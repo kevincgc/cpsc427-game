@@ -83,6 +83,12 @@ struct Colour
 	vec3 colour;
 };
 
+// New Components for project
+struct Item 
+{
+	int id = 0;
+};
+
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
 {
@@ -119,6 +125,10 @@ struct Mesh
 enum class TEXTURE_ASSET_ID {
 	FISH = 0,
 	TURTLE = FISH + 1,
+	MINOTAUR = TURTLE + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
 	TEXTURE_COUNT = TURTLE + 1
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -129,6 +139,10 @@ enum class EFFECT_ASSET_ID {
 	SALMON = PEBBLE + 1,
 	TEXTURED = SALMON + 1,
 	WATER = TEXTURED + 1,
+	MINOTAUR = WATER + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
 	EFFECT_COUNT = WATER + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -139,6 +153,10 @@ enum class GEOMETRY_BUFFER_ID {
 	PEBBLE = SPRITE + 1,
 	DEBUG_LINE = PEBBLE + 1,
 	SCREEN_TRIANGLE = DEBUG_LINE + 1,
+	MINOTAUR = SCREEN_TRIANGLE + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
 	GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;

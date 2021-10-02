@@ -33,9 +33,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	for(entt::entity entity: registry.view<Motion>())
 	{
 		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
-		//Motion& motion = motion_registry.components[i];
-		//Entity entity = motion_registry.entities[i];
-		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		Motion& motion = registry.get<Motion>(entity);
+		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		motion.position[0] += motion.velocity[0] * step_seconds;
+		motion.position[1] += motion.velocity[1] * step_seconds;
 		(void)elapsed_ms; // placeholder to silence unused warning until implemented
 	}
 
@@ -44,25 +45,25 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	//// Check for collisions between all moving entities
-	//for(entt::entity entity : registry.view<Motion>())
-	//{
-	//	Motion& motion = registry.get<Motion>(entity);
-	//	for(entt::entity other : registry.view<Motion>()) // i+1
-	//	{
-	//		if (entity == other)
-	//			continue;
+	// Check for collisions between all moving entities
+	for(entt::entity entity : registry.view<Motion>())
+	{
+		Motion motion = registry.get<Motion>(entity);
+		for(entt::entity other : registry.view<Motion>()) // i+1
+		{
+			if (entity == other)
+				continue;
 
-	//		Motion& motion_other = registry.get<Motion>(other);
-	//		if (collides(motion, motion_other))
-	//		{
-	//			// Create a collisions event
-	//			// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-	//			registry.emplace<Collision>(entity, other);
-	//			registry.emplace<Collision>(other, entity);
-	//		}
-	//	}
-	//}
+			Motion motion_other = registry.get<Motion>(other);
+			if (collides(motion, motion_other))
+			{
+				// Create a collisions event
+				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
+				registry.emplace<Collision>(entity, other);
+				//registry.emplace<Collision>(other, entity);
+			}
+		}
+	}
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A2: HANDLE SALMON - WALL collisions HERE

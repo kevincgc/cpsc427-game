@@ -64,6 +64,91 @@ entt::entity createTurtle(RenderSystem* renderer, vec2 position)
 	return e;
 }
 
+// New Entities
+
+entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
+	Motion motion = Motion();
+	motion.position = pos;
+	motion.angle = 0.f;
+	motion.velocity = { 0.f, 0.f };
+	motion.scale = mesh.original_size * 150.f;
+	motion.scale.x *= -1;
+
+	const entt::entity e = registry.create();
+	registry.emplace<Player>(e);
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+		EFFECT_ASSET_ID::MINOTAUR,
+		GEOMETRY_BUFFER_ID::MINOTAUR);
+
+	return e;
+}
+
+entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
+	Motion motion = Motion();
+	motion.position = pos;
+	motion.angle = 0.f;
+	motion.velocity = { 0.f, 0.f };
+	motion.scale = mesh.original_size * 150.f;
+	motion.scale.x *= -1;
+
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+		EFFECT_ASSET_ID::ENEMY,
+		GEOMETRY_BUFFER_ID::ENEMY);
+
+	return e;
+}
+
+entt::entity createItem(RenderSystem* renderer, vec2 pos)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
+	Motion motion = Motion();
+	motion.position = pos;
+	motion.angle = 0.f;
+	motion.velocity = { 0.f, 0.f };
+	motion.scale = mesh.original_size * 150.f;
+	motion.scale.x *= -1;
+
+	const entt::entity e = registry.create();
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+		EFFECT_ASSET_ID::ITEM,
+		GEOMETRY_BUFFER_ID::ITEM);
+
+	return e;
+}
+
+entt::entity createTraps(RenderSystem* renderer, vec2 pos)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
+	Motion motion = Motion();
+	motion.position = pos;
+	motion.angle = 0.f;
+	motion.velocity = { 0.f, 0.f };
+	motion.scale = mesh.original_size * 150.f;
+	motion.scale.x *= -1;
+
+	const entt::entity e = registry.create();
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+		EFFECT_ASSET_ID::TRAP,
+		GEOMETRY_BUFFER_ID::TRAP);
+
+	return e;
+}
+
 //entt::entity createLine(vec2 position, vec2 scale)
 //{
 //	Entity entity = Entity();

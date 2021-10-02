@@ -305,7 +305,42 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	// key is of 'type' GLFW_KEY_
 	// action can be GLFW_PRESS GLFW_RELEASE GLFW_REPEAT
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	entt::entity salmon = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(salmon);
+	const float salmon_vel = 500;
+	if (!registry.view<DeathTimer>().contains(salmon)) {
+		if (action == GLFW_PRESS && key == GLFW_KEY_LEFT) {
+			motion.velocity[0] = -1 * salmon_vel;
+		}
 
+		if (action == GLFW_RELEASE && key == GLFW_KEY_LEFT) {
+			motion.velocity[0] = 0;
+		}
+
+		if (action == GLFW_PRESS && key == GLFW_KEY_RIGHT) {
+			motion.velocity[0] = salmon_vel;
+		}
+
+		if (action == GLFW_RELEASE && key == GLFW_KEY_RIGHT) {
+			motion.velocity[0] = 0;
+		}
+
+		if (action == GLFW_PRESS && key == GLFW_KEY_UP) {
+			motion.velocity[1] = -1 * salmon_vel;
+		}
+
+		if (action == GLFW_RELEASE && key == GLFW_KEY_UP) {
+			motion.velocity[1] = 0;
+		}
+
+		if (action == GLFW_PRESS && key == GLFW_KEY_DOWN) {
+			motion.velocity[1] = salmon_vel;
+		}
+
+		if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN) {
+			motion.velocity[1] = 0;
+		}
+	}
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
 		int w, h;
