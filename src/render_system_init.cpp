@@ -7,11 +7,14 @@
 #include "../ext/stb_image/stb_image.h"
 
 // This creates circular header inclusion, that is quite bad.
-#include "tiny_ecs_registry.hpp"
 
 // stlib
 #include <iostream>
 #include <sstream>
+
+#include "world_system.hpp"
+#include <entt.hpp>
+extern entt::registry registry;
 
 // World initialization
 bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
@@ -239,14 +242,14 @@ RenderSystem::~RenderSystem()
 	gl_has_errors();
 
 	// remove all entities created by the render system
-	while (registry.renderRequests.entities.size() > 0)
-	    registry.remove_all_components_of(registry.renderRequests.entities.back());
+	while (registry.view<RenderRequest>().size() > 0)
+	    registry.clear<RenderRequest>();
 }
 
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.screenStates.emplace(screen_state_entity);
+	registry.emplace<ScreenState>(screen_state_entity);
 
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);

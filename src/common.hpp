@@ -10,6 +10,7 @@
 #define NOMINMAX
 #include <gl3w.h>
 #include <GLFW/glfw3.h>
+#include <entt.hpp>
 
 // The glm library provides vector and matrix operations as in GLSL
 #include <glm/vec2.hpp>				// vec2
@@ -17,8 +18,6 @@
 #include <glm/vec3.hpp>             // vec3
 #include <glm/mat3x3.hpp>           // mat3
 using namespace glm;
-
-#include "tiny_ecs.hpp"
 
 // Simple utility functions to avoid mistyping directory name
 // audio_path("audio.ogg") -> data/audio/audio.ogg
@@ -45,3 +44,5 @@ struct Transform {
 };
 
 bool gl_has_errors();
+
+extern entt::registry registry;

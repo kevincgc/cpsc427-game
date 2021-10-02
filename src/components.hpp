@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
+#include <entt.hpp>
 
 // Player component
 struct Player
@@ -34,8 +35,8 @@ struct Motion {
 struct Collision
 {
 	// Note, the first object is stored in the ECS container.entities
-	Entity other; // the second object involved in the collision
-	Collision(Entity& other) { this->other = other; };
+	entt::entity other; // the second object involved in the collision
+	Collision(entt::entity& other) { this->other = other; };
 };
 
 // Data structure for toggling debug mode
@@ -75,6 +76,11 @@ struct TexturedVertex
 {
 	vec3 position;
 	vec2 texcoord;
+};
+
+struct Colour
+{
+	vec3 colour;
 };
 
 // Mesh datastructure for storing vertex and index buffers

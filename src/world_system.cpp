@@ -34,7 +34,7 @@ WorldSystem::~WorldSystem() {
 	Mix_CloseAudio();
 
 	// Destroy all created components
-	registry.clear_all_components();
+	registry.clear();
 
 	// Close the window
 	glfwDestroyWindow(window);
@@ -135,31 +135,40 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// Remove debug info from the last step
-	while (registry.debugComponents.entities.size() > 0)
-	    registry.remove_all_components_of(registry.debugComponents.entities.back());
+	//while (registry.debugComponents.entities.size() > 0)
+	//    registry.remove_all_components_of(registry.debugComponents.entities.back());
 
 	// Removing out of screen entities
-	auto& motions_registry = registry.motions;
+	auto motions = registry.view<Motion>();
 
 	// Remove entities that leave the screen on the left side
 	// Iterate backwards to be able to remove without unterfering with the next object to visit
 	// (the containers exchange the last element with the current)
-	for (int i = (int)motions_registry.components.size()-1; i>=0; --i) {
-	    Motion& motion = motions_registry.components[i];
-		if (motion.position.x + abs(motion.scale.x) < 0.f) {
-		    registry.remove_all_components_of(motions_registry.entities[i]);
-		}
+	//for (int i = (int)motions_registry.size()-1; i>=0; --i) {
+	//    auto& motion = motions_registry.begin()[i];
+	//	if (motion.position.x + abs(motion.scale.x) < 0.f) {
+	//	    registry.remove_all_components_of(motions_registry.entities[i]);
+	//	}
+	//}
+	for (auto entity: motions) {
+		//if (entity != player_salmon) {
+			Motion& motion = motions.get<Motion>(entity);
+			if (motion.position.x + abs(motion.scale.x) < 0.f) {
+				registry.destroy(entity);
+			}
+		//}
 	}
+
 
 	// Spawning new turtles
 	next_turtle_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.hardShells.components.size() <= MAX_TURTLES && next_turtle_spawn < 0.f) {
+	if (registry.view<HardShell>().size() <= MAX_TURTLES && next_turtle_spawn < 0.f) {
 		// Reset timer
 		next_turtle_spawn = (TURTLE_DELAY_MS / 2) + uniform_dist(rng) * (TURTLE_DELAY_MS / 2);
 		// Create turtle
-		Entity entity = createTurtle(renderer, {0,0});
+		entt::entity entity = createTurtle(renderer, {0,0});
 		// Setting random initial position and constant velocity
-		Motion& motion = registry.motions.get(entity);
+		Motion& motion = registry.get<Motion>(entity);
 		motion.position =
 			vec2(screen_width -200.f, 
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
@@ -168,7 +177,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.softShells.components.size() <= MAX_FISH && next_fish_spawn < 0.f) {
+	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
 		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
 	}
 
@@ -178,13 +187,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// Processing the salmon state
-	assert(registry.screenStates.components.size() <= 1);
-    ScreenState &screen = registry.screenStates.components[0];
+	// assert(registry.screenStates.components.size() <= 1);
+    // ScreenState &screen = registry.screenStates.components[0];
 
     float min_counter_ms = 3000.f;
-	for (Entity entity : registry.deathTimers.entities) {
+	for (entt::entity entity: registry.view<DeathTimer>()) {
 		// progress timer
-		DeathTimer& counter = registry.deathTimers.get(entity);
+		DeathTimer& counter = registry.get<DeathTimer>(entity);
 		counter.counter_ms -= elapsed_ms_since_last_update;
 		if(counter.counter_ms < min_counter_ms){
 		    min_counter_ms = counter.counter_ms;
@@ -192,14 +201,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
-			registry.deathTimers.remove(entity);
-			screen.darken_screen_factor = 0;
+			registry.remove<DeathTimer>(entity);
+			//screen.darken_screen_factor = 0;
             restart_game();
 			return true;
 		}
 	}
 	// reduce window brightness if any of the present salmons is dying
-	screen.darken_screen_factor = 1 - min_counter_ms / 3000;
+	//screen.darken_screen_factor = 1 - min_counter_ms / 3000;
 
 	// !!! TODO A1: update LightUp timers and remove if time drops below zero, similar to the death counter
 
@@ -209,23 +218,22 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	// Debugging for memory/component leaks
-	registry.list_all_components();
-	printf("Restarting\n");
+	//registry.list_all_components();
+	//printf("Restarting\n");
 
 	// Reset the game speed
 	current_speed = 1.f;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all fish, turtles, ... but that would be more cumbersome
-	while (registry.motions.entities.size() > 0)
-	    registry.remove_all_components_of(registry.motions.entities.back());
+	registry.clear();
 
 	// Debugging for memory/component leaks
-	registry.list_all_components();
+	//registry.list_all_components();
 
 	// Create a new salmon
 	player_salmon = createSalmon(renderer, { 100, 200 });
-	registry.colors.insert(player_salmon, {1, 0.8f, 0.8f});
+	registry.emplace<Colour>(player_salmon, vec3(1, 0.8f, 0.8f));
 
 	// !! TODO A3: Enable static pebbles on the ground
 	// Create pebbles on the floor for reference
@@ -245,34 +253,33 @@ void WorldSystem::restart_game() {
 // Compute collisions between entities
 void WorldSystem::handle_collisions() {
 	// Loop over all collisions detected by the physics system
-	auto& collisionsRegistry = registry.collisions; // TODO: @Tim, is the reference here needed?
-	for (uint i = 0; i < collisionsRegistry.components.size(); i++) {
+	auto collisions = registry.view<Collision>();
+	for (entt::entity entity : collisions) {
 		// The entity and its collider
-		Entity entity = collisionsRegistry.entities[i];
-		Entity entity_other = collisionsRegistry.components[i].other;
+		entt::entity entity_other = collisions.get<Collision>(entity).other;
 
 		// For now, we are only interested in collisions that involve the salmon
-		if (registry.players.has(entity)) {
+		if (registry.view<Player>().contains(entity)) {
 			//Player& player = registry.players.get(entity);
 
 			// Checking Player - HardShell collisions
-			if (registry.hardShells.has(entity_other)) {
+			if (registry.view<HardShell>().contains(entity_other)) {
 				// initiate death unless already dying
-				if (!registry.deathTimers.has(entity)) {
+				if (!registry.view<DeathTimer>().contains(entity)) {
 					// Scream, reset timer, and make the salmon sink
-					registry.deathTimers.emplace(entity);
+					registry.emplace<DeathTimer>(entity);
 					Mix_PlayChannel(-1, salmon_dead_sound, 0);
-					registry.motions.get(entity).angle = 3.1415f;
-					registry.motions.get(entity).velocity = { 0, 80 };
+					registry.get<Motion>(entity).angle = 3.1415f;
+					registry.get<Motion>(entity).velocity = { 0, 80 };
 
 					// !!! TODO A1: change the salmon color on death
 				}
 			}
 			// Checking Player - SoftShell collisions
-			else if (registry.softShells.has(entity_other)) {
-				if (!registry.deathTimers.has(entity)) {
+			else if (registry.view<SoftShell>().contains(entity_other)) {
+				if (!registry.view<DeathTimer>().contains(entity)) {
 					// chew, count points, and set the LightUp timer
-					registry.remove_all_components_of(entity_other);
+					registry.destroy(entity_other);
 					Mix_PlayChannel(-1, salmon_eat_sound, 0);
 					++points;
 
@@ -283,7 +290,7 @@ void WorldSystem::handle_collisions() {
 	}
 
 	// Remove all collisions from this simulation step
-	registry.collisions.clear();
+	registry.clear<Collision>();
 }
 
 // Should the game be over ?
