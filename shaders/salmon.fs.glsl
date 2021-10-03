@@ -11,23 +11,6 @@ uniform int light_up;
 
 // Output color
 layout(location = 0) out vec4 color;
-// Fake projection matrix, which maps game world coordinates into OpenGL's [-1, 1] range
-// float left = 0.f;
-// float top = 0.f;
-// float right = window_size_in_game_units.x;
-// float bottom = window_size_in_game_units.y;
-// float sx = 2.f / (right - left);
-// float sy = 2.f / (top - bottom);
-// float tx = -(right + left) / (right - left);
-// float ty = -(top + bottom) / (top - bottom);
-// mat3 projection_2D = {{sx, 0.f, 0.f}, {0.f, sy, 0.f}, {tx, ty, 1.f}};
-
-
-// mat3 transform = {
-//     {50., 0., 0.},    // Leftmost column      scale x
-//     {0., 50., 0.},    // Middle column        scale y
-//     {200., 200., 1.},  // Rightmost column    translate
-// };
 
 void main()
 {
