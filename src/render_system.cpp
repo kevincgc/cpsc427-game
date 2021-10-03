@@ -88,6 +88,15 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 			GLint light_up_uloc = glGetUniformLocation(program, "light_up");
 			assert(light_up_uloc >= 0);
 
+			// Enabling and binding texture to slot 0
+			glActiveTexture(GL_TEXTURE0);
+			gl_has_errors();
+			assert(registry.renderRequests.has(entity));
+			GLuint texture_id_salmon =
+				texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+
+			glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+
 			// !!! TODO A1: set the light_up shader variable using glUniform1i,
 			// similar to the glUniform1f call below. The 1f or 1i specified the type, here a single int.
 			gl_has_errors();

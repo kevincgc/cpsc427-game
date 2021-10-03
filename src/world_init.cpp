@@ -21,9 +21,9 @@ Entity createSalmon(RenderSystem* renderer, vec2 pos)
 	registry.players.emplace(entity);
 	registry.renderRequests.insert(
 		entity,
-		{ TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
-			EFFECT_ASSET_ID::SALMON,
-			GEOMETRY_BUFFER_ID::SALMON });
+		{ TEXTURE_ASSET_ID::SALMON, // TEXTURE_COUNT indicates that no texture is needed
+			EFFECT_ASSET_ID::TEXTURED, // TEXTURED
+			GEOMETRY_BUFFER_ID::SPRITE });
 
 	return entity;
 }

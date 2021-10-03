@@ -1,0 +1,19 @@
+####
+# Object minotaur.obj
+# faking 2d geometry
+#
+# Vertices: 4
+# Faces: 2
+#
+####
+v -0.5 -0.5 0.5
+v -0.5 0.5 0.5
+v 0.5 0.5 0.5
+v 0.5 -0.5 0.5
+# 4 vertices, 0 vertices normals
+
+f 1//1 2//2 3//3
+f 3//3 4//4 1//1
+# 2 faces, 0 coords texture
+
+# End of File
