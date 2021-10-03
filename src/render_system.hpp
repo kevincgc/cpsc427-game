@@ -5,11 +5,15 @@
 
 #include "common.hpp"
 #include "components.hpp"
-#include "tiny_ecs.hpp"
+//#include "tiny_ecs.hpp"
+#include <entt.hpp>
+
+extern entt::registry registry;
 
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem {
+	
 	/**
 	 * The following arrays store the assets the game will use. They are loaded
 	 * at initialization and are assumed to not be modified by the render loop.
@@ -76,7 +80,7 @@ public:
 
 private:
 	// Internal drawing functions for each entity type
-	void drawTexturedMesh(Entity entity, const mat3& projection);
+	void drawTexturedMesh(entt::entity entity, const mat3& projection);
 	void drawToScreen();
 
 	// Window handle
@@ -89,7 +93,7 @@ private:
 	GLuint off_screen_render_buffer_color;
 	GLuint off_screen_render_buffer_depth;
 
-	Entity screen_state_entity;
+	entt::entity screen_state_entity = registry.create();
 };
 
 bool loadEffectFromFile(

@@ -56,3 +56,5 @@ bool gl_has_errors()
 
 	return true;
 }
+
+entt::registry registry;
