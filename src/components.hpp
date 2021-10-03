@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
+#include <entt.hpp>
 
 // Player component
 struct Player
@@ -34,8 +35,8 @@ struct Motion {
 struct Collision
 {
 	// Note, the first object is stored in the ECS container.entities
-	Entity other; // the second object involved in the collision
-	Collision(Entity& other) { this->other = other; };
+	entt::entity other; // the second object involved in the collision
+	Collision(entt::entity& other) { this->other = other; };
 };
 
 // Data structure for toggling debug mode
@@ -77,6 +78,17 @@ struct TexturedVertex
 	vec2 texcoord;
 };
 
+struct Colour
+{
+	vec3 colour;
+};
+
+// New Components for project
+struct Item 
+{
+	int id = 0;
+};
+
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
 {
@@ -113,8 +125,11 @@ struct Mesh
 enum class TEXTURE_ASSET_ID {
 	FISH = 0,
 	TURTLE = FISH + 1,
-	SALMON = TURTLE + 1,	// ADD MINOTAUR AS SALMON FOR NOW
-	TEXTURE_COUNT = SALMON + 1,
+	MINOTAUR = TURTLE + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
+	TEXTURE_COUNT = MINOTAUR + 1
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -124,6 +139,10 @@ enum class EFFECT_ASSET_ID {
 	SALMON = PEBBLE + 1,
 	TEXTURED = SALMON + 1,
 	WATER = TEXTURED + 1,
+	MINOTAUR = WATER + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
 	EFFECT_COUNT = WATER + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -134,6 +153,10 @@ enum class GEOMETRY_BUFFER_ID {
 	PEBBLE = SPRITE + 1,
 	DEBUG_LINE = PEBBLE + 1,
 	SCREEN_TRIANGLE = DEBUG_LINE + 1,
+	MINOTAUR = SCREEN_TRIANGLE + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
 	GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;

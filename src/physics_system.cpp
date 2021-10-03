@@ -30,13 +30,13 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 {
 	// Move fish based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
-	auto& motion_registry = registry.motions;
-	for(uint i = 0; i< motion_registry.size(); i++)
+	for(entt::entity entity: registry.view<Motion>())
 	{
 		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
-		//Motion& motion = motion_registry.components[i];
-		//Entity entity = motion_registry.entities[i];
-		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		Motion& motion = registry.get<Motion>(entity);
+		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		motion.position[0] += motion.velocity[0] * step_seconds;
+		motion.position[1] += motion.velocity[1] * step_seconds;
 		(void)elapsed_ms; // placeholder to silence unused warning until implemented
 	}
 
@@ -46,24 +46,21 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// Check for collisions between all moving entities
-    ComponentContainer<Motion> &motion_container = registry.motions;
-	for(uint i = 0; i<motion_container.components.size(); i++)
+	for(entt::entity entity : registry.view<Motion>())
 	{
-		Motion& motion_i = motion_container.components[i];
-		Entity entity_i = motion_container.entities[i];
-		for(uint j = 0; j<motion_container.components.size(); j++) // i+1
+		Motion motion = registry.get<Motion>(entity);
+		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
-			if (i == j)
+			if (entity == other)
 				continue;
 
-			Motion& motion_j = motion_container.components[j];
-			if (collides(motion_i, motion_j))
+			Motion motion_other = registry.get<Motion>(other);
+			if (collides(motion, motion_other))
 			{
-				Entity entity_j = motion_container.entities[j];
 				// Create a collisions event
 				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-				registry.collisions.emplace_with_duplicates(entity_i, entity_j);
-				registry.collisions.emplace_with_duplicates(entity_j, entity_i);
+				registry.emplace<Collision>(entity, other);
+				//registry.emplace<Collision>(other, entity);
 			}
 		}
 	}
@@ -82,22 +79,23 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// You will want to use the createLine from world_init.hpp
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes
 	if (debugging.in_debug_mode)
 	{
-		uint size_before_adding_new = (uint)motion_container.components.size();
+		uint size_before_adding_new = (uint)motion_view.size();
 		for (uint i = 0; i < size_before_adding_new; i++)
 		{
-			Motion& motion_i = motion_container.components[i];
-			Entity entity_i = motion_container.entities[i];
+			entt::entity entity_i = motion_view.begin()[i];
+			Motion& motion_i = registry.get<Motion>(entity_i);
 
 			// visualize the radius with two axis-aligned lines
 			const vec2 bonding_box = get_bounding_box(motion_i);
 			float radius = sqrt(dot(bonding_box/2.f, bonding_box/2.f));
-			vec2 line_scale1 = { motion_i.scale.x / 10, 2*radius };
-			Entity line1 = createLine(motion_i.position, line_scale1);
-			vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
-			Entity line2 = createLine(motion_i.position, line_scale2);
+			//vec2 line_scale1 = { motion_i.scale.x / 10, 2*radius };
+			//entt::entity line1 = createLine(motion_i.position, line_scale1);
+			//vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
+			//entt::entity line2 = createLine(motion_i.position, line_scale2);
 
 			// !!! TODO A2: implement debugging of bounding boxes and mesh
 		}

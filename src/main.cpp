@@ -10,11 +10,14 @@
 #include "physics_system.hpp"
 #include "render_system.hpp"
 #include "world_system.hpp"
+#include "common.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
 const int window_width_px = 1200;
 const int window_height_px = 800;
+
+extern entt::registry registry;
 
 // Entry point
 int main()
