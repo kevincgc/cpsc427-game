@@ -41,9 +41,9 @@ struct Collision
 
 // map tiles
 enum MapTile {
-	FREE_SPACE,
-	WALL,
-	ITEM
+	FREE_SPACE = 0,
+	BREAKABLE_WALL,
+	UNBREAKABLE_WALL
 };
 
 // Global Game State
