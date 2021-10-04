@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <map>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -46,3 +47,10 @@ struct Transform {
 bool gl_has_errors();
 
 extern entt::registry registry;
+
+// Utility functions to help with mouse movement, specifically swiping
+struct Mouse_spell {
+	void reset_swipe_status(std::map < std::string,bool> &map, std::string except_button = "None", std::string except_dir = "None");
+	void check_swipe_count(std::map < std::string, bool> &map, int &count, int max_swipes);
+	void check_spell(std::map < std::string, bool> &map);
+};
