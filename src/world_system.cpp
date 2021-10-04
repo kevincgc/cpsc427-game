@@ -461,46 +461,50 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		else if (action == GLFW_RELEASE) {
 			flag_right = false;
 
-			vec2 first = { gesture_coords_right.front().x , gesture_coords_right.front().y };
-			vec2 last = { gesture_coords_right.back().x, gesture_coords_right.back().y };
-			float dif_x = last.x - first.x;
-			float dif_y = last.y - first.y;
+			if (!gesture_coords_right.empty()) {
+				vec2 first = { gesture_coords_right.front().x , gesture_coords_right.front().y };
+				vec2 last = { gesture_coords_right.back().x, gesture_coords_right.back().y };
+				float dif_x = last.x - first.x;
+				float dif_y = last.y - first.y;
+
+				// Debug
+				//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
+				//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
+				//std::cout << "Dif_x: " << dif_x << std::endl;
+				//std::cout << "Dif_y: " << dif_y << std::endl;
+
+				if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
+					std::cout << "RMB_swipe_right" << std::endl;
+					gesture_statuses["gesture_RMB_right"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "right");
+				}
+				else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
+					std::cout << "RMB_swipe_left" << std::endl;
+					gesture_statuses["gesture_RMB_left"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "left");
+				}
+				else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
+					std::cout << "RMB_swipe_down" << std::endl;
+					gesture_statuses["gesture_RMB_down"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "down");
+				}
+				else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
+					std::cout << "RMB_swipe_up" << std::endl;
+					gesture_statuses["gesture_RMB_up"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "up");
+				}
+				gesture_coords_right.clear();
+
+				// Check Spell Cast
+				mouse_spell.check_spell(gesture_statuses);
+
+				// Debug: Print the gesture_statuses map
+				//for (auto it = gesture_statuses.cbegin(); it != gesture_statuses.cend(); ++it) {
+				//	std::cout << it->first << " " << it->second << std::endl;
+				//}
+			}
+
 			
-			// Debug
-			//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
-			//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
-			//std::cout << "Dif_x: " << dif_x << std::endl;
-			//std::cout << "Dif_y: " << dif_y << std::endl;
-
-			if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "RMB_swipe_right" << std::endl;
-				gesture_statuses["gesture_RMB_right"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "right");
-			}
-			else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "RMB_swipe_left" << std::endl;
-				gesture_statuses["gesture_RMB_left"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "left");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
-				std::cout << "RMB_swipe_down" << std::endl;
-				gesture_statuses["gesture_RMB_down"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "down");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
-				std::cout << "RMB_swipe_up" << std::endl;
-				gesture_statuses["gesture_RMB_up"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "up");
-			}
-			gesture_coords_right.clear();
-
-			// Check Spell Cast
-			mouse_spell.check_spell(gesture_statuses);
-
-			// Debug: Print the gesture_statuses map
-			//for (auto it = gesture_statuses.cbegin(); it != gesture_statuses.cend(); ++it) {
-			//	std::cout << it->first << " " << it->second << std::endl;
-			//}
 
 		}
 	}
@@ -511,42 +515,44 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		}
 		else if (action == GLFW_RELEASE) {
 			flag_left = false;
+			
+			if (!gesture_coords_left.empty()) {
+				vec2 first = { gesture_coords_left.front().x , gesture_coords_left.front().y };
+				vec2 last = { gesture_coords_left.back().x, gesture_coords_left.back().y };
+				float dif_x = last.x - first.x;
+				float dif_y = last.y - first.y;
 
-			vec2 first = { gesture_coords_left.front().x , gesture_coords_left.front().y };
-			vec2 last = { gesture_coords_left.back().x, gesture_coords_left.back().y };
-			float dif_x = last.x - first.x;
-			float dif_y = last.y - first.y;
+				// Debug
+				//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
+				//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
+				//std::cout << "Dif_x: " << dif_x << std::endl;
+				//std::cout << "Dif_y: " << dif_y << std::endl;
 
-			// Debug
-			//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
-			//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
-			//std::cout << "Dif_x: " << dif_x << std::endl;
-			//std::cout << "Dif_y: " << dif_y << std::endl;
+				if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
+					std::cout << "LMB_swipe_right" << std::endl;
+					gesture_statuses["gesture_LMB_right"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "right");
+				}
+				else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
+					std::cout << "LMB_swipe_left" << std::endl;
+					gesture_statuses["gesture_LMB_left"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "left");
+				}
+				else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
+					std::cout << "LMB_swipe_down" << std::endl;
+					gesture_statuses["gesture_LMB_down"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "down");
+				}
+				else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
+					std::cout << "LMB_swipe_up" << std::endl;
+					gesture_statuses["gesture_LMB_up"] = true;
+					mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "up");
+				}
+				gesture_coords_left.clear();
 
-			if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "LMB_swipe_right" << std::endl;
-				gesture_statuses["gesture_LMB_right"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "right");
+				// Check Spell Cast
+				mouse_spell.check_spell(gesture_statuses);
 			}
-			else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "LMB_swipe_left" << std::endl;
-				gesture_statuses["gesture_LMB_left"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "left");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
-				std::cout << "LMB_swipe_down" << std::endl;
-				gesture_statuses["gesture_LMB_down"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "down");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
-				std::cout << "LMB_swipe_up" << std::endl;
-				gesture_statuses["gesture_LMB_up"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "up");
-			}
-			gesture_coords_left.clear();
-
-			// Check Spell Cast
-			mouse_spell.check_spell(gesture_statuses);
 		}
 	}
 
