@@ -11,50 +11,11 @@
 
 #include "physics_system.hpp"
 
-// myLibs
-#include <iostream>
-#include <vector>
-#include <map>
-#include <iterator>
-#include <string>
-
 // Game configuration
 const size_t MAX_TURTLES = 15;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
-
-// My Settings
-bool flag_right = false;
-bool flag_left = false;
-std::vector <vec2> gesture_coords_left;
-std::vector <vec2> gesture_coords_right;
-std::map <std::string, bool> gesture_statuses{
-	{"gesture_LMB_up", false},
-	{"gesture_LMB_down", false},
-	{"gesture_LMB_right", false},
-	{"gesture_LMB_left", false},
-	{"gesture_RMB_up", false},
-	{"gesture_RMB_down", false},
-	{"gesture_RMB_right", false},
-	{"gesture_RMB_left", false},
-};
-//bool gesture_left_north = false;
-//bool gesture_left_south = false;
-//bool gesture_left_east = false;
-//bool gesture_left_west = false;
-//bool gesture_right_north = false;
-//bool gesture_right_south = false;
-//bool gesture_right_east = false;
-//bool gesture_right_west = false;
-// The number of swipes allowed before resetting cast
-int max_swipes = 2;
-int swipes = 0;
-
-//Debugging
-vec2 debug_pos = { 0,0 };
-
-
 
 // Create the fish world
 WorldSystem::WorldSystem()
@@ -126,10 +87,8 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 	glfwSetWindowUserPointer(window, this);
 	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
 	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
-	auto mouse_button_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button( _0, _1, _2 ); };
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
-	glfwSetMouseButtonCallback(window, mouse_button_redirect);
 
 	//////////////////////////////////////
 	// Loading music and sounds with SDL
@@ -251,23 +210,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			return true;
 		}
 	}
+	// reduce window brightness if any of the present salmons is dying
+	//screen.darken_screen_factor = 1 - min_counter_ms / 3000;
 
-	// Mouse Gestures
-	// Get cursor position
-	POINT p;
-	GetCursorPos(&p);
+	// !!! TODO A1: update LightUp timers and remove if time drops below zero, similar to the death counter
 
-	// If right button down
-	if (flag_right) {
-		//std::cout << "Tracking right... " << p.x << ", " << p.y << std::endl;
-		gesture_coords_right.push_back({ p.x,p.y });
-	}
-	if (flag_left) {
-		//std::cout << "Tracking left..." << p.x << ", " << p.y << std::endl;
-		gesture_coords_left.push_back({ p.x,p.y });
-
-	}
-	
 	return true;
 }
 
@@ -420,13 +367,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			motion.velocity[1] = 0;
 		}
 	}
-
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
 		int w, h;
 		glfwGetWindowSize(window, &w, &h);
 
-		restart_game();
+        restart_game();
 	}
 
 	// Debugging
@@ -447,130 +393,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		printf("Current speed = %f\n", current_speed);
 	}
 	current_speed = fmax(0.f, current_speed);
-
-}
-
-void WorldSystem::on_mouse_button(int button, int action, int mods) {
-	// Mouse actions are one of: GLFW_PRESS or GLFW_RELEASE
-	// Get mouse button state (GFLW_PRESS or GLFW_RELEASE) with ex: 
-	//   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)
-
-	// Get cursor position
-	POINT p;
-	GetCursorPos(&p);
-
-	// Access mouse_spell helper functions
-	Mouse_spell mouse_spell;
-
-	// Forgiveness range
-	// The leniency refers to whether the cursor x or y value strays too far from the origin
-	// Example: start: (100,100). Intent: Up motion. End: (110,40). Interpretation: 10 right, 60 up.
-	// Is 10 right okay? If leniency is 20, then yes, 10 is acceptable, and we register this as swiping up.
-	float forgiveness_range = 100;
-	// The distance the cursor must travel to register as a swipe
-	float min_distance = 100;
-
-	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-		if (action == GLFW_PRESS) {
-			flag_right = true;
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_right = false;
-
-			vec2 first = { gesture_coords_right.front().x , gesture_coords_right.front().y };
-			vec2 last = { gesture_coords_right.back().x, gesture_coords_right.back().y };
-			float dif_x = last.x - first.x;
-			float dif_y = last.y - first.y;
-			
-			// Debug
-			//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
-			//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
-			//std::cout << "Dif_x: " << dif_x << std::endl;
-			//std::cout << "Dif_y: " << dif_y << std::endl;
-
-			if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "RMB_swipe_right" << std::endl;
-				gesture_statuses["gesture_RMB_right"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "right");
-			}
-			else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "RMB_swipe_left" << std::endl;
-				gesture_statuses["gesture_RMB_left"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "left");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
-				std::cout << "RMB_swipe_down" << std::endl;
-				gesture_statuses["gesture_RMB_down"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "down");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
-				std::cout << "RMB_swipe_up" << std::endl;
-				gesture_statuses["gesture_RMB_up"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "LMB", "up");
-			}
-			gesture_coords_right.clear();
-
-			// Check Spell Cast
-			mouse_spell.check_spell(gesture_statuses);
-
-			// Debug: Print the gesture_statuses map
-			//for (auto it = gesture_statuses.cbegin(); it != gesture_statuses.cend(); ++it) {
-			//	std::cout << it->first << " " << it->second << std::endl;
-			//}
-
-		}
-	}
-	if (button == GLFW_MOUSE_BUTTON_LEFT) {
-		if (action == GLFW_PRESS) {
-			//std::cout << "clicked_left: " << p.x << ", " << p.y << std::endl;
-			flag_left = true;
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_left = false;
-
-			vec2 first = { gesture_coords_left.front().x , gesture_coords_left.front().y };
-			vec2 last = { gesture_coords_left.back().x, gesture_coords_left.back().y };
-			float dif_x = last.x - first.x;
-			float dif_y = last.y - first.y;
-
-			// Debug
-			//std::cout << "First element: " << first.x << ", " << first.y << std::endl;
-			//std::cout << "Last element: " << last.x << ", " << last.y << std::endl;
-			//std::cout << "Dif_x: " << dif_x << std::endl;
-			//std::cout << "Dif_y: " << dif_y << std::endl;
-
-			if (dif_x > min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "LMB_swipe_right" << std::endl;
-				gesture_statuses["gesture_LMB_right"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "right");
-			}
-			else if (dif_x < -1 * min_distance && abs(dif_y) < forgiveness_range) {
-				std::cout << "LMB_swipe_left" << std::endl;
-				gesture_statuses["gesture_LMB_left"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "left");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y > min_distance) {
-				std::cout << "LMB_swipe_down" << std::endl;
-				gesture_statuses["gesture_LMB_down"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "down");
-			}
-			else if (abs(dif_x) < forgiveness_range && dif_y < -1 * min_distance) {
-				std::cout << "LMB_swipe_up" << std::endl;
-				gesture_statuses["gesture_LMB_up"] = true;
-				mouse_spell.reset_swipe_status(gesture_statuses, "RMB", "up");
-			}
-			gesture_coords_left.clear();
-
-			// Check Spell Cast
-			mouse_spell.check_spell(gesture_statuses);
-
-			// Debug: Print the gesture_statuses map
-			//for (auto it = gesture_statuses.cbegin(); it != gesture_statuses.cend(); ++it) {
-			//	std::cout << it->first << " " << it->second << std::endl;
-			//}
-		}
-	}
-
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -579,8 +401,6 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	// xpos and ypos are relative to the top-left of the window, the salmon's
 	// default facing direction is (1, 0)
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
 	(vec2)mouse_position; // dummy to avoid compiler warning
 }
