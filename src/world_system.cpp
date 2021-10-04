@@ -547,11 +547,6 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 
 			// Check Spell Cast
 			mouse_spell.check_spell(gesture_statuses);
-
-			// Debug: Print the gesture_statuses map
-			//for (auto it = gesture_statuses.cbegin(); it != gesture_statuses.cend(); ++it) {
-			//	std::cout << it->first << " " << it->second << std::endl;
-			//}
 		}
 	}
 
