@@ -39,6 +39,20 @@ struct Collision
 	Collision(entt::entity& other) { this->other = other; };
 };
 
+// map tiles
+enum MapTile {
+	FREE_SPACE,
+	WALL,
+	ITEM
+};
+
+// Global Game State
+struct GameState
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+};
+extern GameState game_state;
+
 // Data structure for toggling debug mode
 struct Debug {
 	bool in_debug_mode = 0;
@@ -84,7 +98,7 @@ struct Colour
 };
 
 // New Components for project
-struct Item 
+struct Item
 {
 	int id = 0;
 };
