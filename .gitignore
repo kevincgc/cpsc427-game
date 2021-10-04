@@ -8,6 +8,7 @@
 **/.vscode
 **/.idea
 **/build/
+**/ext/project_path.hpp
 **/out/
 *.exe
 *.db

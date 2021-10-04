@@ -39,6 +39,20 @@ struct Collision
 	Collision(entt::entity& other) { this->other = other; };
 };
 
+// map tiles
+enum MapTile {
+	FREE_SPACE = 0,
+	BREAKABLE_WALL,
+	UNBREAKABLE_WALL
+};
+
+// Global Game State
+struct GameState
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+};
+extern GameState game_state;
+
 // Data structure for toggling debug mode
 struct Debug {
 	bool in_debug_mode = 0;
@@ -84,7 +98,7 @@ struct Colour
 };
 
 // New Components for project
-struct Item 
+struct Item
 {
 	int id = 0;
 };
@@ -129,7 +143,7 @@ enum class TEXTURE_ASSET_ID {
 	ENEMY = MINOTAUR + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	TEXTURE_COUNT = TURTLE + 1
+	TEXTURE_COUNT = MINOTAUR + 1
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
