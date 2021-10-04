@@ -5,6 +5,9 @@
 // stlib
 #include <cassert>
 #include <sstream>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #include "physics_system.hpp"
 
@@ -170,7 +173,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(entity);
 		motion.position =
-			vec2(screen_width -200.f, 
+			vec2(screen_width -200.f,
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
 		motion.velocity = vec2(-100.f, 0.f);
 	}
@@ -217,6 +220,29 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
+	// delete old map, if one exists
+	game_state.map_tiles.clear();
+
+	// load map
+	fprintf(stderr, "Started loading map 1\n");
+	std::ifstream file(maps_path("map1.txt"));
+	if (file.is_open()) {
+		std::string line;
+		while (std::getline(file, line)) { // read one line from file
+			std::istringstream str_stream(line);
+
+			int tile;
+			std::vector<MapTile> row;
+			while (str_stream >> tile) { // read all tiles from this line
+				row.push_back((MapTile) tile);
+			}
+
+			// push this map row to the final vector
+			game_state.map_tiles.push_back(row);
+		}
+	}
+	fprintf(stderr, "Finished loading map\n");
+
 	// Debugging for memory/component leaks
 	//registry.list_all_components();
 	//printf("Restarting\n");
@@ -242,7 +268,7 @@ void WorldSystem::restart_game() {
 		int w, h;
 		glfwGetWindowSize(window, &w, &h);
 		float radius = 30 * (uniform_dist(rng) + 0.3f); // range 0.3 .. 1.3
-		Entity pebble = createPebble({ uniform_dist(rng) * w, h - uniform_dist(rng) * 20 }, 
+		Entity pebble = createPebble({ uniform_dist(rng) * w, h - uniform_dist(rng) * 20 },
 			         { radius, radius });
 		float brightness = uniform_dist(rng) * 0.5 + 0.5;
 		registry.colors.insert(pebble, { brightness, brightness, brightness});
