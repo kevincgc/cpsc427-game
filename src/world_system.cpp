@@ -251,22 +251,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			return true;
 		}
 	}
-
-	// Mouse Gestures
-	// Get cursor position
-	POINT p;
-	GetCursorPos(&p);
-
-	// If right button down
-	if (flag_right) {
-		//std::cout << "Tracking right... " << p.x << ", " << p.y << std::endl;
-		gesture_coords_right.push_back({ p.x,p.y });
-	}
-	if (flag_left) {
-		//std::cout << "Tracking left..." << p.x << ", " << p.y << std::endl;
-		gesture_coords_left.push_back({ p.x,p.y });
-
-	}
 	
 	return true;
 }
@@ -574,13 +558,15 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: HANDLE SALMON ROTATION HERE
-	// xpos and ypos are relative to the top-left of the window, the salmon's
-	// default facing direction is (1, 0)
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// If RMB down
+	if (flag_right) {
+		//std::cout << "Tracking right... " << p.x << ", " << p.y << std::endl;
+		gesture_coords_right.push_back({ mouse_position.x,mouse_position.y });
+	}
 
-
-
-	(vec2)mouse_position; // dummy to avoid compiler warning
+	// If LMB down
+	if (flag_left) {
+		//std::cout << "Tracking left..." << p.x << ", " << p.y << std::endl;
+		gesture_coords_left.push_back({ mouse_position.x,mouse_position.y });
+	}
 }
