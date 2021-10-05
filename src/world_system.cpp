@@ -437,12 +437,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
 	// Mouse actions are one of: GLFW_PRESS or GLFW_RELEASE
 	// Get mouse button state (GFLW_PRESS or GLFW_RELEASE) with ex: 
-	//   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)
-
-	// Get cursor position
-	POINT p;
-	GetCursorPos(&p);
-
+	//   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)s
 	// Access mouse_spell helper functions
 	Mouse_spell mouse_spell;
 
