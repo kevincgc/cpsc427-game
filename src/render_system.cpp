@@ -1,5 +1,6 @@
 // internal
 #include "render_system.hpp"
+#include "world_system.hpp"
 #include <SDL.h>
 
 void RenderSystem::drawTexturedMesh(entt::entity entity,
@@ -10,7 +11,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	// specification for more info Incrementally updates transformation matrix,
 	// thus ORDER IS IMPORTANT
 	Transform transform;
-	transform.translate(motion.position);
+	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.scale(motion.scale);
 	// !!! TODO A1: add rotation to the chain of transformations, mind the order
 	// of transformations
