@@ -26,6 +26,9 @@ public:
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
 
+	// Creates a camera
+	static SDL_Rect camera;
+
 	// starts the game
 	void init(RenderSystem* renderer);
 
