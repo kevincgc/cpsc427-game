@@ -13,7 +13,7 @@ extern entt::registry registry;
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem {
-	
+
 	/**
 	 * The following arrays store the assets the game will use. They are loaded
 	 * at initialization and are assumed to not be modified by the render loop.
@@ -34,9 +34,10 @@ class RenderSystem {
 
 	// Make sure these paths remain in sync with the associated enumerators.
 	const std::array<std::string, texture_count> texture_paths = {
+		textures_path("wall.png"),
 		textures_path("fish.png"),
 		textures_path("turtle.png"),
-		textures_path("minotaur.png"),
+		textures_path("minotaur.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -84,6 +85,7 @@ public:
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(entt::entity entity, const mat3& projection);
+	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection);
 	void drawToScreen();
 
 	// Window handle

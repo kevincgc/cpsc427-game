@@ -137,13 +137,27 @@ struct Mesh
  */
 
 enum class TEXTURE_ASSET_ID {
-	FISH = 0,
-	TURTLE = FISH + 1,
-	MINOTAUR = TURTLE + 1,
-	ENEMY = MINOTAUR + 1,
-	ITEM = ENEMY + 1,
-	TRAP = ITEM + 1,
-	TEXTURE_COUNT = MINOTAUR + 1
+	// wall types. for now only one type
+	// but if we wanted to use different sprites for junctions
+	// we could do something like:
+	// WALL_VERTICAL,
+	// WALL_HORIZONTAL,
+	// WALL_TOP_RIGHT,
+	// WALL_TOP_LEFT,
+	// WALL_BTM_LEFT,
+	// WALL_BTM_RIGHT,
+	// WALL_T_TOP,
+	// WALL_T_LEFT,
+	// WALL_T_BTM,
+	// WALL_T_RIGHT,
+	// WALL_CROSS,
+	WALL = 0,
+
+	FISH,
+	TURTLE,
+	MINOTAUR,
+
+	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
