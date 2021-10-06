@@ -205,12 +205,6 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 
-	// Getting uniform locations for glUniform* calls
-	GLint color_uloc = glGetUniformLocation(program, "fcolor");
-	const vec3 color = {0.0, 0.0, 0.0};
-	glUniform3fv(color_uloc, 1, (float *)&color);
-	gl_has_errors();
-
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
 	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
