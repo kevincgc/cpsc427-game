@@ -12,9 +12,8 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	// thus ORDER IS IMPORTANT
 	Transform transform;
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
+	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	// !!! TODO A1: add rotation to the chain of transformations, mind the order
-	// of transformations
 
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
@@ -135,15 +134,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection)
 {
-	Transform transform;
-
-	// transform map coords to position
-	// each tile is 100x100
-	vec2 position = {100.0 * map_coords.x, 100.0 * map_coords.y};
-
-	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
-	transform.scale({100.0, 100.0});
-
 	// define which texture to draw
 	TEXTURE_ASSET_ID texture_asset;
 	switch (map_tile) {
@@ -157,6 +147,15 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 			return; // don't render anything
 	}
 
+	const float tile_size = 75.0;
+	Transform transform;
+
+	// transform map coords to position
+	// each tile is 100x100
+	vec2 position = {tile_size * map_coords.x, tile_size * map_coords.y};
+
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
+	transform.scale({-tile_size, tile_size});
 
 	const RenderRequest render_request = {
 		texture_asset,
