@@ -16,7 +16,7 @@ entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
 			TEXTURE_ASSET_ID::MINOTAUR, // TEXTURE_COUNT indicates that no texture is needed
-			EFFECT_ASSET_ID::TEXTURED, // TEXTURED
+			EFFECT_ASSET_ID::SALMON, // was TEXTURED
 			GEOMETRY_BUFFER_ID::SPRITE);
 
 	return e;
