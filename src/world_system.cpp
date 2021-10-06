@@ -23,6 +23,7 @@ const size_t MAX_TURTLES = 15;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
+const size_t ITEM_DELAY_MS = 3000 * 3;
 SDL_Rect WorldSystem::camera = {0,0,1200,800};
 
 // My Settings
@@ -370,14 +371,14 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - SoftShell collisions
 			else if (registry.view<SoftShell>().contains(entity_other)) {
-				if (!registry.view<DeathTimer>().contains(entity)) {
-					// chew, count points, and set the LightUp timer
-					registry.destroy(entity_other);
-					Mix_PlayChannel(-1, salmon_eat_sound, 0);
-					++points;
+				// if (!registry.view<DeathTimer>().contains(entity)) {
+				// 	// chew, count points, and set the LightUp timer
+				// 	registry.destroy(entity_other);
+				// 	Mix_PlayChannel(-1, salmon_eat_sound, 0);
+				// 	++points;
 
-					// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
-				}
+				// 	// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
+				// }
 			}
 		}
 	}

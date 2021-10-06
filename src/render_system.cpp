@@ -85,10 +85,17 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
-		// glEnableVertexAttribArray(in_position_loc);
-		// glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void *)0);
-		// glEnableVertexAttribArray(in_uv_loc);
-		// glVertexAttribPointer(in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), 0);
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+							  sizeof(TexturedVertex), (void *)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_uv_loc);
+		glVertexAttribPointer(
+			in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+			(void *)sizeof(
+				vec3)); // note the stride to skip the preceeding vertex position
+				
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
