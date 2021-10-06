@@ -26,6 +26,9 @@ public:
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
 
+	// Creates a camera
+	static SDL_Rect camera;
+
 	// starts the game
 	void init(RenderSystem* renderer);
 
@@ -47,6 +50,7 @@ private:
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
+	void on_mouse_button(int button, int action, int mods);
 
 	// restart level
 	void restart_game();
