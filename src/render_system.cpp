@@ -65,7 +65,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
-	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON || render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
+	else if (render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_color_loc = glGetAttribLocation(program, "in_color");
@@ -80,26 +80,27 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
+	}
+	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
+	{
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
+		// glEnableVertexAttribArray(in_position_loc);
+		// glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void *)0);
+		// glEnableVertexAttribArray(in_uv_loc);
+		// glVertexAttribPointer(in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), 0);
+		GLuint time_uloc = glGetUniformLocation(program, "time");
+		glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
-		if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
-		{
-			// Light up?
-			GLint light_up_uloc = glGetUniformLocation(program, "light_up");
-			assert(light_up_uloc >= 0);
+		// Enabling and binding texture to slot 0
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+		assert(registry.view<RenderRequest>().contains(entity));
+		GLuint texture_id_salmon =
+			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
 
-			// Enabling and binding texture to slot 0
-			glActiveTexture(GL_TEXTURE0);
-			gl_has_errors();
-			assert(registry.view<RenderRequest>().contains(entity));
-			GLuint texture_id_salmon =
-				texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
-
-			glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
-
-			// !!! TODO A1: set the light_up shader variable using glUniform1i,
-			// similar to the glUniform1f call below. The 1f or 1i specified the type, here a single int.
-			gl_has_errors();
-		}
+		glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		gl_has_errors();
 	}
 	else
 	{
