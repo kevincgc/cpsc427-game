@@ -15,6 +15,11 @@
 #include "components.hpp"
 
 extern entt::registry registry;
+extern std::map < int, std::map <std::string, std::string>> spellbook;
+extern bool move_right;
+extern bool move_left;
+extern bool move_up;
+extern bool move_down;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods

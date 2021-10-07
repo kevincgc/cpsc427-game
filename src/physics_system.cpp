@@ -1,6 +1,7 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
+#include<iostream>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -32,7 +33,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// having entities move at different speed based on the machine.
 	for(entt::entity entity: registry.view<Motion>())
 	{
-		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
 		Motion& motion = registry.get<Motion>(entity);
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		motion.position[0] += motion.velocity[0] * step_seconds;
@@ -40,10 +40,40 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		(void)elapsed_ms; // placeholder to silence unused warning until implemented
 	}
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE UPDATES HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
+
+	// Movement
+	float& x_vel = motion.velocity.x;
+	float& y_vel = motion.velocity.y;
+	// Temporary implementation
+	// Update minotaur speed if the spell is active
+	float accel = spellbook[1]["active"] == "true" ?		60 : 30;
+	float max_vel = spellbook[1]["active"] == "true" ?		500 : 200;
+	float slow_factor = spellbook[1]["active"] == "true" ?	20 : 10;
+	if (!registry.view<DeathTimer>().contains(player)) {
+		if (move_right)		{ x_vel += accel; }
+		else if (move_left) { x_vel += -1 * accel; }
+		if (move_up)		{ y_vel += -1 * accel; }
+		else if (move_down) { y_vel += accel; }
+	}
+
+	// Impose max velocity for minotaur
+	if (x_vel > max_vel) { x_vel = max_vel; }
+	else if (x_vel < -1 * max_vel) { x_vel = -1 * max_vel; }
+	if (y_vel > max_vel) { y_vel = max_vel; }
+	else if (y_vel < -1 * max_vel) { y_vel = -1 * max_vel; }
+
+
+	// Friction to slow minotaur down
+	
+	if (x_vel != 0 || y_vel != 0) {
+		if (x_vel > 0) { x_vel -= slow_factor; }
+		else if (x_vel < 0) { x_vel += slow_factor; }
+		if (y_vel > 0) { y_vel -= slow_factor; }
+		else if (y_vel < 0) { y_vel += slow_factor; }
+	}
 
 	// Check for collisions between all moving entities
 	for(entt::entity entity : registry.view<Motion>())
@@ -65,19 +95,8 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		}
 	}
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: HANDLE SALMON - WALL collisions HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 	// you may need the following quantities to compute wall positions
 	(float)window_width_px; (float)window_height_px;
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: DRAW DEBUG INFO HERE on Salmon mesh collision
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// You will want to use the createLine from world_init.hpp
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes
@@ -96,13 +115,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			//entt::entity line1 = createLine(motion_i.position, line_scale1);
 			//vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
 			//entt::entity line2 = createLine(motion_i.position, line_scale2);
-
-			// !!! TODO A2: implement debugging of bounding boxes and mesh
 		}
 	}
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE collisions HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
