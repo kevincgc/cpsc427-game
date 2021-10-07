@@ -210,17 +210,34 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	title_ss << "Points: " << points;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
+	// setting coordinates of camera
+	camera.x = registry.get<Motion>(player_salmon).position.x - screen_width / 2;
+	camera.y = registry.get<Motion>(player_salmon).position.y - screen_height / 2;
+
 	// Remove debug info from the last step
-	//while (registry.debugComponents.entities.size() > 0)
-	//    registry.remove_all_components_of(registry.debugComponents.entities.back());
+        //while (registry.debugComponents.entities.size() > 0)
+        //	registry.remove_all_components_of(registry.debugComponents.entities.back());
 
 	// Removing out of screen entities
-	auto motions = registry.view<Motion>();
+	auto motions= registry.view<Motion>();
+
+	// Remove entities that leave the screen on the left side
+	// Iterate backwards to be able to remove without unterfering with the next object to visit
+	// (the containers exchange the last element with the current)
+	//for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+	//	Motion& motion = motions_registry.components[i];
+	//	if (motion.position.x + abs(motion.scale.x) < 0.f) {
+	//		registry.remove_all_components_of(motions_registry.entities[i]);
+	//	}
+	//}
+	
 	for (auto entity: motions) {
+		//if (entity != player_salmon) {
 		Motion& motion = motions.get<Motion>(entity);
 		if (motion.position.x + abs(motion.scale.x) < 0.f) {
 			registry.destroy(entity);
 		}
+	 //}
 	}
 
 	// Spawning new turtles
@@ -236,7 +253,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.coeff_rest = 0.9;
 		motion.position =
 			vec2(screen_width -200.f,
-				 50.f + uniform_dist(rng) * (screen_height - 100.f));
+				50.f + uniform_dist(rng) * (screen_height - 100.f));
 		motion.velocity = vec2(-100.f, 0.f);
 	}
 
@@ -245,12 +262,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		for (entt::entity turtle : registry.view<HardShell>()) {
 			Motion& motion = registry.get<Motion>(turtle);
 			motion.velocity = vec2(-25.f, 0.f);
+		}
 	}
 	else {
 		for (entt::entity turtle : registry.view<HardShell>()) {
 			Motion& motion = registry.get<Motion>(turtle);
 			motion.velocity = vec2(-100.f, 0.f);
 		}
+	}
 	
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
@@ -279,7 +298,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		camera.x = camera.w;
 	}
 
-
+	if (camera.y >= camera.h) {
+		camera.y = camera.h;
 	}
 
     float min_counter_ms = 3000.f;
@@ -287,8 +307,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// progress timer
 		DeathTimer& counter = registry.get<DeathTimer>(entity);
 		counter.counter_ms -= elapsed_ms_since_last_update;
-		if(counter.counter_ms < min_counter_ms){
-		    min_counter_ms = counter.counter_ms;
+		if (counter.counter_ms < min_counter_ms) {
+			min_counter_ms = counter.counter_ms;
 		}
 
 		// restart the game once the death timer expired
@@ -496,3 +516,5 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	if (flag_right) { gesture_coords_right.push_back({ mouse_position.x,mouse_position.y }); }
 	if (flag_left) { gesture_coords_left.push_back({ mouse_position.x,mouse_position.y }); }
 }
+
+
