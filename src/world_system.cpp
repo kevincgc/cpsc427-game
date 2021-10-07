@@ -26,7 +26,6 @@ const size_t MAX_TURTLES = 15;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
-SDL_Rect WorldSystem::camera = {0,0,1200,800};
 
 // My Settings
 auto t = Clock::now();
@@ -209,11 +208,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	title_ss << "Points: " << points;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
-	// setting coordinates of camera
-	camera.x = registry.get<Motion>(player_salmon).position.x - screen_width / 2;
-	camera.y = registry.get<Motion>(player_salmon).position.y - screen_height / 2;
-
-
 	// Remove debug info from the last step
 	//while (registry.debugComponents.entities.size() > 0)
 	//    registry.remove_all_components_of(registry.debugComponents.entities.back());
@@ -255,29 +249,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			motion.velocity = vec2(-100.f, 0.f);
 		}
 	}
-	
-	if (camera.x <= 0) {
-		camera.x = 0;
-	}
-	if (camera.y <= 0) {
-		camera.y = 0;
-	}
-
-	if (camera.x >= camera.w) {
-		camera.x = camera.w;
-	}
-
-	if (camera.y >= camera.h) {
-		camera.y = camera.h;
-	}
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE SPAWN HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// Processing the salmon state
-	// assert(registry.screenStates.components.size() <= 1);
-    // ScreenState &screen = registry.screenStates.components[0];
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
