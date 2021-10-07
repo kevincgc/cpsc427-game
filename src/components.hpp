@@ -29,6 +29,8 @@ struct Motion {
 	float angle = 0;
 	vec2 velocity = { 0, 0 };
 	vec2 scale = { 10, 10 };
+	float mass = 50;
+	float coeff_rest = 0.8;
 };
 
 // Stucture to store collision information
@@ -75,7 +77,7 @@ struct DebugComponent
 // A timer that will be associated to dying salmon
 struct DeathTimer
 {
-	float counter_ms = 3000;
+	float counter_ms = 1000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
