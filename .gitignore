@@ -27,6 +27,8 @@
 **/__MACOSX/
 **/$RECYCLE.BIN/
 **/Desktop.ini
+**/CMakeFiles
+CMakeCache.txt
 
 !ext/
 !template/ext/
