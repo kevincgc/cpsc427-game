@@ -15,7 +15,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.scale(motion.scale);
 	// !!! TODO A1: add rotation to the chain of transformations, mind the order
 	// of transformations
-
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
@@ -83,8 +82,10 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	}
 	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
 	{
+
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
+
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(TexturedVertex), (void *)0);
@@ -95,9 +96,13 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
-				
+		// glEnableVertexAttribArray(frame_loc);
+    	// glVertexAttribPointer(frame_loc, 1, GL_INT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(
+		// 		vec3));
+		
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
+
 
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);

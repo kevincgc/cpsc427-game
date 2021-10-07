@@ -36,7 +36,8 @@ class RenderSystem {
 	const std::array<std::string, texture_count> texture_paths = {
 		textures_path("enemy.png"), // fish
 		textures_path("drone.png"), // turtle
-		textures_path("minotaur.png"),
+		// textures_path("minotaur.png"),
+		textures_path("Minotaur_sprite_sheet.png"),
 	};
 
 	std::array<GLuint, effect_count> effects;
