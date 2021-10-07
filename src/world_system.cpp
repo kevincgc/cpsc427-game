@@ -219,6 +219,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		entt::entity entity = createTurtle(renderer, {0,0});
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(entity);
+		motion.mass = 200;
+		motion.coeff_rest = 0.9;
 		motion.position =
 			vec2(screen_width -200.f,
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
@@ -350,10 +352,11 @@ void WorldSystem::handle_collisions() {
 				// initiate death unless already dying
 				if (!registry.view<DeathTimer>().contains(entity)) {
 					// Scream, reset timer, and make the salmon sink
+					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
 					Mix_PlayChannel(-1, salmon_dead_sound, 0);
-					registry.get<Motion>(entity).angle = 3.1415f;
-					registry.get<Motion>(entity).velocity = { 0, 80 };
+					Colour& c = registry.get<Colour>(entity);
+					c.colour = vec3( 0.27, 0.27, 0.27 );
 
 					// !!! TODO A1: change the salmon color on death
 				}
@@ -390,7 +393,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	entt::entity salmon = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(salmon);
-	const float salmon_vel = 500;
+	const float salmon_vel = 250;
 	if (!registry.view<DeathTimer>().contains(salmon)) {
 		if (action == GLFW_PRESS && key == GLFW_KEY_LEFT && motion.position.x >= 1) {
 			motion.velocity[0] = -1 * salmon_vel;
