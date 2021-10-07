@@ -441,17 +441,17 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	if (!registry.view<DeathTimer>().contains(salmon)) {
 		if (action == GLFW_PRESS) {
-			if (key == GLFW_KEY_D) { move_right = true; }
-			else if (key == GLFW_KEY_A) { move_left = true; }
-			if (key == GLFW_KEY_W) { move_up = true; }
-			else if (key == GLFW_KEY_S) { move_down = true; }
+			if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
+			else if (key == GLFW_KEY_A  || key == GLFW_KEY_LEFT ) { move_left = true;	}
+			if		(key == GLFW_KEY_W	|| key == GLFW_KEY_UP	) { move_up = true;		}
+			else if (key == GLFW_KEY_S  || key == GLFW_KEY_DOWN ) { move_down = true;	}
 		}
 
 		if (action == GLFW_RELEASE) {
-			if (key == GLFW_KEY_D) { move_right = false; }
-			else if (key == GLFW_KEY_A) { move_left = false; }
-			if (key == GLFW_KEY_W) { move_up = false; }
-			else if (key == GLFW_KEY_S) { move_down = false; }
+			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { move_right = false;	}
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { move_left = false;	}
+			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { move_up = false;		}
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { move_down = false;	}
 		}
 	}
 
