@@ -27,6 +27,58 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	return false;
 }
 
+void impulseCollisionResolution(Motion& motion, Motion& motion_other) {
+	// Based on math derived here: https://www.randygaul.net/2013/03/27/game-physics-engine-part-1-impulse-resolution/
+	// Using impulse to resolve collisions
+	vec2 norm = glm::normalize(motion_other.position - motion.position); // collision normal
+	vec2 relative_vel = motion_other.velocity - motion.velocity;
+	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
+		return;
+	float coeff_restitution = min(motion.coeff_rest, motion_other.coeff_rest);
+	
+	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
+	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / motion.mass + 1 / motion_other.mass); 
+	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
+
+	// velocity is changed relative to the mass of objects in the collision
+	motion.velocity = motion.velocity - impulse / motion.mass; 
+	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
+}
+
+void preventCollisionOverlap(entt::entity entity, entt::entity other) {
+	Motion& circle = registry.get<Motion>(entity);
+	Motion& rectangle = registry.get<Motion>(other);
+	const float pen_scaling_factor = 10;
+	vec2 box_c = get_bounding_box(circle);
+	vec2 box_r = get_bounding_box(rectangle);
+	float x_rectangle_bound = rectangle.position[0] - box_r[0] / 2.f;
+	float x_circle_bound = circle.position[0] + box_c[0] / 2.f;
+	float x_penetration = x_circle_bound - x_rectangle_bound;
+	x_penetration /= pen_scaling_factor;
+	float y_rectangle_bound = rectangle.position[1] - box_r[1] / 2.f;
+	float y_circle_bound = circle.position[1] + box_c[1] / 2.f;
+	float y_penetration = y_circle_bound - y_rectangle_bound;
+	y_penetration /= pen_scaling_factor;
+	if (circle.velocity[0] < 0) {
+		circle.position[0] = circle.position[0] + x_penetration / 2.f;
+		rectangle.position[0] = rectangle.position[0] - x_penetration / 2.f;
+	}
+	else {
+		circle.position[0] = circle.position[0] - x_penetration / 2.f;
+		rectangle.position[0] = rectangle.position[0] + x_penetration / 2.f;
+	}
+	if (circle.velocity[1] > 0) {
+		circle.position[1] = circle.position[1] + y_penetration / 2.f;
+		rectangle.position[1] = rectangle.position[1] - y_penetration / 2.f;
+	}
+	else {
+		circle.position[1] = circle.position[1] - y_penetration / 2.f;
+		rectangle.position[1] = rectangle.position[1] + y_penetration / 2.f;
+	}
+	/*printf("x pen: %f\n", x_penetration);
+	printf("y pen: %f\n", y_penetration);*/
+}
+
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
 	// Move fish based on how much time has passed, this is to (partially) avoid
@@ -78,19 +130,22 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// Check for collisions between all moving entities
 	for(entt::entity entity : registry.view<Motion>())
 	{
-		Motion motion = registry.get<Motion>(entity);
+		Motion& motion = registry.get<Motion>(entity);
 		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
 			if (entity == other)
 				continue;
 
-			Motion motion_other = registry.get<Motion>(other);
+			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
+				impulseCollisionResolution(motion, motion_other);
+				registry.emplace<Collision>(other, entity);
+				preventCollisionOverlap(other, entity);
 				// Create a collisions event
 				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-				registry.emplace<Collision>(entity, other);
-				//registry.emplace<Collision>(other, entity);
+				//registry.emplace<Collision>(entity, other);
+				
 			}
 		}
 	}

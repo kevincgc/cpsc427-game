@@ -15,6 +15,16 @@
 #include "world_system.hpp"
 #include <entt.hpp>
 extern entt::registry registry;
+const int SPRITE_SHEET_WIDTH = 844;
+const int SPRITE_SHEET_HEIGHT = 1868;
+
+const float ANIMATION_FRAME_W = 96.f / SPRITE_SHEET_WIDTH; // 0-1
+const float ANIMATION_FRAME_H = 60.f / SPRITE_SHEET_HEIGHT; 
+const float OFFSET_X = 0.f;
+const float OFFSET_Y = 90.f / SPRITE_SHEET_HEIGHT;
+// const int ANIMATION_SPEED = 3;
+// const int NUM_ANIMATION_FRAMES = 3;
+GLint frame = 0;
 
 // World initialization
 bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
@@ -160,6 +170,23 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> textured_indices = { 0, 3, 1, 1, 3, 2 };
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SPRITE, textured_vertices, textured_indices);
+
+	//////////////////////////
+	// Initialize sprite
+	// The position corresponds to the center of the texture.
+	std::vector<TexturedVertex> minotaur_sprite_sheet_vertices(4);
+	minotaur_sprite_sheet_vertices[0].position = { -1.f/2, +1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[0].texcoord = {OFFSET_X, OFFSET_Y + ANIMATION_FRAME_H};  
+	minotaur_sprite_sheet_vertices[1].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y + ANIMATION_FRAME_H};  
+	minotaur_sprite_sheet_vertices[2].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y};  
+	minotaur_sprite_sheet_vertices[3].texcoord = {OFFSET_X, OFFSET_Y};  
+
+	// Counterclockwise as it's the default opengl front winding direction.
+	const std::vector<uint16_t> minotaur_sprite_sheet_indices = { 0, 3, 1, 1, 3, 2 };
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
 
 	////////////////////////
 	// Initialize pebble

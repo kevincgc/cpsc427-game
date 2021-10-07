@@ -26,6 +26,8 @@ const size_t MAX_TURTLES = 15;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
+const size_t ITEM_DELAY_MS = 3000 * 3;
+SDL_Rect WorldSystem::camera = {0,0,1200,800};
 
 // My Settings
 auto t = Clock::now();
@@ -230,6 +232,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		entt::entity entity = createTurtle(renderer, {0,0});
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(entity);
+		motion.mass = 200;
+		motion.coeff_rest = 0.9;
 		motion.position =
 			vec2(screen_width -200.f,
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
@@ -241,13 +245,41 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		for (entt::entity turtle : registry.view<HardShell>()) {
 			Motion& motion = registry.get<Motion>(turtle);
 			motion.velocity = vec2(-25.f, 0.f);
-		}
 	}
 	else {
 		for (entt::entity turtle : registry.view<HardShell>()) {
 			Motion& motion = registry.get<Motion>(turtle);
 			motion.velocity = vec2(-100.f, 0.f);
 		}
+	
+	// Spawning new fish
+	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
+	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
+		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
+		next_fish_spawn = (FISH_DELAY_MS / 2) + uniform_dist(rng) * (next_fish_spawn / 2);
+		entt::entity fish = createFish(renderer, {0,0});
+		// Setting random initial position and constant velocity
+		Motion& motion = registry.get<Motion>(fish);
+		motion.position =
+			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f), 
+				 50.f + uniform_dist(rng) * (screen_height - 100.f));
+		// motion.velocity = vec2(-200.f, 0.f);
+		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200, 
+				  (uniform_dist(rng) - 0.5f) * 200);
+	}
+	
+	if (camera.x <= 0) {
+		camera.x = 0;
+	}
+	if (camera.y <= 0) {
+		camera.y = 0;
+	}
+
+	if (camera.x >= camera.w) {
+		camera.x = camera.w;
+	}
+
+
 	}
 
     float min_counter_ms = 3000.f;
@@ -346,10 +378,11 @@ void WorldSystem::handle_collisions() {
 				// initiate death unless already dying
 				if (!registry.view<DeathTimer>().contains(entity) && spellbook[3]["active"] == "false") {
 					// Scream, reset timer, and make the salmon sink
+					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
 					Mix_PlayChannel(-1, salmon_dead_sound, 0);
-					registry.get<Motion>(entity).angle = 3.1415f;
-					registry.get<Motion>(entity).velocity = { 0, 80 };
+					Colour& c = registry.get<Colour>(entity);
+					c.colour = vec3( 0.27, 0.27, 0.27 );
 
 					// Reset movement switches
 					move_right = false;
@@ -360,14 +393,14 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - SoftShell collisions
 			else if (registry.view<SoftShell>().contains(entity_other)) {
-				if (!registry.view<DeathTimer>().contains(entity)) {
-					// chew, count points, and set the LightUp timer
-					registry.destroy(entity_other);
-					Mix_PlayChannel(-1, salmon_eat_sound, 0);
-					++points;
+				// if (!registry.view<DeathTimer>().contains(entity)) {
+				// 	// chew, count points, and set the LightUp timer
+				// 	registry.destroy(entity_other);
+				// 	Mix_PlayChannel(-1, salmon_eat_sound, 0);
+				// 	++points;
 
-					// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
-				}
+				// 	// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
+				// }
 			}
 		}
 	}
