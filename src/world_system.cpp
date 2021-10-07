@@ -67,8 +67,8 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 	{3, {
 			{"name", "invincibility"},
 			{"speed", "none"},
-			{"combo_1", "gesture_LMB_up"},
-			{"combo_2", "gesture_RMB_down"},
+			{"combo_1", "gesture_LMB_down"},
+			{"combo_2", "gesture_RMB_left"},
 			{"active", "false"}
 		}
 	}
@@ -214,25 +214,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Removing out of screen entities
 	auto motions = registry.view<Motion>();
-
-	// Remove entities that leave the screen on the left side
-	// Iterate backwards to be able to remove without unterfering with the next object to visit
-	// (the containers exchange the last element with the current)
-	//for (int i = (int)motions_registry.size()-1; i>=0; --i) {
-	//    auto& motion = motions_registry.begin()[i];
-	//	if (motion.position.x + abs(motion.scale.x) < 0.f) {
-	//	    registry.remove_all_components_of(motions_registry.entities[i]);
-	//	}
-	//}
 	for (auto entity: motions) {
-		//if (entity != player_salmon) {
-			Motion& motion = motions.get<Motion>(entity);
-			if (motion.position.x + abs(motion.scale.x) < 0.f) {
-				registry.destroy(entity);
-			}
-		//}
+		Motion& motion = motions.get<Motion>(entity);
+		if (motion.position.x + abs(motion.scale.x) < 0.f) {
+			registry.destroy(entity);
+		}
 	}
-
 
 	// Spawning new turtles
 	next_turtle_spawn -= elapsed_ms_since_last_update * current_speed;
@@ -249,9 +236,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.velocity = vec2(-100.f, 0.f);
 	}
 
-
-
-
 	// Adjust turtle speed
 	if (gesture_statuses["gesture_LMB_down"] && gesture_statuses["gesture_RMB_down"]) {
 		for (entt::entity turtle : registry.view<HardShell>()) {
@@ -265,18 +249,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			motion.velocity = vec2(-100.f, 0.f);
 		}
 	}
-
-
-
-	// Spawning new fish
-	//next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
-	//if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
-	//}
-
-
-	// Processing the salmon state
-	// assert(registry.screenStates.components.size() <= 1);
-    // ScreenState &screen = registry.screenStates.components[0];
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
@@ -296,7 +268,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
-
 	// Temporary implementation: General timer for spell duration. Later implementation will have spell-specific timers
 	// Deactivate spells based on time
 	for (auto &spell : spellbook) {
@@ -310,10 +281,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				active_spell = false;
 			}
 		}
-
-
 	}
-	
 	return true;
 }
 
@@ -415,12 +383,9 @@ bool WorldSystem::is_over() const {
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: HANDLE SALMON MOVEMENT HERE
-	// key is of 'type' GLFW_KEY_
-	// action can be GLFW_PRESS GLFW_RELEASE GLFW_REPEAT
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 	entt::entity salmon = registry.view<Player>().begin()[0];
+
 	if (!registry.view<DeathTimer>().contains(salmon)) {
 		if (action == GLFW_PRESS) {
 			if (key == GLFW_KEY_D) { move_right = true; }
@@ -441,33 +406,10 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
 		int w, h;
 		glfwGetWindowSize(window, &w, &h);
-
 		restart_game();
 	}
 
-	// Debugging
-	if (key == GLFW_KEY_D) {
-		if (action == GLFW_RELEASE)
-			debugging.in_debug_mode = false;
-		else
-			debugging.in_debug_mode = true;
-	}
-
-	// Control the current speed with `<` `>`
-	if (action == GLFW_RELEASE && (mod & GLFW_MOD_SHIFT) && key == GLFW_KEY_COMMA) {
-		current_speed -= 0.1f;
-		printf("Current speed = %f\n", current_speed);
-	}
-	if (action == GLFW_RELEASE && (mod & GLFW_MOD_SHIFT) && key == GLFW_KEY_PERIOD) {
-		current_speed += 0.1f;
-		printf("Current speed = %f\n", current_speed);
-	}
-	current_speed = fmax(0.f, current_speed);
-
 }
-
-
-
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
 
@@ -478,22 +420,16 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		}
 		else if (action == GLFW_RELEASE) {
 			flag_right = false;
-			
-			// Determine speed of swipe
+
+			// Capture elapsed time
 			auto now = Clock::now();
 			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
-			//if (!gesture_coords_right.empty()) {
-			//	mouse_spell.gesture_implementation(gesture_coords_right);
-			//}
-
 			if (!gesture_coords_right.empty()) {
-
+				// Modify datastructs
 				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_right, "RMB", flag_fast, elapsed_ms);
-
 				// Check Spell Cast
 				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-
 				// reset fast_flag;
 				flag_fast = false;
 			}
@@ -506,36 +442,24 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		}
 		else if (action == GLFW_RELEASE) {
 			flag_left = false;
-
-			// Determine speed of swipe
+			// Capture elapsed time
 			auto now = Clock::now();
 			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
 			if (!gesture_coords_left.empty()) {
+				// Modify datastructs
 				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_left, "LMB", flag_fast, elapsed_ms);
-
 				// Check Spell Cast
 				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-
 				// reset fast_flag;
 				flag_fast = false;
 			}
 		}
 	}
-
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
-	// If RMB down
-	if (flag_right) {
-		//std::cout << "Tracking right... " << mouse_position.x << ", " << mouse_position.y << std::endl;
-		gesture_coords_right.push_back({ mouse_position.x,mouse_position.y });
-
-	}
-
-	// If LMB down
-	if (flag_left) {
-		//std::cout << "Tracking left..." << p.x << ", " << p.y << std::endl;
-		gesture_coords_left.push_back({ mouse_position.x,mouse_position.y });
-	}
+	// Capture mouse movement coords into vector if LMB or RMB is pressed
+	if (flag_right) { gesture_coords_right.push_back({ mouse_position.x,mouse_position.y }); }
+	if (flag_left) { gesture_coords_left.push_back({ mouse_position.x,mouse_position.y }); }
 }
