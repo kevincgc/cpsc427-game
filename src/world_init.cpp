@@ -18,7 +18,6 @@ entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
 			TEXTURE_ASSET_ID::MINOTAUR, // TEXTURE_COUNT indicates that no texture is needed
 			EFFECT_ASSET_ID::SALMON, // TEXTURED
 			GEOMETRY_BUFFER_ID::SALMON);
-
 	return e;
 }
 
