@@ -8,7 +8,7 @@ entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
 	motion.scale = mesh.original_size * 75.f;
-	motion.scale.x *= -1;
+	motion.scale.x *= 1.5;
 
 	const entt::entity e = registry.create();
 	registry.emplace<Player>(e);
