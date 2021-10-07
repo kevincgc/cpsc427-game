@@ -86,6 +86,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
+		
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
@@ -97,13 +98,20 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
-		// glEnableVertexAttribArray(frame_loc);
-    	// glVertexAttribPointer(frame_loc, 1, GL_INT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(
+		// glEnableVertexAttribArray(in_frame_loc);
+    	// glVertexAttribPointer(in_frame_loc, 1, GL_INT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(
 		// 		vec3));
-		
+		float time_total = (float)(glfwGetTime() * 10.0f);
 		GLuint time_uloc = glGetUniformLocation(program, "time");
-		glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
+		glUniform1f(time_uloc, time_total);
 
+		GLint in_frame_loc = glGetUniformLocation(program, "in_frame");
+		
+		// if (sin(time_total/4)<0.1 && sin(time_total/4)>-0.1) {
+		// 	frame = (frame + 1) % NUM_ANIMATION_FRAMES;
+		// }
+		int frame = 0;
+		glUniform1i(in_frame_loc, frame);
 
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);
