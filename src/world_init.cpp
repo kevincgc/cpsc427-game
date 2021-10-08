@@ -8,7 +8,7 @@ entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
 	motion.scale = mesh.original_size * 75.f;
-	motion.scale.x *= -1;
+	motion.scale.x *= 1.5;
 
 	const entt::entity e = registry.create();
 	registry.emplace<Player>(e);
@@ -16,9 +16,8 @@ entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
 			TEXTURE_ASSET_ID::MINOTAUR, // TEXTURE_COUNT indicates that no texture is needed
-			EFFECT_ASSET_ID::TEXTURED, // TEXTURED
-			GEOMETRY_BUFFER_ID::SPRITE);
-
+			EFFECT_ASSET_ID::SALMON, // TEXTURED
+			GEOMETRY_BUFFER_ID::SALMON);
 	return e;
 }
 
