@@ -6,6 +6,7 @@
 #include <tuple>
 #include <vector>
 #include <map>
+#include <queue>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -51,7 +52,9 @@ extern entt::registry registry;
 
 // Utility functions to help with mouse movement, specifically swiping
 struct Mouse_spell {
+	//std::vector<vec2> load_gesture(std::string file_name);
 	void reset_swipe_status(std::map < std::string,bool> &map, std::string except_button = "None", std::string except_dir = "None");
-	void check_swipe_count(std::map < std::string, bool> &map, int &count, int max_swipes);
-	void check_spell(std::map < std::string, bool> &map);
+	void check_spell(std::queue <std::string> &gesture_queue, std::map < int, std::map <std::string, std::string>> &spellbook, bool flag_fast);
+	void update_datastructs(std::map<std::string, bool>& gesture_statuses, std::queue<std::string> &gesture_queue, std::vector<vec2> &gesture_coords, std::string mouse_button, bool &flag_fast, float elapsed_ms);
+	void reset_spells(std::map < int, std::map <std::string, std::string>> &spellbook);
 };

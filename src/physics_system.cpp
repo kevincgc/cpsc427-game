@@ -1,6 +1,7 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
+#include<iostream>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -90,6 +91,61 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		motion.position[0] += motion.velocity[0] * step_seconds;
 		motion.position[1] += motion.velocity[1] * step_seconds;
 	}
+
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
+
+	// Deal with spell speed while moving
+	if (spellbook[1]["active"] == "true") {
+		if (motion.velocity.x > 0) {
+			motion.velocity.x = 800.f;
+		}
+		else if (motion.velocity.x < 0) {
+			motion.velocity.x = -800.f;
+		}
+		if (motion.velocity.y > 0) {
+			motion.velocity.y = 800.f;
+		}
+		else if (motion.velocity.y < 0) {
+			motion.velocity.y = -800.f;
+		}
+	}
+	
+
+	// ========= Below is the implementation for an acceleration/flag-based movement system (for more accurate movement later) ========= //
+
+	// // Movement
+	// float& x_vel = motion.velocity.x;
+	// float& y_vel = motion.velocity.y;
+	// // Temporary implementation
+	// // Update minotaur speed if the spell is active
+	// float accel = spellbook[1]["active"] == "true" ?		60 : 30;
+	// float max_vel = spellbook[1]["active"] == "true" ?		500 : 200;
+	// float slow_factor = spellbook[1]["active"] == "true" ?	20 : 10;
+	// if (!registry.view<DeathTimer>().contains(player)) {
+	// 	if (move_right)		{ x_vel += accel; }
+	// 	else if (move_left) { x_vel += -1 * accel; }
+	// 	if (move_up)		{ y_vel += -1 * accel; }
+	// 	else if (move_down) { y_vel += accel; }
+	// }
+
+	// // Impose max velocity for minotaur
+	// if (x_vel > max_vel) { x_vel = max_vel; }
+	// else if (x_vel < -1 * max_vel) { x_vel = -1 * max_vel; }
+	// if (y_vel > max_vel) { y_vel = max_vel; }
+	// else if (y_vel < -1 * max_vel) { y_vel = -1 * max_vel; }
+
+
+	// // Friction to slow minotaur down
+	
+	// if (x_vel != 0 || y_vel != 0) {
+	// 	if (x_vel > 0) { x_vel -= slow_factor; }
+	// 	else if (x_vel < 0) { x_vel += slow_factor; }
+	// 	if (y_vel > 0) { y_vel -= slow_factor; }
+	// 	else if (y_vel < 0) { y_vel += slow_factor; }
+	// }
+
+
 
 	// Check for collisions between all moving entities
 	for(entt::entity entity : registry.view<Motion>())
