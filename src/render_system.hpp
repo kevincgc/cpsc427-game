@@ -5,11 +5,15 @@
 
 #include "common.hpp"
 #include "components.hpp"
-#include "tiny_ecs.hpp"
+//#include "tiny_ecs.hpp"
+#include <entt.hpp>
+
+extern entt::registry registry;
 
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem {
+	
 	/**
 	 * The following arrays store the assets the game will use. They are loaded
 	 * at initialization and are assumed to not be modified by the render loop.
@@ -24,14 +28,17 @@ class RenderSystem {
 	// Associated id with .obj path
 	const std::vector < std::pair<GEOMETRY_BUFFER_ID, std::string>> mesh_paths =
 	{
-		  std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::SALMON, mesh_path("salmon.obj"))
+		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::SALMON, mesh_path("minotaur.obj")),
 		  // specify meshes of other assets here
 	};
 
 	// Make sure these paths remain in sync with the associated enumerators.
 	const std::array<std::string, texture_count> texture_paths = {
-			textures_path("fish.png"),
-			textures_path("turtle.png") };
+		textures_path("enemy.png"), // fish
+		textures_path("drone.png"), // turtle
+		// textures_path("minotaur.png"),
+		textures_path("Minotaur_sprite_sheet.png"),
+	};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -40,7 +47,8 @@ class RenderSystem {
 		shader_path("pebble"),
 		shader_path("salmon"),
 		shader_path("textured"),
-		shader_path("water") };
+		shader_path("water"),
+		};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -76,7 +84,7 @@ public:
 
 private:
 	// Internal drawing functions for each entity type
-	void drawTexturedMesh(Entity entity, const mat3& projection);
+	void drawTexturedMesh(entt::entity entity, const mat3& projection);
 	void drawToScreen();
 
 	// Window handle
@@ -89,7 +97,7 @@ private:
 	GLuint off_screen_render_buffer_color;
 	GLuint off_screen_render_buffer_depth;
 
-	Entity screen_state_entity;
+	entt::entity screen_state_entity = registry.create();
 };
 
 bool loadEffectFromFile(

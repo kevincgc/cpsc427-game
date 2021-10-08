@@ -8,11 +8,11 @@
 **/.vscode
 **/.idea
 **/build/
+**/ext/project_path.hpp
 **/out/
 *.exe
 *.db
 *.pdb
-*.lib
 *.ipch
 *.mp4
 *.suo

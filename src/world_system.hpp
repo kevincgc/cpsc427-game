@@ -12,6 +12,9 @@
 #include <SDL_mixer.h>
 
 #include "render_system.hpp"
+#include "components.hpp"
+
+extern entt::registry registry;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -22,6 +25,9 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
+
+	// Creates a camera
+	static SDL_Rect camera;
 
 	// starts the game
 	void init(RenderSystem* renderer);
@@ -37,10 +43,14 @@ public:
 
 	// Should the game be over ?
 	bool is_over()const;
+
 private:
+	
+
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
+	void on_mouse_button(int button, int action, int mods);
 
 	// restart level
 	void restart_game();
@@ -56,7 +66,8 @@ private:
 	float current_speed;
 	float next_turtle_spawn;
 	float next_fish_spawn;
-	Entity player_salmon;
+	float next_item_spawn;
+	entt::entity player_salmon;
 
 	// music references
 	Mix_Music* background_music;
