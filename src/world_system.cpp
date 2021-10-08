@@ -314,7 +314,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			//screen.darken_screen_factor = 0;
             restart_game();
 			return true;
 		}
