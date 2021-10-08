@@ -32,18 +32,17 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// having entities move at different speed based on the machine.
 	for(entt::entity entity: registry.view<Motion>())
 	{
-		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
 		Motion& motion = registry.get<Motion>(entity);
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		motion.position[0] += motion.velocity[0] * step_seconds;
-		motion.position[1] += motion.velocity[1] * step_seconds;
-		(void)elapsed_ms; // placeholder to silence unused warning until implemented
-	}
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE UPDATES HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		vec2 vertex = WorldSystem::position_to_map_coords(nextpos);
+		const MapTile tile = WorldSystem::get_map_tile(vertex);
+
+		if (tile == MapTile::FREE_SPACE) { // no collision
+			motion.position = nextpos;
+		}
+	}
 
 	// Check for collisions between all moving entities
 	for(entt::entity entity : registry.view<Motion>())
@@ -64,20 +63,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			}
 		}
 	}
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: HANDLE SALMON - WALL collisions HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// you may need the following quantities to compute wall positions
-	(float)window_width_px; (float)window_height_px;
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: DRAW DEBUG INFO HERE on Salmon mesh collision
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// You will want to use the createLine from world_init.hpp
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes

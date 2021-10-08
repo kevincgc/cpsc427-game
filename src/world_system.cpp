@@ -230,7 +230,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
 		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
 	}
-	
+
 	if (camera.x <= 0) {
 		camera.x = 0;
 	}
@@ -271,7 +271,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			return true;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -390,7 +390,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	entt::entity salmon = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(salmon);
-	const float salmon_vel = 500;
+	const float salmon_vel = 250;
 	if (!registry.view<DeathTimer>().contains(salmon)) {
 		if (action == GLFW_PRESS && key == GLFW_KEY_LEFT && motion.position.x >= 1) {
 			motion.velocity[0] = -1 * salmon_vel;
@@ -456,7 +456,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
 	// Mouse actions are one of: GLFW_PRESS or GLFW_RELEASE
-	// Get mouse button state (GFLW_PRESS or GLFW_RELEASE) with ex: 
+	// Get mouse button state (GFLW_PRESS or GLFW_RELEASE) with ex:
 	//   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)s
 	// Access mouse_spell helper functions
 	Mouse_spell mouse_spell;
@@ -519,7 +519,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				//}
 			}
 
-			
+
 
 		}
 	}
@@ -530,7 +530,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		}
 		else if (action == GLFW_RELEASE) {
 			flag_left = false;
-			
+
 			if (!gesture_coords_left.empty()) {
 				vec2 first = { gesture_coords_left.front().x , gesture_coords_left.front().y };
 				vec2 last = { gesture_coords_left.back().x, gesture_coords_left.back().y };
@@ -585,4 +585,31 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 		//std::cout << "Tracking left..." << p.x << ", " << p.y << std::endl;
 		gesture_coords_left.push_back({ mouse_position.x,mouse_position.y });
 	}
+}
+
+vec2 WorldSystem::map_coords_to_position(vec2 map_coords) {
+	return {map_scale * map_coords.x, map_scale * map_coords.y};
+}
+
+float WorldSystem::map_coords_to_position(float map_coords) {
+	return map_scale * map_coords;
+}
+
+vec2 WorldSystem::position_to_map_coords(vec2 position) {
+	return {(int) (position.x / map_scale), (int) (position.y / map_scale)};
+}
+
+int WorldSystem::position_to_map_coords(float position) {
+	return (int) (position / map_scale);
+}
+
+MapTile WorldSystem::get_map_tile(vec2 map_coords) {
+	if (map_coords.y >= 0 && map_coords.y < game_state.map_tiles.size()) {
+		const auto row = game_state.map_tiles[(int)(map_coords.y)];
+		if (map_coords.x >= 0 && map_coords.x < row.size()) {
+			return row[(int)(map_coords.x)];
+		}
+	}
+
+	return MapTile::FREE_SPACE; // out of bounds
 }

@@ -147,15 +147,13 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 			return; // don't render anything
 	}
 
-	const float tile_size = 75.0;
 	Transform transform;
 
 	// transform map coords to position
-	// each tile is 100x100
-	vec2 position = {tile_size * map_coords.x, tile_size * map_coords.y};
+	vec2 position = {WorldSystem::map_coords_to_position(map_coords)};
 
-	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
-	transform.scale({-tile_size, tile_size});
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale/2.0, map_scale/2.0));
+	transform.scale({-map_scale, map_scale});
 
 	const RenderRequest render_request = {
 		texture_asset,
@@ -311,7 +309,7 @@ void RenderSystem::draw()
 	std::vector<std::vector<MapTile>> map_tiles = game_state.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
-			drawTile({i, j}, map_tiles[i][j], projection_2D);
+			drawTile({j, i}, map_tiles[i][j], projection_2D);
 		}
 	}
 
