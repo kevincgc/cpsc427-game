@@ -28,6 +28,7 @@ const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
 SDL_Rect WorldSystem::camera = {0,0,1200,800};
+float player_vel = 300;
 
 // My Settings
 auto t = Clock::now();
@@ -79,11 +80,12 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
 
-//Movement
-bool move_right = false;
-bool move_left = false;
-bool move_up = false;
-bool move_down = false;
+// Below is the acceleration/flag-based movement implementation
+////Movement
+//bool move_right = false;
+//bool move_left = false;
+//bool move_up = false;
+//bool move_down = false;
 
 //Debugging
 vec2 debug_pos = { 0,0 };
@@ -314,7 +316,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			//screen.darken_screen_factor = 0;
             restart_game();
 			return true;
 		}
@@ -334,6 +335,24 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 	}
+
+	// Temporary implementation: Handle speed-up spell: Player moves faster
+	player_vel = spellbook[1]["active"] == "true" ? 800 : 300;
+	
+	// Temporary implementation: Player movement being handled in step - continue later if needed
+	//entt::entity player = registry.view<Player>().begin()[0];
+
+	//if (!registry.view<DeathTimer>().contains(player)) {
+	//	Motion& motion = registry.get<Motion>(player);
+	//	float y_pos = motion.position[1];
+	//	float x_pos = motion.position[0];
+
+	//	if (move_up)	{ y_pos = -1 * player_vel;  }
+	//	if (move_left)  { x_pos = -1 * player_vel;  }
+	//	if (move_down)	{ y_pos = player_vel;		}
+	//	if (move_right) { x_pos = player_vel;		}
+	//}
+
 	return true;
 }
 
@@ -404,11 +423,16 @@ void WorldSystem::handle_collisions() {
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3( 0.27, 0.27, 0.27 );
 
-					// Reset movement switches
-					move_right = false;
-					move_left = false;
-					move_up = false;
-					move_down = false;
+
+					// Reset player speed/movement to 0
+					m.velocity.x = 0;
+					m.velocity.y = 0;
+
+					// Below is the acceleration/flag-based movement implementation
+					//move_right = false;
+					//move_left = false;
+					//move_up = false;
+					//move_down = false;
 				}
 			}
 			// Checking Player - SoftShell collisions
@@ -437,21 +461,40 @@ bool WorldSystem::is_over() const {
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
 
-	entt::entity salmon = registry.view<Player>().begin()[0];
+	// Below is the acceleration/flag-based movement implementation
 
-	if (!registry.view<DeathTimer>().contains(salmon)) {
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
+
+	//if (!registry.view<DeathTimer>().contains(player)) {
+	//	if (action == GLFW_PRESS) {
+	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
+	//		else if (key == GLFW_KEY_A  || key == GLFW_KEY_LEFT ) { move_left  = true;	}
+	//		if		(key == GLFW_KEY_W	|| key == GLFW_KEY_UP	) { move_up    = true;	}
+	//		else if (key == GLFW_KEY_S  || key == GLFW_KEY_DOWN ) { move_down  = true;	}
+	//	}
+
+	//	if (action == GLFW_RELEASE) {
+	//		if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { move_right = false;	}
+	//		else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { move_left  = false;	}
+	//		if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { move_up    = false;	}
+	//		else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { move_down  = false;	}
+	//	}
+	//}
+
+	if (!registry.view<DeathTimer>().contains(player)) {
 		if (action == GLFW_PRESS) {
-			if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
-			else if (key == GLFW_KEY_A  || key == GLFW_KEY_LEFT ) { move_left = true;	}
-			if		(key == GLFW_KEY_W	|| key == GLFW_KEY_UP	) { move_up = true;		}
-			else if (key == GLFW_KEY_S  || key == GLFW_KEY_DOWN ) { move_down = true;	}
+			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = -1 * player_vel; }
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = -1 * player_vel; }
+			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = player_vel; }
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = player_vel; }
 		}
 
 		if (action == GLFW_RELEASE) {
-			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { move_right = false;	}
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { move_left = false;	}
-			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { move_up = false;		}
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { move_down = false;	}
+			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = 0; }
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = 0; }
+			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = 0; }
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = 0; }
 		}
 	}
 
@@ -461,7 +504,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		glfwGetWindowSize(window, &w, &h);
 		restart_game();
 	}
-
 }
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
