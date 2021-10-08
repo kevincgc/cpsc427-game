@@ -92,13 +92,27 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		motion.position[1] += motion.velocity[1] * step_seconds;
 	}
 
-
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
+	// Deal with spell speed while moving
+	if (spellbook[1]["active"] == "true") {
+		if (motion.velocity.x > 0) {
+			motion.velocity.x = 800.f;
+		}
+		else if (motion.velocity.x < 0) {
+			motion.velocity.x = -800.f;
+		}
+		if (motion.velocity.y > 0) {
+			motion.velocity.y = 800.f;
+		}
+		else if (motion.velocity.y < 0) {
+			motion.velocity.y = -800.f;
+		}
+	}
 	
 
-	// ========= Below is the implementation for an acceleration/flag-based movement system ========= //
+	// ========= Below is the implementation for an acceleration/flag-based movement system (for more accurate movement later) ========= //
 
 	// // Movement
 	// float& x_vel = motion.velocity.x;

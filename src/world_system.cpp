@@ -28,7 +28,7 @@ const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
 SDL_Rect WorldSystem::camera = {0,0,1200,800};
-float player_vel = 300;
+float player_vel = 300.f;
 
 // My Settings
 auto t = Clock::now();
@@ -337,7 +337,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
-	player_vel = spellbook[1]["active"] == "true" ? 800 : 300;
+	player_vel = spellbook[1]["active"] == "true" ? 800.f : 300.f;
 	
 	// Temporary implementation: Player movement being handled in step - continue later if needed
 	//entt::entity player = registry.view<Player>().begin()[0];
@@ -381,19 +381,12 @@ void WorldSystem::restart_game() {
 	}
 	fprintf(stderr, "Finished loading map\n");
 
-	// Debugging for memory/component leaks
-	//registry.list_all_components();
-	//printf("Restarting\n");
-
 	// Reset the game speed
 	current_speed = 1.f;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all fish, turtles, ... but that would be more cumbersome
 	registry.clear();
-
-	// Debugging for memory/component leaks
-	//registry.list_all_components();
 
 	// Create a new salmon
 	player_salmon = createSalmon(renderer, { 100, 200 });
@@ -410,7 +403,6 @@ void WorldSystem::handle_collisions() {
 
 		// For now, we are only interested in collisions that involve the salmon
 		if (registry.view<Player>().contains(entity)) {
-			//Player& player = registry.players.get(entity);
 
 			// Checking Player - HardShell collisions
 			if (registry.view<HardShell>().contains(entity_other)) {
@@ -437,14 +429,12 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - SoftShell collisions
 			else if (registry.view<SoftShell>().contains(entity_other)) {
+				// TODO: Implement other character actions
 				// if (!registry.view<DeathTimer>().contains(entity)) {
 				// 	// chew, count points, and set the LightUp timer
 				// 	registry.destroy(entity_other);
 				// 	Mix_PlayChannel(-1, salmon_eat_sound, 0);
 				// 	++points;
-
-				// 	// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
-				// }
 			}
 		}
 	}
@@ -466,6 +456,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
+	// TODO: Implementation with acceleration 
 	//if (!registry.view<DeathTimer>().contains(player)) {
 	//	if (action == GLFW_PRESS) {
 	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
@@ -483,7 +474,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	//}
 
 	if (!registry.view<DeathTimer>().contains(player)) {
-		if (action == GLFW_PRESS) {
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = -1 * player_vel; }
 			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = -1 * player_vel; }
 			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = player_vel; }
