@@ -14,8 +14,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	// !!! TODO A1: add rotation to the chain of transformations, mind the order
-	// of transformations
+
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
@@ -155,6 +154,97 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	gl_has_errors();
 }
 
+void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection)
+{
+	// define which texture to draw
+	TEXTURE_ASSET_ID texture_asset;
+	switch (map_tile) {
+		case MapTile::BREAKABLE_WALL:
+		case MapTile::UNBREAKABLE_WALL:
+			texture_asset = TEXTURE_ASSET_ID::WALL;
+			break;
+
+		case MapTile::FREE_SPACE:
+		default:
+			return; // don't render anything
+	}
+
+	Transform transform;
+
+	// transform map coords to position
+	vec2 position = {WorldSystem::map_coords_to_position(map_coords)};
+
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale/2.0, map_scale/2.0));
+	transform.scale({-map_scale, map_scale});
+
+	const RenderRequest render_request = {
+		texture_asset,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE
+	};
+
+	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
+	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
+	const GLuint program = (GLuint)effects[used_effect_enum];
+
+	// Setting shaders
+	glUseProgram(program);
+	gl_has_errors();
+
+	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
+	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	// Setting vertex and index buffers
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	gl_has_errors();
+	assert(in_texcoord_loc >= 0);
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+							sizeof(TexturedVertex), (void *)0);
+	gl_has_errors();
+
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(
+		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+		(void *)sizeof(
+			vec3)); // note the stride to skip the preceeding vertex position
+	// Enabling and binding texture to slot 0
+	glActiveTexture(GL_TEXTURE0);
+	gl_has_errors();
+
+	GLuint texture_id = texture_gl_handles[(GLuint) render_request.used_texture];
+
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	// Get number of indices from index buffer, which has elements uint16_t
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	gl_has_errors();
+
+	GLsizei num_indices = size / sizeof(uint16_t);
+	// GLsizei num_triangles = num_indices / 3;
+
+	GLint currProgram;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
+	// Setting uniform values to the currently bound program
+	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	gl_has_errors();
+	// Drawing of num_indices/3 triangles specified in the index buffer
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
 // draw the intermediate texture to the screen, with some distortion to simulate
 // water
 void RenderSystem::drawToScreen()
@@ -227,7 +317,7 @@ void RenderSystem::draw()
 	// Clearing backbuffer
 	glViewport(0, 0, w, h);
 	glDepthRange(0.00001, 10);
-	glClearColor(0, 0, 1, 1.0);
+	glClearColor(1, 1, 1, 1.0);
 	glClearDepth(1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_BLEND);
@@ -237,6 +327,14 @@ void RenderSystem::draw()
 							  // sprites back to front
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
+
+	std::vector<std::vector<MapTile>> map_tiles = game_state.map_tiles;
+	for (int i = 0; i < map_tiles.size(); i++) {
+		for (int j = 0; j < map_tiles[i].size(); j++) {
+			drawTile({j, i}, map_tiles[i][j], projection_2D);
+		}
+	}
+
 	// Draw all textured meshes that have a position and size component
 	for (entt::entity entity : registry.view<RenderRequest>())
 	{

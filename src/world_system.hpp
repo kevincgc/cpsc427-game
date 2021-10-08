@@ -15,6 +15,11 @@
 #include "components.hpp"
 
 extern entt::registry registry;
+extern std::map < int, std::map <std::string, std::string>> spellbook;
+//extern bool move_right;
+//extern bool move_left;
+//extern bool move_up;
+//extern bool move_down;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -25,8 +30,8 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
-
-	// Creates a camera
+	
+	// camera
 	static SDL_Rect camera;
 
 	// starts the game
@@ -44,8 +49,17 @@ public:
 	// Should the game be over ?
 	bool is_over()const;
 
+	// map coords conversion
+	// the vec2 functions do both x and y, the float functions will do only one
+	static vec2 map_coords_to_position(vec2 position);
+	static float map_coords_to_position(float position);
+	static vec2 position_to_map_coords(vec2 map_coords);
+	static int position_to_map_coords(float map_coords);
+
+	static MapTile get_map_tile(vec2 map_coords);
+
 private:
-	
+
 
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);

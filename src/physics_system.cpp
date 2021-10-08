@@ -1,6 +1,7 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
+#include<iostream>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -33,13 +34,13 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
 		return;
 	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
-	
+
 	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
-	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass); 
+	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);
 	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
 
 	// velocity is changed relative to the mass of objects in the collision
-	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass; 
+	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass;
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
@@ -87,8 +88,33 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	{
 		Motion& motion = registry.get<Motion>(entity);
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		motion.position[0] += motion.velocity[0] * step_seconds;
-		motion.position[1] += motion.velocity[1] * step_seconds;
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
+
+		vec2 vertex = WorldSystem::position_to_map_coords(nextpos);
+		const MapTile tile = WorldSystem::get_map_tile(vertex);
+
+		if (tile == MapTile::FREE_SPACE) { // no collision
+			motion.position = nextpos;
+		}
+	}
+
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
+
+	// Deal with spell speed while moving
+	if (spellbook[1]["active"] == "true") {
+		if (motion.velocity.x > 0) {
+			motion.velocity.x = 800.f;
+		}
+		else if (motion.velocity.x < 0) {
+			motion.velocity.x = -800.f;
+		}
+		if (motion.velocity.y > 0) {
+			motion.velocity.y = 800.f;
+		}
+		else if (motion.velocity.y < 0) {
+			motion.velocity.y = -800.f;
+		}
 	}
 
 	// Check for collisions between all moving entities
@@ -104,17 +130,13 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			if (collides(motion, motion_other))
 			{
 				impulseCollisionResolution(motion, motion_other);
-				registry.emplace<Collision>(entity, other);
+				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
 				//preventCollisionOverlap(other, entity);
-				
 			}
 		}
 	}
-
-	// you may need the following quantities to compute wall positions
-	(float)window_width_px; (float)window_height_px;
 
 	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes
