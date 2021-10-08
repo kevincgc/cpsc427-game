@@ -58,7 +58,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			{
 				// Create a collisions event
 				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-				registry.emplace<Collision>(entity, other);
+				registry.emplace_or_replace<Collision>(entity, other);
 				//registry.emplace<Collision>(other, entity);
 			}
 		}
