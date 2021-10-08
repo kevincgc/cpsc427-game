@@ -23,6 +23,7 @@ const size_t MAX_TURTLES = 15;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
+const size_t ITEM_DELAY_MS = 3000 * 3;
 SDL_Rect WorldSystem::camera = {0,0,1200,800};
 
 // My Settings
@@ -231,6 +232,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
 	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
 		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
+		next_fish_spawn = (FISH_DELAY_MS / 2) + uniform_dist(rng) * (next_fish_spawn / 2);
+		entt::entity fish = createFish(renderer, {0,0});
+		// Setting random initial position and constant velocity
+		Motion& motion = registry.get<Motion>(fish);
+		motion.position =
+			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f), 
+				 50.f + uniform_dist(rng) * (screen_height - 100.f));
+		// motion.velocity = vec2(-200.f, 0.f);
+		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200, 
+				  (uniform_dist(rng) - 0.5f) * 200);
 	}
 	
 	if (camera.x <= 0) {
@@ -354,14 +365,14 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - SoftShell collisions
 			else if (registry.view<SoftShell>().contains(entity_other)) {
-				if (!registry.view<DeathTimer>().contains(entity)) {
-					// chew, count points, and set the LightUp timer
-					registry.destroy(entity_other);
-					Mix_PlayChannel(-1, salmon_eat_sound, 0);
-					++points;
+				// if (!registry.view<DeathTimer>().contains(entity)) {
+				// 	// chew, count points, and set the LightUp timer
+				// 	registry.destroy(entity_other);
+				// 	Mix_PlayChannel(-1, salmon_eat_sound, 0);
+				// 	++points;
 
-					// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
-				}
+				// 	// !!! TODO A1: create a new struct called LightUp in components.hpp and add an instance to the salmon entity by modifying the ECS registry
+				// }
 			}
 		}
 	}
