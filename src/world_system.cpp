@@ -247,14 +247,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (camera.y >= camera.h) {
 		camera.y = camera.h;
 	}
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE SPAWN HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// Processing the salmon state
-	// assert(registry.screenStates.components.size() <= 1);
-    // ScreenState &screen = registry.screenStates.components[0];
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
@@ -268,7 +260,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			//screen.darken_screen_factor = 0;
             restart_game();
 			return true;
 		}

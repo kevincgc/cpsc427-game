@@ -28,9 +28,5 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 position);
 entt::entity createItem(RenderSystem* renderer, vec2 position);
 
 entt::entity createTrap(RenderSystem* renderer, vec2 position);
-//// a red line for debugging purposes
-//entt::entity createLine(vec2 position, vec2 size);
-//// a pebble
-//entt::entity createPebble(vec2 pos, vec2 size);
 
 
