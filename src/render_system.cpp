@@ -16,7 +16,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.scale(motion.scale);
 	// !!! TODO A1: add rotation to the chain of transformations, mind the order
 	// of transformations
-
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
@@ -66,7 +65,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
-	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON || render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
+	else if (render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_color_loc = glGetAttribLocation(program, "in_color");
@@ -81,26 +80,48 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
+	}
+	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
+	{
 
-		if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
-		{
-			// Light up?
-			GLint light_up_uloc = glGetUniformLocation(program, "light_up");
-			assert(light_up_uloc >= 0);
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
+		
 
-			// Enabling and binding texture to slot 0
-			glActiveTexture(GL_TEXTURE0);
-			gl_has_errors();
-			assert(registry.view<RenderRequest>().contains(entity));
-			GLuint texture_id_salmon =
-				texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+							  sizeof(TexturedVertex), (void *)0);
+		gl_has_errors();
 
-			glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		glEnableVertexAttribArray(in_uv_loc);
+		glVertexAttribPointer(
+			in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+			(void *)sizeof(
+				vec3)); // note the stride to skip the preceeding vertex position
+		// glEnableVertexAttribArray(in_frame_loc);
+    	// glVertexAttribPointer(in_frame_loc, 1, GL_INT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(
+		// 		vec3));
+		float time_total = (float)(glfwGetTime() * 10.0f);
+		GLuint time_uloc = glGetUniformLocation(program, "time");
+		glUniform1f(time_uloc, time_total);
 
-			// !!! TODO A1: set the light_up shader variable using glUniform1i,
-			// similar to the glUniform1f call below. The 1f or 1i specified the type, here a single int.
-			gl_has_errors();
-		}
+		GLint in_frame_loc = glGetUniformLocation(program, "in_frame");
+		
+		// if (sin(time_total/4)<0.1 && sin(time_total/4)>-0.1) {
+		// 	frame = (frame + 1) % NUM_ANIMATION_FRAMES;
+		// }
+		int frame = 0;
+		glUniform1i(in_frame_loc, frame);
+
+		// Enabling and binding texture to slot 0
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+		assert(registry.view<RenderRequest>().contains(entity));
+		GLuint texture_id_salmon =
+			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
+
+		glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		gl_has_errors();
 	}
 	else
 	{
