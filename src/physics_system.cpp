@@ -34,13 +34,13 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
 		return;
 	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
-	
+
 	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
-	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass); 
+	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);
 	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
 
 	// velocity is changed relative to the mass of objects in the collision
-	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass; 
+	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass;
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
@@ -153,3 +153,4 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			float radius = sqrt(dot(bonding_box/2.f, bonding_box/2.f));
 		}
 	}
+}
