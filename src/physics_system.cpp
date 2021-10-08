@@ -34,13 +34,13 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
 		return;
 	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
-	
+
 	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
-	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass); 
+	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);
 	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
 
 	// velocity is changed relative to the mass of objects in the collision
-	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass; 
+	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass;
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
@@ -88,8 +88,14 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	{
 		Motion& motion = registry.get<Motion>(entity);
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		motion.position[0] += motion.velocity[0] * step_seconds;
-		motion.position[1] += motion.velocity[1] * step_seconds;
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
+
+		vec2 vertex = WorldSystem::position_to_map_coords(nextpos);
+		const MapTile tile = WorldSystem::get_map_tile(vertex);
+
+		if (tile == MapTile::FREE_SPACE) { // no collision
+			motion.position = nextpos;
+		}
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
@@ -110,42 +116,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			motion.velocity.y = -800.f;
 		}
 	}
-	
-
-	// ========= Below is the implementation for an acceleration/flag-based movement system (for more accurate movement later) ========= //
-
-	// // Movement
-	// float& x_vel = motion.velocity.x;
-	// float& y_vel = motion.velocity.y;
-	// // Temporary implementation
-	// // Update minotaur speed if the spell is active
-	// float accel = spellbook[1]["active"] == "true" ?		60 : 30;
-	// float max_vel = spellbook[1]["active"] == "true" ?		500 : 200;
-	// float slow_factor = spellbook[1]["active"] == "true" ?	20 : 10;
-	// if (!registry.view<DeathTimer>().contains(player)) {
-	// 	if (move_right)		{ x_vel += accel; }
-	// 	else if (move_left) { x_vel += -1 * accel; }
-	// 	if (move_up)		{ y_vel += -1 * accel; }
-	// 	else if (move_down) { y_vel += accel; }
-	// }
-
-	// // Impose max velocity for minotaur
-	// if (x_vel > max_vel) { x_vel = max_vel; }
-	// else if (x_vel < -1 * max_vel) { x_vel = -1 * max_vel; }
-	// if (y_vel > max_vel) { y_vel = max_vel; }
-	// else if (y_vel < -1 * max_vel) { y_vel = -1 * max_vel; }
-
-
-	// // Friction to slow minotaur down
-	
-	// if (x_vel != 0 || y_vel != 0) {
-	// 	if (x_vel > 0) { x_vel -= slow_factor; }
-	// 	else if (x_vel < 0) { x_vel += slow_factor; }
-	// 	if (y_vel > 0) { y_vel -= slow_factor; }
-	// 	else if (y_vel < 0) { y_vel += slow_factor; }
-	// }
-
-
 
 	// Check for collisions between all moving entities
 	for(entt::entity entity : registry.view<Motion>())
@@ -160,17 +130,13 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			if (collides(motion, motion_other))
 			{
 				impulseCollisionResolution(motion, motion_other);
-				registry.emplace<Collision>(entity, other);
+				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
 				//preventCollisionOverlap(other, entity);
-				
 			}
 		}
 	}
-
-	// you may need the following quantities to compute wall positions
-	(float)window_width_px; (float)window_height_px;
 
 	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes

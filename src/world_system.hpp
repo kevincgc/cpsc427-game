@@ -49,8 +49,17 @@ public:
 	// Should the game be over ?
 	bool is_over()const;
 
+	// map coords conversion
+	// the vec2 functions do both x and y, the float functions will do only one
+	static vec2 map_coords_to_position(vec2 position);
+	static float map_coords_to_position(float position);
+	static vec2 position_to_map_coords(vec2 map_coords);
+	static int position_to_map_coords(float map_coords);
+
+	static MapTile get_map_tile(vec2 map_coords);
+
 private:
-	
+
 
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
