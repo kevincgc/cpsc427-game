@@ -26,69 +26,17 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	return false;
 }
 
-void impulseCollisionResolution(Motion& motion, Motion& motion_other) {
-	// Based on math derived here: https://www.randygaul.net/2013/03/27/game-physics-engine-part-1-impulse-resolution/
-	// Using impulse to resolve collisions
-	vec2 norm = glm::normalize(motion_other.position - motion.position); // collision normal
-	vec2 relative_vel = motion_other.velocity - motion.velocity;
-	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
-		return;
-	float coeff_restitution = min(motion.coeff_rest, motion_other.coeff_rest);
-	
-	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
-	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / motion.mass + 1 / motion_other.mass); 
-	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
-
-	// velocity is changed relative to the mass of objects in the collision
-	motion.velocity = motion.velocity - impulse / motion.mass; 
-	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
-}
-
-void preventCollisionOverlap(entt::entity entity, entt::entity other) {
-	Motion& circle = registry.get<Motion>(entity);
-	Motion& rectangle = registry.get<Motion>(other);
-	const float pen_scaling_factor = 10;
-	vec2 box_c = get_bounding_box(circle);
-	vec2 box_r = get_bounding_box(rectangle);
-	float x_rectangle_bound = rectangle.position[0] - box_r[0] / 2.f;
-	float x_circle_bound = circle.position[0] + box_c[0] / 2.f;
-	float x_penetration = x_circle_bound - x_rectangle_bound;
-	x_penetration /= pen_scaling_factor;
-	float y_rectangle_bound = rectangle.position[1] - box_r[1] / 2.f;
-	float y_circle_bound = circle.position[1] + box_c[1] / 2.f;
-	float y_penetration = y_circle_bound - y_rectangle_bound;
-	y_penetration /= pen_scaling_factor;
-	if (circle.velocity[0] < 0) {
-		circle.position[0] = circle.position[0] + x_penetration / 2.f;
-		rectangle.position[0] = rectangle.position[0] - x_penetration / 2.f;
-	}
-	else {
-		circle.position[0] = circle.position[0] - x_penetration / 2.f;
-		rectangle.position[0] = rectangle.position[0] + x_penetration / 2.f;
-	}
-	if (circle.velocity[1] > 0) {
-		circle.position[1] = circle.position[1] + y_penetration / 2.f;
-		rectangle.position[1] = rectangle.position[1] - y_penetration / 2.f;
-	}
-	else {
-		circle.position[1] = circle.position[1] - y_penetration / 2.f;
-		rectangle.position[1] = rectangle.position[1] + y_penetration / 2.f;
-	}
-	/*printf("x pen: %f\n", x_penetration);
-	printf("y pen: %f\n", y_penetration);*/
-}
-
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
 	// Move fish based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
-	for(entt::entity entity: registry.view<Motion>())
+	auto& motion_registry = registry.motions;
+	for(uint i = 0; i< motion_registry.size(); i++)
 	{
 		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
-		Motion& motion = registry.get<Motion>(entity);
-		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		motion.position[0] += motion.velocity[0] * step_seconds;
-		motion.position[1] += motion.velocity[1] * step_seconds;
+		//Motion& motion = motion_registry.components[i];
+		//Entity entity = motion_registry.entities[i];
+		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		(void)elapsed_ms; // placeholder to silence unused warning until implemented
 	}
 
@@ -98,24 +46,24 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// Check for collisions between all moving entities
-	for(entt::entity entity : registry.view<Motion>())
+    ComponentContainer<Motion> &motion_container = registry.motions;
+	for(uint i = 0; i<motion_container.components.size(); i++)
 	{
-		Motion& motion = registry.get<Motion>(entity);
-		for(entt::entity other : registry.view<Motion>()) // i+1
+		Motion& motion_i = motion_container.components[i];
+		Entity entity_i = motion_container.entities[i];
+		for(uint j = 0; j<motion_container.components.size(); j++) // i+1
 		{
-			if (entity == other)
+			if (i == j)
 				continue;
 
-			Motion& motion_other = registry.get<Motion>(other);
-			if (collides(motion, motion_other))
+			Motion& motion_j = motion_container.components[j];
+			if (collides(motion_i, motion_j))
 			{
-				impulseCollisionResolution(motion, motion_other);
-				registry.emplace<Collision>(other, entity);
-				preventCollisionOverlap(other, entity);
+				Entity entity_j = motion_container.entities[j];
 				// Create a collisions event
 				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-				//registry.emplace<Collision>(entity, other);
-				
+				registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+				registry.collisions.emplace_with_duplicates(entity_j, entity_i);
 			}
 		}
 	}
@@ -134,23 +82,22 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// You will want to use the createLine from world_init.hpp
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	auto motion_view = registry.view<Motion>();
 	// debugging of bounding boxes
 	if (debugging.in_debug_mode)
 	{
-		uint size_before_adding_new = (uint)motion_view.size();
+		uint size_before_adding_new = (uint)motion_container.components.size();
 		for (uint i = 0; i < size_before_adding_new; i++)
 		{
-			entt::entity entity_i = motion_view.begin()[i];
-			Motion& motion_i = registry.get<Motion>(entity_i);
+			Motion& motion_i = motion_container.components[i];
+			Entity entity_i = motion_container.entities[i];
 
 			// visualize the radius with two axis-aligned lines
 			const vec2 bonding_box = get_bounding_box(motion_i);
 			float radius = sqrt(dot(bonding_box/2.f, bonding_box/2.f));
-			//vec2 line_scale1 = { motion_i.scale.x / 10, 2*radius };
-			//entt::entity line1 = createLine(motion_i.position, line_scale1);
-			//vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
-			//entt::entity line2 = createLine(motion_i.position, line_scale2);
+			vec2 line_scale1 = { motion_i.scale.x / 10, 2*radius };
+			Entity line1 = createLine(motion_i.position, line_scale1);
+			vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
+			Entity line2 = createLine(motion_i.position, line_scale2);
 
 			// !!! TODO A2: implement debugging of bounding boxes and mesh
 		}
