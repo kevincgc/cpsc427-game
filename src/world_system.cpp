@@ -213,8 +213,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// setting coordinates of camera
-	camera.x = registry.get<Motion>(player_salmon).position.x - screen_width / 2;
-	camera.y = registry.get<Motion>(player_salmon).position.y - screen_height / 2;
+	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
+	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
 	// Remove debug info from the last step
         //while (registry.debugComponents.entities.size() > 0)
@@ -234,7 +234,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//}
 
 	for (auto entity: motions) {
-		//if (entity != player_salmon) {
+		//if (entity != player_minotaur) {
 		Motion& motion = motions.get<Motion>(entity);
 		if (motion.position.x + abs(motion.scale.x) < 0.f) {
 			registry.destroy(entity);
@@ -388,9 +388,9 @@ void WorldSystem::restart_game() {
 	// All that have a motion, we could also iterate over all fish, turtles, ... but that would be more cumbersome
 	registry.clear();
 
-	// Create a new salmon
-	player_salmon = createSalmon(renderer, { map_scale * 0.5, map_scale * 1.5 });
-	registry.emplace<Colour>(player_salmon, vec3(1, 0.8f, 0.8f));
+	// Create a new Minotaur
+	player_minotaur = createMinotaur(renderer, { map_scale * 0.5, map_scale * 1.5 });
+	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 }
 
 // Compute collisions between entities
