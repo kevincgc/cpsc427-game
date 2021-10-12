@@ -21,7 +21,7 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
 	const float my_r_squared = dot(my_bounding_box, my_bounding_box);
 	const float r_squared = max(other_r_squared, my_r_squared);
-	if (dist_squared < r_squared)
+	if (dist_squared < r_squared || dist_squared == 0)
 		return true;
 	return false;
 }
@@ -154,7 +154,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
-				//preventCollisionOverlap(other, entity);
+				preventCollisionOverlap(other, entity);
 			}
 		}
 	}
