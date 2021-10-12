@@ -35,11 +35,11 @@ void AISystem::step(float elapsed_ms)
 			{
 				vec2 direction_vector = motion.position - entity_motion.position;
 				entity_motion.velocity = direction_vector;
-				entity_motion.position += entity_motion.velocity * step_seconds;
+				//entity_motion.position += entity_motion.velocity * step_seconds;
 			}
 			else {
 				entity_motion.velocity = entity_velocity;
-				entity_motion.position += entity_velocity * step_seconds * 4.f;
+				//entity_motion.position += entity_velocity * step_seconds * 4.f;
 			}
 		}
 		
