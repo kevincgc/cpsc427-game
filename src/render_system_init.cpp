@@ -186,7 +186,8 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> minotaur_sprite_sheet_indices = { 0, 3, 1, 1, 3, 2 };
-	bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
+	// bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::MINOTAUR, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
 
 	////////////////////////
 	// Initialize pebble
