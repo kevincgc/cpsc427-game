@@ -289,18 +289,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
 
-	// setting camera boundary.
-	if (camera.x <= 0) {camera.x = 0;}
-
-    if (camera.y <= 0) {camera.y = 0;}
-
-	if (camera.x >= camera.w) {camera.x = camera.w;}
-
-	if (camera.y >= camera.h) {camera.y = camera.h;}
-
-
-
-
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
 		// progress timer
