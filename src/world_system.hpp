@@ -30,9 +30,9 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
-	
+
 	// camera
-	static SDL_Rect camera;
+	static vec2 camera;
 
 	// starts the game
 	void init(RenderSystem* renderer);
