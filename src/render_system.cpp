@@ -103,6 +103,10 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
+		bool flash = registry.view<Flash>().contains(entity);
+		GLuint flash_uloc = glGetUniformLocation(program, "flash");
+		glUniform1f(flash_uloc, flash);
+
 
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);
