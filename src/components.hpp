@@ -26,11 +26,11 @@ struct SoftShell
 // All data relevant to the shape and motion of entities
 struct Motion {
 	vec2 position = { 0, 0 };
-	float angle = 0;
+	float angle = 0.0f;
 	vec2 velocity = { 0, 0 };
 	vec2 scale = { 10, 10 };
-	float mass = 50;
-	float coeff_rest = 0.8;
+	float mass = 50.0f;
+	float coeff_rest = 0.8f;
 };
 
 // Stucture to store collision information

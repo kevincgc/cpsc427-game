@@ -252,7 +252,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(entity);
 		motion.mass = 200;
-		motion.coeff_rest = 0.9;
+		motion.coeff_rest = 0.9f;
 		motion.position =
 			vec2(screen_width -200.f,
 				50.f + uniform_dist(rng) * (screen_height - 100.f));
