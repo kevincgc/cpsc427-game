@@ -560,4 +560,31 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	if (flag_left) { gesture_coords_left.push_back({ mouse_position.x,mouse_position.y }); }
 }
 
+vec2 WorldSystem::map_coords_to_position(vec2 map_coords) {
+	return {map_scale * map_coords.x, map_scale * map_coords.y};
+}
+
+float WorldSystem::map_coords_to_position(float map_coords) {
+	return map_scale * map_coords;
+}
+
+vec2 WorldSystem::position_to_map_coords(vec2 position) {
+	return {(int) (position.x / map_scale), (int) (position.y / map_scale)};
+}
+
+int WorldSystem::position_to_map_coords(float position) {
+	return (int) (position / map_scale);
+}
+
+MapTile WorldSystem::get_map_tile(vec2 map_coords) {
+	if (map_coords.y >= 0 && map_coords.y < game_state.map_tiles.size()) {
+		const auto row = game_state.map_tiles[(int)(map_coords.y)];
+		if (map_coords.x >= 0 && map_coords.x < row.size()) {
+			return row[(int)(map_coords.x)];
+		}
+	}
+
+	return MapTile::FREE_SPACE; // out of bounds
+}
+
 
