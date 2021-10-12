@@ -109,8 +109,9 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		for (const auto corner : corners) {
 			const MapTile tile = WorldSystem::get_map_tile(corner);
 
-			if (tile != MapTile::FREE_SPACE) {
+			if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
 				collision = true;
+				break;
 			}
 		}
 

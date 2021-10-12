@@ -27,7 +27,7 @@ const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
-SDL_Rect WorldSystem::camera = {0,0,1200,800};
+vec2 WorldSystem::camera = {0, 0};
 float player_vel = 300.f;
 
 // My Settings
@@ -288,18 +288,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
-	
-	// setting camera boundary.
-	if (camera.x <= 0) {camera.x = 0;}
-
-    if (camera.y <= 0) {camera.y = 0;}
-
-	if (camera.x >= camera.w) {camera.x = camera.w;}
-
-	if (camera.y >= camera.h) {camera.y = camera.h;}
-
-
-	
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
@@ -350,6 +338,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	if (move_right) { x_pos = player_vel;		}
 	//}
 
+	// process player flash timer
+	flash_timer -= elapsed_ms_since_last_update;
+	if (flash_timer <= 0) {
+		registry.remove<Flash>(player_minotaur);
+	}
 	return true;
 }
 
@@ -388,6 +381,10 @@ void WorldSystem::restart_game() {
 	// Create a new Minotaur
 	player_minotaur = createMinotaur(renderer, { map_scale * 0.5, map_scale * 1.5 });
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+
+	// reset player flash timer
+	flash_timer = 1000.f;
+	registry.emplace<Flash>(player_minotaur);
 }
 
 // Compute collisions between entities
@@ -472,20 +469,20 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	if (!registry.view<DeathTimer>().contains(player)) {
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-			if ((key == GLFW_KEY_W || key == GLFW_KEY_UP) && motion.position.y > camera.y + 20)
-			{ 
-				motion.velocity[1] = -1 * player_vel; 
-			}
-			else if ((key == GLFW_KEY_A || key == GLFW_KEY_LEFT) && motion.position.x > camera.x + 20)
+			if (key == GLFW_KEY_W || key == GLFW_KEY_UP)
 			{
-				motion.velocity[0] = -1 * player_vel; 
+				motion.velocity[1] = -1 * player_vel;
 			}
-			if ((key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) && motion.position.x < camera.w - 20)
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
 			{
-				motion.velocity[0] = player_vel; 
+				motion.velocity[0] = -1 * player_vel;
 			}
-			else if ((key == GLFW_KEY_S || key == GLFW_KEY_DOWN) && motion.position.y < camera.h - 20)
-			{ 
+			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
+			{
+				motion.velocity[0] = player_vel;
+			}
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
+			{
 				motion.velocity[1] = player_vel;
 			}
 		}

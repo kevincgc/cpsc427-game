@@ -30,9 +30,9 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
-	
+
 	// camera
-	static SDL_Rect camera;
+	static vec2 camera;
 
 	// starts the game
 	void init(RenderSystem* renderer);
@@ -81,6 +81,7 @@ private:
 	float next_turtle_spawn;
 	float next_fish_spawn;
 	float next_item_spawn;
+	float flash_timer;
 	entt::entity player_minotaur;
 
 	// music references

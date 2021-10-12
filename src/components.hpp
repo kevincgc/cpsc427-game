@@ -104,6 +104,11 @@ struct Colour
 	vec3 colour;
 };
 
+struct Flash
+{
+	// flash the sprite
+};
+
 // New Components for project
 struct Item
 {
