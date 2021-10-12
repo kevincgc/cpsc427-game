@@ -21,7 +21,7 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
 	const float my_r_squared = dot(my_bounding_box, my_bounding_box);
 	const float r_squared = max(other_r_squared, my_r_squared);
-	if (dist_squared < r_squared)
+	if (dist_squared < r_squared || dist_squared == 0)
 		return true;
 	return false;
 }
@@ -90,10 +90,31 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		vec2 vertex = WorldSystem::position_to_map_coords(nextpos);
-		const MapTile tile = WorldSystem::get_map_tile(vertex);
+		vec2 bounding_box = get_bounding_box(motion);
+		vec2 corners[] = {
+			// upper right
+			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
 
-		if (tile == MapTile::FREE_SPACE) { // no collision
+			// upper left
+			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
+
+			// lower left
+			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
+
+			// lower right
+			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
+		};
+
+		bool collision = false;
+		for (const auto corner : corners) {
+			const MapTile tile = WorldSystem::get_map_tile(corner);
+
+			if (tile != MapTile::FREE_SPACE) {
+				collision = true;
+			}
+		}
+
+		if (!collision) {
 			motion.position = nextpos;
 		}
 	}
@@ -133,7 +154,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
-				//preventCollisionOverlap(other, entity);
+				preventCollisionOverlap(other, entity);
 			}
 		}
 	}

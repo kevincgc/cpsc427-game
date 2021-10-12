@@ -46,7 +46,7 @@ struct Collision
  * This map scale can be used as such:
  *	- to transform map coordinates to pixels do: {map_scale * map_coords.x, map_scale * map_coords.y}
  */
-const float map_scale = 75.0;
+const float map_scale = 150.0;
 enum MapTile {
 	FREE_SPACE = 0,
 	BREAKABLE_WALL,
@@ -178,7 +178,7 @@ enum class EFFECT_ASSET_ID {
 	ENEMY = MINOTAUR + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	EFFECT_COUNT = WATER + 1
+	EFFECT_COUNT = MINOTAUR + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -192,7 +192,7 @@ enum class GEOMETRY_BUFFER_ID {
 	ENEMY = MINOTAUR + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
+	GEOMETRY_COUNT = MINOTAUR + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 

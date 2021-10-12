@@ -14,7 +14,7 @@ const float TURTLE_BB_HEIGHT = 0.4f * 202.f;
 extern entt::registry registry;
 
 // the player
-entt::entity createSalmon(RenderSystem* renderer, vec2 pos);
+// entt::entity createSalmon(RenderSystem* renderer, vec2 pos);
 // the prey
 entt::entity createFish(RenderSystem* renderer, vec2 position);
 // the enemy

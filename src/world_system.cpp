@@ -213,8 +213,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// setting coordinates of camera
-	camera.x = registry.get<Motion>(player_salmon).position.x - screen_width / 2;
-	camera.y = registry.get<Motion>(player_salmon).position.y - screen_height / 2;
+	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
+	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
 	// Remove debug info from the last step
         //while (registry.debugComponents.entities.size() > 0)
@@ -232,9 +232,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//		registry.remove_all_components_of(motions_registry.entities[i]);
 	//	}
 	//}
-	
+
 	for (auto entity: motions) {
-		//if (entity != player_salmon) {
+		//if (entity != player_minotaur) {
 		Motion& motion = motions.get<Motion>(entity);
 		if (motion.position.x + abs(motion.scale.x) < 0.f) {
 			registry.destroy(entity);
@@ -272,7 +272,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			motion.velocity = vec2(-100.f, 0.f);
 		}
 	}
-	
+
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
 	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
@@ -282,10 +282,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(fish);
 		motion.position =
-			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f), 
+			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f),
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
 		// motion.velocity = vec2(-200.f, 0.f);
-		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200, 
+		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
 	
@@ -335,7 +335,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? 800.f : 300.f;
-	
+
 	// Temporary implementation: Player movement being handled in step - continue later if needed
 	//entt::entity player = registry.view<Player>().begin()[0];
 
@@ -385,9 +385,9 @@ void WorldSystem::restart_game() {
 	// All that have a motion, we could also iterate over all fish, turtles, ... but that would be more cumbersome
 	registry.clear();
 
-	// Create a new salmon
-	player_salmon = createSalmon(renderer, { 100, 200 });
-	registry.emplace<Colour>(player_salmon, vec3(1, 0.8f, 0.8f));
+	// Create a new Minotaur
+	player_minotaur = createMinotaur(renderer, { map_scale * 0.5, map_scale * 1.5 });
+	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 }
 
 // Compute collisions between entities
@@ -402,7 +402,7 @@ void WorldSystem::handle_collisions() {
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - HardShell collisions
-			if (registry.view<HardShell>().contains(entity_other)) {
+			if (registry.view<HardShell>().contains(entity_other) || registry.view<SoftShell>().contains(entity_other)) {
 				// initiate death unless already dying
 				if (!registry.view<DeathTimer>().contains(entity) && spellbook[3]["active"] == "false") {
 					// Scream, reset timer, and make the salmon sink
@@ -453,7 +453,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
-	// TODO: Implementation with acceleration 
+	// TODO: Implementation with acceleration
 	//if (!registry.view<DeathTimer>().contains(player)) {
 	//	if (action == GLFW_PRESS) {
 	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
@@ -558,6 +558,33 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	// Capture mouse movement coords into vector if LMB or RMB is pressed
 	if (flag_right) { gesture_coords_right.push_back({ mouse_position.x,mouse_position.y }); }
 	if (flag_left) { gesture_coords_left.push_back({ mouse_position.x,mouse_position.y }); }
+}
+
+vec2 WorldSystem::map_coords_to_position(vec2 map_coords) {
+	return {map_scale * map_coords.x, map_scale * map_coords.y};
+}
+
+float WorldSystem::map_coords_to_position(float map_coords) {
+	return map_scale * map_coords;
+}
+
+vec2 WorldSystem::position_to_map_coords(vec2 position) {
+	return {(int) (position.x / map_scale), (int) (position.y / map_scale)};
+}
+
+int WorldSystem::position_to_map_coords(float position) {
+	return (int) (position / map_scale);
+}
+
+MapTile WorldSystem::get_map_tile(vec2 map_coords) {
+	if (map_coords.y >= 0 && map_coords.y < game_state.map_tiles.size()) {
+		const auto row = game_state.map_tiles[(int)(map_coords.y)];
+		if (map_coords.x >= 0 && map_coords.x < row.size()) {
+			return row[(int)(map_coords.x)];
+		}
+	}
+
+	return MapTile::FREE_SPACE; // out of bounds
 }
 
 

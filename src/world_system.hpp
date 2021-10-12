@@ -81,7 +81,7 @@ private:
 	float next_turtle_spawn;
 	float next_fish_spawn;
 	float next_item_spawn;
-	entt::entity player_salmon;
+	entt::entity player_minotaur;
 
 	// music references
 	Mix_Music* background_music;

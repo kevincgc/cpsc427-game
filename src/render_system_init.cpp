@@ -18,8 +18,8 @@ extern entt::registry registry;
 const int SPRITE_SHEET_WIDTH = 844;
 const int SPRITE_SHEET_HEIGHT = 1868;
 
-const float ANIMATION_FRAME_W = 96.f / SPRITE_SHEET_WIDTH; // 0-1
-const float ANIMATION_FRAME_H = 60.f / SPRITE_SHEET_HEIGHT; 
+const float ANIMATION_FRAME_W = 53.f / SPRITE_SHEET_WIDTH; // 0-1
+const float ANIMATION_FRAME_H =50.f / SPRITE_SHEET_HEIGHT; 
 const float OFFSET_X = 0.f;
 const float OFFSET_Y = 90.f / SPRITE_SHEET_HEIGHT;
 // const int ANIMATION_SPEED = 3;
@@ -186,7 +186,8 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> minotaur_sprite_sheet_indices = { 0, 3, 1, 1, 3, 2 };
-	bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
+	// bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::MINOTAUR, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
 
 	////////////////////////
 	// Initialize pebble
