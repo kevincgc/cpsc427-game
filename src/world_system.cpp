@@ -27,7 +27,7 @@ const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
-SDL_Rect WorldSystem::camera = {0,0,1200,800};
+vec2 WorldSystem::camera = {0, 0};
 float player_vel = 300.f;
 
 // My Settings
