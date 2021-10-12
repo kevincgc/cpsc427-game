@@ -288,7 +288,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
-	
+
 	// setting camera boundary.
 	if (camera.x <= 0) {camera.x = 0;}
 
@@ -299,7 +299,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (camera.y >= camera.h) {camera.y = camera.h;}
 
 
-	
+
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
@@ -472,20 +472,20 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	if (!registry.view<DeathTimer>().contains(player)) {
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-			if ((key == GLFW_KEY_W || key == GLFW_KEY_UP) && motion.position.y > camera.y + 20)
-			{ 
-				motion.velocity[1] = -1 * player_vel; 
-			}
-			else if ((key == GLFW_KEY_A || key == GLFW_KEY_LEFT) && motion.position.x > camera.x + 20)
+			if (key == GLFW_KEY_W || key == GLFW_KEY_UP)
 			{
-				motion.velocity[0] = -1 * player_vel; 
+				motion.velocity[1] = -1 * player_vel;
 			}
-			if ((key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) && motion.position.x < camera.w - 20)
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
 			{
-				motion.velocity[0] = player_vel; 
+				motion.velocity[0] = -1 * player_vel;
 			}
-			else if ((key == GLFW_KEY_S || key == GLFW_KEY_DOWN) && motion.position.y < camera.h - 20)
-			{ 
+			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
+			{
+				motion.velocity[0] = player_vel;
+			}
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
+			{
 				motion.velocity[1] = player_vel;
 			}
 		}
