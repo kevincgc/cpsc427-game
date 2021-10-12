@@ -232,7 +232,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//		registry.remove_all_components_of(motions_registry.entities[i]);
 	//	}
 	//}
-	
+
 	for (auto entity: motions) {
 		//if (entity != player_salmon) {
 		Motion& motion = motions.get<Motion>(entity);
@@ -272,7 +272,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			motion.velocity = vec2(-100.f, 0.f);
 		}
 	}
-	
+
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
 	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
@@ -282,10 +282,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(fish);
 		motion.position =
-			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f), 
+			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f),
 				 50.f + uniform_dist(rng) * (screen_height - 100.f));
 		// motion.velocity = vec2(-200.f, 0.f);
-		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200, 
+		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
 	
@@ -335,7 +335,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? 800.f : 300.f;
-	
+
 	// Temporary implementation: Player movement being handled in step - continue later if needed
 	//entt::entity player = registry.view<Player>().begin()[0];
 
@@ -386,7 +386,7 @@ void WorldSystem::restart_game() {
 	registry.clear();
 
 	// Create a new salmon
-	player_salmon = createSalmon(renderer, { 100, 200 });
+	player_salmon = createSalmon(renderer, { map_scale * 0.5, map_scale * 1.5 });
 	registry.emplace<Colour>(player_salmon, vec3(1, 0.8f, 0.8f));
 }
 
@@ -453,7 +453,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
-	// TODO: Implementation with acceleration 
+	// TODO: Implementation with acceleration
 	//if (!registry.view<DeathTimer>().contains(player)) {
 	//	if (action == GLFW_PRESS) {
 	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}

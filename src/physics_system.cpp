@@ -90,10 +90,31 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		vec2 vertex = WorldSystem::position_to_map_coords(nextpos);
-		const MapTile tile = WorldSystem::get_map_tile(vertex);
+		vec2 bounding_box = get_bounding_box(motion);
+		vec2 corners[] = {
+			// upper right
+			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
 
-		if (tile == MapTile::FREE_SPACE) { // no collision
+			// upper left
+			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
+
+			// lower left
+			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
+
+			// lower right
+			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
+		};
+
+		bool collision = false;
+		for (const auto corner : corners) {
+			const MapTile tile = WorldSystem::get_map_tile(corner);
+
+			if (tile != MapTile::FREE_SPACE) {
+				collision = true;
+			}
+		}
+
+		if (!collision) {
 			motion.position = nextpos;
 		}
 	}
