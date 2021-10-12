@@ -288,21 +288,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200, 
 				  (uniform_dist(rng) - 0.5f) * 200);
 	}
+	
+	// setting camera boundary.
+	if (camera.x <= 0) {camera.x = 0;}
 
-	if (camera.x <= 0) {
-		camera.x = 0;
-	}
-	if (camera.y <= 0) {
-		camera.y = 0;
-	}
+    if (camera.y <= 0) {camera.y = 0;}
 
-	if (camera.x >= camera.w) {
-		camera.x = camera.w;
-	}
+	if (camera.x >= camera.w) {camera.x = camera.w;}
 
-	if (camera.y >= camera.h) {
-		camera.y = camera.h;
-	}
+	if (camera.y >= camera.h) {camera.y = camera.h;}
+
+
+	
 
     float min_counter_ms = 3000.f;
 	for (entt::entity entity: registry.view<DeathTimer>()) {
@@ -450,6 +447,7 @@ bool WorldSystem::is_over() const {
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
+
 	// Below is the acceleration/flag-based movement implementation
 
 	entt::entity player = registry.view<Player>().begin()[0];
@@ -474,10 +472,22 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	if (!registry.view<DeathTimer>().contains(player)) {
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = -1 * player_vel; }
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = -1 * player_vel; }
-			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = player_vel; }
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = player_vel; }
+			if ((key == GLFW_KEY_W || key == GLFW_KEY_UP) && motion.position.y > camera.y + 20)
+			{ 
+				motion.velocity[1] = -1 * player_vel; 
+			}
+			else if ((key == GLFW_KEY_A || key == GLFW_KEY_LEFT) && motion.position.x > camera.x + 20)
+			{
+				motion.velocity[0] = -1 * player_vel; 
+			}
+			if ((key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) && motion.position.x < camera.w - 20)
+			{
+				motion.velocity[0] = player_vel; 
+			}
+			else if ((key == GLFW_KEY_S || key == GLFW_KEY_DOWN) && motion.position.y < camera.h - 20)
+			{ 
+				motion.velocity[1] = player_vel;
+			}
 		}
 
 		if (action == GLFW_RELEASE) {
@@ -488,6 +498,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		}
 	}
 
+
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
 		int w, h;
@@ -497,6 +508,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 }
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
+
 	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 		if (action == GLFW_PRESS) {
 			flag_right = true;
@@ -526,7 +538,6 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		}
 		else if (action == GLFW_RELEASE) {
 			flag_left = false;
-
 			// Capture elapsed time
 			auto now = Clock::now();
 			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
@@ -575,3 +586,5 @@ MapTile WorldSystem::get_map_tile(vec2 map_coords) {
 
 	return MapTile::FREE_SPACE; // out of bounds
 }
+
+
