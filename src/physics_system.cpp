@@ -121,21 +121,21 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& motion = registry.get<Motion>(player);
+	Motion& player_motion = registry.get<Motion>(player);
 
 	// Deal with spell speed while moving
 	if (spellbook[1]["active"] == "true") {
-		if (motion.velocity.x > 0) {
-			motion.velocity.x = 800.f;
+		if (player_motion.velocity.x > 0) {
+			player_motion.velocity.x = 800.f;
 		}
-		else if (motion.velocity.x < 0) {
-			motion.velocity.x = -800.f;
+		else if (player_motion.velocity.x < 0) {
+			player_motion.velocity.x = -800.f;
 		}
-		if (motion.velocity.y > 0) {
-			motion.velocity.y = 800.f;
+		if (player_motion.velocity.y > 0) {
+			player_motion.velocity.y = 800.f;
 		}
-		else if (motion.velocity.y < 0) {
-			motion.velocity.y = -800.f;
+		else if (player_motion.velocity.y < 0) {
+			player_motion.velocity.y = -800.f;
 		}
 	}
 
@@ -157,22 +157,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				// TODO: Optimization needed for overlap handling/clipping
 				preventCollisionOverlap(other, entity);
 			}
-		}
-	}
-
-	auto motion_view = registry.view<Motion>();
-	// debugging of bounding boxes
-	if (debugging.in_debug_mode)
-	{
-		uint size_before_adding_new = (uint)motion_view.size();
-		for (uint i = 0; i < size_before_adding_new; i++)
-		{
-			entt::entity entity_i = motion_view.begin()[i];
-			Motion& motion_i = registry.get<Motion>(entity_i);
-
-			// visualize the radius with two axis-aligned lines
-			const vec2 bonding_box = get_bounding_box(motion_i);
-			float radius = sqrt(dot(bonding_box/2.f, bonding_box/2.f));
 		}
 	}
 }
