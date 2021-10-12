@@ -350,6 +350,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	if (move_right) { x_pos = player_vel;		}
 	//}
 
+	// process player flash timer
+	flash_timer -= elapsed_ms_since_last_update;
+	if (flash_timer <= 0) {
+		registry.remove<Flash>(player_minotaur);
+	}
 	return true;
 }
 
@@ -388,6 +393,10 @@ void WorldSystem::restart_game() {
 	// Create a new Minotaur
 	player_minotaur = createMinotaur(renderer, { map_scale * 0.5, map_scale * 1.5 });
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+
+	// reset player flash timer
+	flash_timer = 1000.f;
+	registry.emplace<Flash>(player_minotaur);
 }
 
 // Compute collisions between entities

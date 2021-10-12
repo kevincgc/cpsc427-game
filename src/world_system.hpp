@@ -81,6 +81,7 @@ private:
 	float next_turtle_spawn;
 	float next_fish_spawn;
 	float next_item_spawn;
+	float flash_timer;
 	entt::entity player_minotaur;
 
 	// music references
