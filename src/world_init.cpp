@@ -28,8 +28,8 @@ entt::entity createFish(RenderSystem* renderer, vec2 position)
 	motion.angle = 0.f;
 	motion.velocity = { -50, 0 };
 	motion.position = position;
-	motion.scale = vec2({ -FISH_BB_WIDTH, FISH_BB_HEIGHT });
-
+	// motion.scale = vec2({ -FISH_BB_WIDTH, FISH_BB_HEIGHT });
+	motion.scale = mesh.original_size * 75.f;
 	const entt::entity e = registry.create();
 	registry.emplace<SoftShell>(e);
 	registry.emplace<Motion>(e, motion);
@@ -38,7 +38,7 @@ entt::entity createFish(RenderSystem* renderer, vec2 position)
 		TEXTURE_ASSET_ID::FISH,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
-
+	
 	return e;
 }
 
@@ -49,8 +49,8 @@ entt::entity createTurtle(RenderSystem* renderer, vec2 position)
 	motion.angle = 0.f;
 	motion.velocity = { -100.f, 0.f };
 	motion.position = position;
-	motion.scale = vec2({ -TURTLE_BB_WIDTH, TURTLE_BB_HEIGHT });
-
+	// motion.scale = vec2({ -TURTLE_BB_WIDTH, TURTLE_BB_HEIGHT });
+	motion.scale = mesh.original_size * 75.f;
 	const entt::entity e = registry.create();
 	registry.emplace<HardShell>(e);
 	registry.emplace<Motion>(e, motion);
