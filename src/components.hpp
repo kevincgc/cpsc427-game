@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
+#include <entt.hpp>
 
 // Player component
 struct Player
@@ -25,18 +26,39 @@ struct SoftShell
 // All data relevant to the shape and motion of entities
 struct Motion {
 	vec2 position = { 0, 0 };
-	float angle = 0;
+	float angle = 0.0f;
 	vec2 velocity = { 0, 0 };
 	vec2 scale = { 10, 10 };
+	float mass = 50.0f;
+	float coeff_rest = 0.8f;
 };
 
 // Stucture to store collision information
 struct Collision
 {
 	// Note, the first object is stored in the ECS container.entities
-	Entity other; // the second object involved in the collision
-	Collision(Entity& other) { this->other = other; };
+	entt::entity other; // the second object involved in the collision
+	Collision(entt::entity& other) { this->other = other; };
 };
+
+// map tiles
+/**
+ * This map scale can be used as such:
+ *	- to transform map coordinates to pixels do: {map_scale * map_coords.x, map_scale * map_coords.y}
+ */
+const float map_scale = 150.0;
+enum MapTile {
+	FREE_SPACE = 0,
+	BREAKABLE_WALL,
+	UNBREAKABLE_WALL
+};
+
+// Global Game State
+struct GameState
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+};
+extern GameState game_state;
 
 // Data structure for toggling debug mode
 struct Debug {
@@ -60,7 +82,7 @@ struct DebugComponent
 // A timer that will be associated to dying salmon
 struct DeathTimer
 {
-	float counter_ms = 3000;
+	float counter_ms = 1000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
@@ -75,6 +97,22 @@ struct TexturedVertex
 {
 	vec3 position;
 	vec2 texcoord;
+};
+
+struct Colour
+{
+	vec3 colour;
+};
+
+struct Flash
+{
+	// flash the sprite
+};
+
+// New Components for project
+struct Item
+{
+	int id = 0;
 };
 
 // Mesh datastructure for storing vertex and index buffers
@@ -111,9 +149,27 @@ struct Mesh
  */
 
 enum class TEXTURE_ASSET_ID {
-	FISH = 0,
-	TURTLE = FISH + 1,
-	TEXTURE_COUNT = TURTLE + 1
+	// wall types. for now only one type
+	// but if we wanted to use different sprites for junctions
+	// we could do something like:
+	// WALL_VERTICAL,
+	// WALL_HORIZONTAL,
+	// WALL_TOP_RIGHT,
+	// WALL_TOP_LEFT,
+	// WALL_BTM_LEFT,
+	// WALL_BTM_RIGHT,
+	// WALL_T_TOP,
+	// WALL_T_LEFT,
+	// WALL_T_BTM,
+	// WALL_T_RIGHT,
+	// WALL_CROSS,
+	WALL = 0,
+
+	FISH,
+	TURTLE,
+	MINOTAUR,
+
+	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -123,7 +179,11 @@ enum class EFFECT_ASSET_ID {
 	SALMON = PEBBLE + 1,
 	TEXTURED = SALMON + 1,
 	WATER = TEXTURED + 1,
-	EFFECT_COUNT = WATER + 1
+	MINOTAUR = WATER + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
+	EFFECT_COUNT = MINOTAUR + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -133,7 +193,11 @@ enum class GEOMETRY_BUFFER_ID {
 	PEBBLE = SPRITE + 1,
 	DEBUG_LINE = PEBBLE + 1,
 	SCREEN_TRIANGLE = DEBUG_LINE + 1,
-	GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
+	MINOTAUR = SCREEN_TRIANGLE + 1,
+	ENEMY = MINOTAUR + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
+	GEOMETRY_COUNT = MINOTAUR + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 

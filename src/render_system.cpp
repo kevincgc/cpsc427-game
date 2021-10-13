@@ -1,24 +1,22 @@
 // internal
 #include "render_system.hpp"
+#include "world_system.hpp"
 #include <SDL.h>
 
-#include "tiny_ecs_registry.hpp"
-
-void RenderSystem::drawTexturedMesh(Entity entity,
+void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
 {
-	Motion &motion = registry.motions.get(entity);
+	Motion &motion = registry.get<Motion>(entity);
 	// Transformation code, see Rendering and Transformation in the template
 	// specification for more info Incrementally updates transformation matrix,
 	// thus ORDER IS IMPORTANT
 	Transform transform;
-	transform.translate(motion.position);
+	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
+	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	// !!! TODO A1: add rotation to the chain of transformations, mind the order
-	// of transformations
 
-	assert(registry.renderRequests.has(entity));
-	const RenderRequest &render_request = registry.renderRequests.get(entity);
+	assert(registry.view<RenderRequest>().contains(entity));
+	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -59,14 +57,14 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glActiveTexture(GL_TEXTURE0);
 		gl_has_errors();
 
-		assert(registry.renderRequests.has(entity));
+		assert(registry.view<RenderRequest>().contains(entity));
 		GLuint texture_id =
-			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
 
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
-	else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON || render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
+	else if (render_request.used_effect == EFFECT_ASSET_ID::PEBBLE)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_color_loc = glGetAttribLocation(program, "in_color");
@@ -81,17 +79,44 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
+	}
+	// else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
+	else if (render_request.used_effect == EFFECT_ASSET_ID::MINOTAUR)
+	{
 
-		if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
-		{
-			// Light up?
-			GLint light_up_uloc = glGetUniformLocation(program, "light_up");
-			assert(light_up_uloc >= 0);
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
+		
 
-			// !!! TODO A1: set the light_up shader variable using glUniform1i,
-			// similar to the glUniform1f call below. The 1f or 1i specified the type, here a single int.
-			gl_has_errors();
-		}
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+							  sizeof(TexturedVertex), (void *)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_uv_loc);
+		glVertexAttribPointer(
+			in_uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+			(void *)sizeof(
+				vec3)); // note the stride to skip the preceeding vertex position
+
+		float time_total = (float)(glfwGetTime() * 10.0f);
+		GLuint time_uloc = glGetUniformLocation(program, "time");
+		glUniform1f(time_uloc, time_total);
+
+		bool flash = registry.view<Flash>().contains(entity);
+		GLuint flash_uloc = glGetUniformLocation(program, "flash");
+		glUniform1f(flash_uloc, flash);
+
+
+		// Enabling and binding texture to slot 0
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+		assert(registry.view<RenderRequest>().contains(entity));
+		GLuint texture_id_salmon =
+			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
+
+		glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		gl_has_errors();
 	}
 	else
 	{
@@ -100,8 +125,99 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 	// Getting uniform locations for glUniform* calls
 	GLint color_uloc = glGetUniformLocation(program, "fcolor");
-	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
+	const vec3 color = registry.view<Colour>().contains(entity) ? registry.get<Colour>(entity).colour : vec3(1);
 	glUniform3fv(color_uloc, 1, (float *)&color);
+	gl_has_errors();
+
+	// Get number of indices from index buffer, which has elements uint16_t
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	gl_has_errors();
+
+	GLsizei num_indices = size / sizeof(uint16_t);
+	// GLsizei num_triangles = num_indices / 3;
+
+	GLint currProgram;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
+	// Setting uniform values to the currently bound program
+	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	gl_has_errors();
+	// Drawing of num_indices/3 triangles specified in the index buffer
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
+void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection)
+{
+	// define which texture to draw
+	TEXTURE_ASSET_ID texture_asset;
+	switch (map_tile) {
+		case MapTile::BREAKABLE_WALL:
+		case MapTile::UNBREAKABLE_WALL:
+			texture_asset = TEXTURE_ASSET_ID::WALL;
+			break;
+
+		case MapTile::FREE_SPACE:
+		default:
+			return; // don't render anything
+	}
+
+	Transform transform;
+
+	// transform map coords to position
+	vec2 position = {WorldSystem::map_coords_to_position(map_coords)};
+
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale/2.0, map_scale/2.0));
+	transform.scale({-map_scale, map_scale});
+
+	const RenderRequest render_request = {
+		texture_asset,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE
+	};
+
+	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
+	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
+	const GLuint program = (GLuint)effects[used_effect_enum];
+
+	// Setting shaders
+	glUseProgram(program);
+	gl_has_errors();
+
+	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
+	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	// Setting vertex and index buffers
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	gl_has_errors();
+	assert(in_texcoord_loc >= 0);
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+							sizeof(TexturedVertex), (void *)0);
+	gl_has_errors();
+
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(
+		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+		(void *)sizeof(
+			vec3)); // note the stride to skip the preceeding vertex position
+	// Enabling and binding texture to slot 0
+	glActiveTexture(GL_TEXTURE0);
+	gl_has_errors();
+
+	GLuint texture_id = texture_gl_handles[(GLuint) render_request.used_texture];
+
+	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -160,8 +276,8 @@ void RenderSystem::drawToScreen()
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
 	GLuint dead_timer_uloc = glGetUniformLocation(water_program, "darken_screen_factor");
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
-	ScreenState &screen = registry.screenStates.get(screen_state_entity);
-	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
+	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
+	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
 	gl_has_errors();
 	// Set the vertex position and vertex texture coordinates (both stored in the
 	// same VBO)
@@ -197,7 +313,7 @@ void RenderSystem::draw()
 	// Clearing backbuffer
 	glViewport(0, 0, w, h);
 	glDepthRange(0.00001, 10);
-	glClearColor(0, 0, 1, 1.0);
+	glClearColor(1, 1, 1, 1.0);
 	glClearDepth(1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_BLEND);
@@ -207,10 +323,18 @@ void RenderSystem::draw()
 							  // sprites back to front
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
+
+	std::vector<std::vector<MapTile>> map_tiles = game_state.map_tiles;
+	for (int i = 0; i < map_tiles.size(); i++) {
+		for (int j = 0; j < map_tiles[i].size(); j++) {
+			drawTile({j, i}, map_tiles[i][j], projection_2D);
+		}
+	}
+
 	// Draw all textured meshes that have a position and size component
-	for (Entity entity : registry.renderRequests.entities)
+	for (entt::entity entity : registry.view<RenderRequest>())
 	{
-		if (!registry.motions.has(entity))
+		if (!registry.view<Motion>().contains(entity))
 			continue;
 		// Note, its not very efficient to access elements indirectly via the entity
 		// albeit iterating through all Sprites in sequence. A good point to optimize

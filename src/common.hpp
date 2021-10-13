@@ -5,11 +5,14 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <map>
+#include <queue>
 
 // glfw (OpenGL)
 #define NOMINMAX
 #include <gl3w.h>
 #include <GLFW/glfw3.h>
+#include <entt.hpp>
 
 // The glm library provides vector and matrix operations as in GLSL
 #include <glm/vec2.hpp>				// vec2
@@ -17,8 +20,6 @@
 #include <glm/vec3.hpp>             // vec3
 #include <glm/mat3x3.hpp>           // mat3
 using namespace glm;
-
-#include "tiny_ecs.hpp"
 
 // Simple utility functions to avoid mistyping directory name
 // audio_path("audio.ogg") -> data/audio/audio.ogg
@@ -29,6 +30,7 @@ inline std::string shader_path(const std::string& name) {return std::string(PROJ
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
+inline std::string maps_path(const std::string& name) {return data_path() + "/maps/" + std::string(name);};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
@@ -45,3 +47,14 @@ struct Transform {
 };
 
 bool gl_has_errors();
+
+extern entt::registry registry;
+
+// Utility functions to help with mouse movement, specifically swiping
+struct Mouse_spell {
+	//std::vector<vec2> load_gesture(std::string file_name);
+	void reset_swipe_status(std::map < std::string,bool> &map, std::string except_button = "None", std::string except_dir = "None");
+	void check_spell(std::queue <std::string> &gesture_queue, std::map < int, std::map <std::string, std::string>> &spellbook, bool flag_fast);
+	void update_datastructs(std::map<std::string, bool>& gesture_statuses, std::queue<std::string> &gesture_queue, std::vector<vec2> &gesture_coords, std::string mouse_button, bool &flag_fast, float elapsed_ms);
+	void reset_spells(std::map < int, std::map <std::string, std::string>> &spellbook);
+};

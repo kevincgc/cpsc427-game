@@ -7,11 +7,24 @@
 #include "../ext/stb_image/stb_image.h"
 
 // This creates circular header inclusion, that is quite bad.
-#include "tiny_ecs_registry.hpp"
 
 // stlib
 #include <iostream>
 #include <sstream>
+
+#include "world_system.hpp"
+#include <entt.hpp>
+extern entt::registry registry;
+const int SPRITE_SHEET_WIDTH = 844;
+const int SPRITE_SHEET_HEIGHT = 1868;
+
+const float ANIMATION_FRAME_W = 53.f / SPRITE_SHEET_WIDTH; // 0-1
+const float ANIMATION_FRAME_H =50.f / SPRITE_SHEET_HEIGHT; 
+const float OFFSET_X = 0.f;
+const float OFFSET_Y = 90.f / SPRITE_SHEET_HEIGHT;
+// const int ANIMATION_SPEED = 3;
+// const int NUM_ANIMATION_FRAMES = 3;
+GLint frame = 0;
 
 // World initialization
 bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
@@ -149,14 +162,32 @@ void RenderSystem::initializeGlGeometryBuffers()
 	textured_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
 	textured_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
 	textured_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
-	textured_vertices[0].texcoord = { 0.f, 1.f };
-	textured_vertices[1].texcoord = { 1.f, 1.f };
-	textured_vertices[2].texcoord = { 1.f, 0.f };
-	textured_vertices[3].texcoord = { 0.f, 0.f };
+	textured_vertices[0].texcoord = { 0.f, 1.f };  
+	textured_vertices[1].texcoord = { 1.f, 1.f };  
+	textured_vertices[2].texcoord = { 1.f, 0.f };  
+	textured_vertices[3].texcoord = { 0.f, 0.f };  
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> textured_indices = { 0, 3, 1, 1, 3, 2 };
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SPRITE, textured_vertices, textured_indices);
+
+	//////////////////////////
+	// Initialize sprite
+	// The position corresponds to the center of the texture.
+	std::vector<TexturedVertex> minotaur_sprite_sheet_vertices(4);
+	minotaur_sprite_sheet_vertices[0].position = { -1.f/2, +1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
+	minotaur_sprite_sheet_vertices[0].texcoord = {OFFSET_X, OFFSET_Y + ANIMATION_FRAME_H};  
+	minotaur_sprite_sheet_vertices[1].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y + ANIMATION_FRAME_H};  
+	minotaur_sprite_sheet_vertices[2].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y};  
+	minotaur_sprite_sheet_vertices[3].texcoord = {OFFSET_X, OFFSET_Y};  
+
+	// Counterclockwise as it's the default opengl front winding direction.
+	const std::vector<uint16_t> minotaur_sprite_sheet_indices = { 0, 3, 1, 1, 3, 2 };
+	// bindVBOandIBO(GEOMETRY_BUFFER_ID::SALMON, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::MINOTAUR, minotaur_sprite_sheet_vertices, minotaur_sprite_sheet_indices);
 
 	////////////////////////
 	// Initialize pebble
@@ -218,6 +249,7 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> screen_indices = { 0, 1, 2 };
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE, screen_vertices, screen_indices);
+
 }
 
 RenderSystem::~RenderSystem()
@@ -239,14 +271,14 @@ RenderSystem::~RenderSystem()
 	gl_has_errors();
 
 	// remove all entities created by the render system
-	while (registry.renderRequests.entities.size() > 0)
-	    registry.remove_all_components_of(registry.renderRequests.entities.back());
+	while (registry.view<RenderRequest>().size() > 0)
+	    registry.clear<RenderRequest>();
 }
 
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.screenStates.emplace(screen_state_entity);
+	registry.emplace<ScreenState>(screen_state_entity);
 
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);

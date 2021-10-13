@@ -1,6 +1,7 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
+#include<iostream>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -9,102 +10,170 @@ vec2 get_bounding_box(const Motion& motion)
 	return { abs(motion.scale.x), abs(motion.scale.y) };
 }
 
-// This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
-// if the center point of either object is inside the other's bounding-box-circle. You can
-// surely implement a more accurate detection
+// This is a check that puts a circle around the bounding boxes and sees
+// if the center point of either object is inside the other's bounding-box-circle.
 bool collides(const Motion& motion1, const Motion& motion2)
 {
 	vec2 dp = motion1.position - motion2.position;
 	float dist_squared = dot(dp,dp);
-	const vec2 other_bonding_box = get_bounding_box(motion1) / 2.f;
-	const float other_r_squared = dot(other_bonding_box, other_bonding_box);
-	const vec2 my_bonding_box = get_bounding_box(motion2) / 2.f;
-	const float my_r_squared = dot(my_bonding_box, my_bonding_box);
+	const vec2 other_bounding_box = get_bounding_box(motion1) / 2.f;
+	const float other_r_squared = dot(other_bounding_box, other_bounding_box);
+	const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
+	const float my_r_squared = dot(my_bounding_box, my_bounding_box);
 	const float r_squared = max(other_r_squared, my_r_squared);
-	if (dist_squared < r_squared)
+	if (dist_squared < r_squared || dist_squared == 0)
 		return true;
 	return false;
+}
+
+void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
+	// Based on math derived here: https://www.randygaul.net/2013/03/27/game-physics-engine-part-1-impulse-resolution/
+	// Using impulse to resolve collisions
+	vec2 norm = glm::normalize(motion_other.position - player_motion.position); // collision normal
+	vec2 relative_vel = motion_other.velocity - player_motion.velocity;
+	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
+		return;
+	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
+
+	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
+	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);
+	vec2 impulse = impulse_magnitude * norm; // impulse along direction of collision norm
+
+	// velocity is changed relative to the mass of objects in the collision
+	player_motion.velocity = player_motion.velocity - impulse / player_motion.mass;
+	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
+}
+
+
+// returns true if successfull, false if it didn't set
+bool setMotionPosition(Motion& motion, vec2 nextpos) {
+	vec2 bounding_box = get_bounding_box(motion);
+	vec2 corners[] = {
+		// upper right
+		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
+
+		// upper left
+		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
+
+		// lower left
+		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
+
+		// lower right
+		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
+	};
+
+	bool collision = false;
+	for (const auto corner : corners) {
+		const MapTile tile = WorldSystem::get_map_tile(corner);
+
+		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+			collision = true;
+			break;
+		}
+	}
+
+	if (!collision) {
+		motion.position = nextpos;
+	}
+
+	return !collision;
+}
+
+// TODO: Optimization needed for overlap handling/clipping, weird behaviour occurring with certain collisions
+void preventCollisionOverlap(entt::entity entity, entt::entity other) {
+	Motion& player = registry.get<Motion>(entity);
+	Motion& enemy = registry.get<Motion>(other);
+	const float pen_scaling_factor = 10;
+	vec2 box_player = get_bounding_box(player);
+	vec2 box_enemy = get_bounding_box(enemy);
+	float x_enemy_bound = enemy.position[0] - box_enemy[0] / 2.f;
+	float x_player_bound = player.position[0] + box_player[0] / 2.f;
+	float x_penetration = x_player_bound - x_enemy_bound;
+	x_penetration /= pen_scaling_factor;
+	float y_rectangle_bound = enemy.position[1] - box_enemy[1] / 2.f;
+	float y_circle_bound = player.position[1] + box_player[1] / 2.f;
+	float y_penetration = y_circle_bound - y_rectangle_bound;
+	y_penetration /= pen_scaling_factor;
+
+	if (glm::dot(enemy.velocity, player.velocity) > 0) {
+		vec2 player_nextpos = {0.0, 0.0};
+		vec2 enemy_nextpos = {0.0, 0.0};
+
+		if (player.velocity[0] < 0) {
+			player_nextpos[0] = player.position[0] + x_penetration / 2.f;
+			enemy_nextpos[0] = enemy.position[0] - x_penetration / 2.f;
+		}
+
+		else {
+			player_nextpos[0] = player.position[0] - x_penetration / 2.f;
+			enemy_nextpos[0] = enemy.position[0] + x_penetration / 2.f;
+		}
+
+		if (player.velocity[1] > 0) {
+			player_nextpos[1] = player.position[1] + y_penetration / 2.f;
+			enemy_nextpos[1] = enemy.position[1] - y_penetration / 2.f;
+		}
+
+		else {
+			player_nextpos[1] = player.position[1] - y_penetration / 2.f;
+			enemy_nextpos[1] = enemy.position[1] + y_penetration / 2.f;
+		}
+
+		setMotionPosition(player, player_nextpos);
+		setMotionPosition(enemy, enemy_nextpos);
+	}
 }
 
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
 	// Move fish based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
-	auto& motion_registry = registry.motions;
-	for(uint i = 0; i< motion_registry.size(); i++)
+	for(entt::entity entity: registry.view<Motion>())
 	{
-		// !!! TODO A1: update motion.position based on step_seconds and motion.velocity
-		//Motion& motion = motion_registry.components[i];
-		//Entity entity = motion_registry.entities[i];
-		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		(void)elapsed_ms; // placeholder to silence unused warning until implemented
+		Motion& motion = registry.get<Motion>(entity);
+		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
+
+		setMotionPosition(motion, nextpos);
 	}
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE UPDATES HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+
+	// Deal with spell speed while moving
+	if (spellbook[1]["active"] == "true") {
+		if (player_motion.velocity.x > 0) {
+			player_motion.velocity.x = 800.f;
+		}
+		else if (player_motion.velocity.x < 0) {
+			player_motion.velocity.x = -800.f;
+		}
+		if (player_motion.velocity.y > 0) {
+			player_motion.velocity.y = 800.f;
+		}
+		else if (player_motion.velocity.y < 0) {
+			player_motion.velocity.y = -800.f;
+		}
+	}
 
 	// Check for collisions between all moving entities
-    ComponentContainer<Motion> &motion_container = registry.motions;
-	for(uint i = 0; i<motion_container.components.size(); i++)
+	for(entt::entity entity : registry.view<Motion>())
 	{
-		Motion& motion_i = motion_container.components[i];
-		Entity entity_i = motion_container.entities[i];
-		for(uint j = 0; j<motion_container.components.size(); j++) // i+1
+		Motion& motion = registry.get<Motion>(entity);
+		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
-			if (i == j)
+			if (entity == other)
 				continue;
 
-			Motion& motion_j = motion_container.components[j];
-			if (collides(motion_i, motion_j))
+			Motion& motion_other = registry.get<Motion>(other);
+			if (collides(motion, motion_other))
 			{
-				Entity entity_j = motion_container.entities[j];
-				// Create a collisions event
-				// We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-				registry.collisions.emplace_with_duplicates(entity_i, entity_j);
-				registry.collisions.emplace_with_duplicates(entity_j, entity_i);
+				impulseCollisionResolution(motion, motion_other);
+				registry.emplace_or_replace<Collision>(entity, other);
+
+				// TODO: Optimization needed for overlap handling/clipping
+				preventCollisionOverlap(other, entity);
 			}
 		}
 	}
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: HANDLE SALMON - WALL collisions HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// you may need the following quantities to compute wall positions
-	(float)window_width_px; (float)window_height_px;
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A2: DRAW DEBUG INFO HERE on Salmon mesh collision
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 2
-	// You will want to use the createLine from world_init.hpp
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// debugging of bounding boxes
-	if (debugging.in_debug_mode)
-	{
-		uint size_before_adding_new = (uint)motion_container.components.size();
-		for (uint i = 0; i < size_before_adding_new; i++)
-		{
-			Motion& motion_i = motion_container.components[i];
-			Entity entity_i = motion_container.entities[i];
-
-			// visualize the radius with two axis-aligned lines
-			const vec2 bonding_box = get_bounding_box(motion_i);
-			float radius = sqrt(dot(bonding_box/2.f, bonding_box/2.f));
-			vec2 line_scale1 = { motion_i.scale.x / 10, 2*radius };
-			Entity line1 = createLine(motion_i.position, line_scale1);
-			vec2 line_scale2 = { 2*radius, motion_i.scale.x / 10};
-			Entity line2 = createLine(motion_i.position, line_scale2);
-
-			// !!! TODO A2: implement debugging of bounding boxes and mesh
-		}
-	}
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A3: HANDLE PEBBLE collisions HERE
-	// DON'T WORRY ABOUT THIS UNTIL ASSIGNMENT 3
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
