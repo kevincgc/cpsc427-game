@@ -44,6 +44,41 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
+
+// returns true if successfull, false if it didn't set
+bool setMotionPosition(Motion& motion, vec2 nextpos) {
+	vec2 bounding_box = get_bounding_box(motion);
+	vec2 corners[] = {
+		// upper right
+		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
+
+		// upper left
+		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
+
+		// lower left
+		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
+
+		// lower right
+		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
+	};
+
+	bool collision = false;
+	for (const auto corner : corners) {
+		const MapTile tile = WorldSystem::get_map_tile(corner);
+
+		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+			collision = true;
+			break;
+		}
+	}
+
+	if (!collision) {
+		motion.position = nextpos;
+	}
+
+	return !collision;
+}
+
 // TODO: Optimization needed for overlap handling/clipping, weird behaviour occurring with certain collisions
 void preventCollisionOverlap(entt::entity entity, entt::entity other) {
 	Motion& player = registry.get<Motion>(entity);
@@ -61,22 +96,31 @@ void preventCollisionOverlap(entt::entity entity, entt::entity other) {
 	y_penetration /= pen_scaling_factor;
 
 	if (glm::dot(enemy.velocity, player.velocity) > 0) {
+		vec2 player_nextpos = {0.0, 0.0};
+		vec2 enemy_nextpos = {0.0, 0.0};
+
 		if (player.velocity[0] < 0) {
-			player.position[0] = player.position[0] + x_penetration / 2.f;
-			enemy.position[0] = enemy.position[0] - x_penetration / 2.f;
+			player_nextpos[0] = player.position[0] + x_penetration / 2.f;
+			enemy_nextpos[0] = enemy.position[0] - x_penetration / 2.f;
 		}
+
 		else {
-			player.position[0] = player.position[0] - x_penetration / 2.f;
-			enemy.position[0] = enemy.position[0] + x_penetration / 2.f;
+			player_nextpos[0] = player.position[0] - x_penetration / 2.f;
+			enemy_nextpos[0] = enemy.position[0] + x_penetration / 2.f;
 		}
+
 		if (player.velocity[1] > 0) {
-			player.position[1] = player.position[1] + y_penetration / 2.f;
-			enemy.position[1] = enemy.position[1] - y_penetration / 2.f;
+			player_nextpos[1] = player.position[1] + y_penetration / 2.f;
+			enemy_nextpos[1] = enemy.position[1] - y_penetration / 2.f;
 		}
+
 		else {
-			player.position[1] = player.position[1] - y_penetration / 2.f;
-			enemy.position[1] = enemy.position[1] + y_penetration / 2.f;
+			player_nextpos[1] = player.position[1] - y_penetration / 2.f;
+			enemy_nextpos[1] = enemy.position[1] + y_penetration / 2.f;
 		}
+
+		setMotionPosition(player, player_nextpos);
+		setMotionPosition(enemy, enemy_nextpos);
 	}
 }
 
@@ -90,34 +134,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		vec2 bounding_box = get_bounding_box(motion);
-		vec2 corners[] = {
-			// upper right
-			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
-
-			// upper left
-			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
-
-			// lower left
-			WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
-
-			// lower right
-			WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
-		};
-
-		bool collision = false;
-		for (const auto corner : corners) {
-			const MapTile tile = WorldSystem::get_map_tile(corner);
-
-			if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
-				collision = true;
-				break;
-			}
-		}
-
-		if (!collision) {
-			motion.position = nextpos;
-		}
+		setMotionPosition(motion, nextpos);
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
