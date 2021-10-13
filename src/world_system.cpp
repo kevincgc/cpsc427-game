@@ -22,7 +22,7 @@
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
-const size_t MAX_TURTLES = 15;
+const size_t MAX_TURTLES = 5;
 const size_t MAX_FISH = 5;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
@@ -37,6 +37,8 @@ bool flag_left = false;
 bool flag_fast = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
+float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
+
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
 std::vector <vec2> gesture_coords_right;
@@ -76,6 +78,35 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 		}
 	}
 };
+
+// helper function to check collision with wall
+
+bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
+	vec2 corners[] = {
+			// upper right
+			WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, - scale_y / 2)),
+
+			// upper left
+			WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
+
+			// lower left
+			WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
+
+			// lower right
+			WorldSystem::position_to_map_coords(position + vec2(scale_x/ 2, scale_y/ 2)),
+		};
+
+		bool collision = false;
+		for (const auto corner : corners) {
+			const MapTile tile = WorldSystem::get_map_tile(corner);
+
+			if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+				collision = true;
+				break;
+			}
+		}
+	return collision;
+}
 
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
@@ -247,15 +278,22 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (registry.view<HardShell>().size() <= MAX_TURTLES && next_turtle_spawn < 0.f) {
 		// Reset timer
 		next_turtle_spawn = (TURTLE_DELAY_MS / 2) + uniform_dist(rng) * (TURTLE_DELAY_MS / 2);
+		// init position of enemy
+		vec2 position;
+		bool collision = true;
+		// if the enemy is created on the wall, change it's position till it's not
+		while (collision) {
+			position = vec2(screen_width -200.f,
+				50.f + uniform_dist(rng) * (screen_height - 100.f));
+			collision = collision_with_wall(position, softshell_scale, softshell_scale);
+		}
 		// Create turtle
-		entt::entity entity = createTurtle(renderer, {0,0});
+		entt::entity entity = createTurtle(renderer, position);
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(entity);
 		motion.mass = 200;
 		motion.coeff_rest = 0.9f;
-		motion.position =
-			vec2(screen_width -200.f,
-				50.f + uniform_dist(rng) * (screen_height - 100.f));
+
 		motion.velocity = vec2(-100.f, 0.f);
 	}
 
@@ -270,6 +308,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		for (entt::entity turtle : registry.view<HardShell>()) {
 			Motion& motion = registry.get<Motion>(turtle);
 			motion.velocity = vec2(-100.f, 0.f);
+			// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
+			// 	  (uniform_dist(rng) - 0.5f) * 200);
 		}
 	}
 
@@ -278,15 +318,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
 		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
 		next_fish_spawn = (FISH_DELAY_MS / 2) + uniform_dist(rng) * (next_fish_spawn / 2);
-		entt::entity fish = createFish(renderer, {0,0});
+		vec2 position;
+		bool collision = true;
+		// if the enemy is created on the wall, change it's position till it's not
+		while (collision) {
+			position = vec2(screen_width -200.f,
+				50.f + uniform_dist(rng) * (screen_height - 100.f));
+			collision = collision_with_wall(position, softshell_scale, softshell_scale);
+		}
+		entt::entity fish = createFish(renderer, position);
 		// Setting random initial position and constant velocity
 		Motion& motion = registry.get<Motion>(fish);
-		motion.position =
-			vec2(50.f + uniform_dist(rng) * (screen_width - 100.f),
-				 50.f + uniform_dist(rng) * (screen_height - 100.f));
-		// motion.velocity = vec2(-200.f, 0.f);
-		motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
-				  (uniform_dist(rng) - 0.5f) * 200);
+		motion.velocity = vec2(-200.f, 0.f);
 	}
 
     float min_counter_ms = 3000.f;
