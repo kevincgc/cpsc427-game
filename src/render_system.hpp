@@ -5,7 +5,10 @@
 
 #include "common.hpp"
 #include "components.hpp"
-#include "tiny_ecs.hpp"
+//#include "tiny_ecs.hpp"
+#include <entt.hpp>
+
+extern entt::registry registry;
 
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
@@ -96,7 +99,7 @@ private:
 	GLuint off_screen_render_buffer_color;
 	GLuint off_screen_render_buffer_depth;
 
-	Entity screen_state_entity;
+	entt::entity screen_state_entity = registry.create();
 };
 
 bool loadEffectFromFile(

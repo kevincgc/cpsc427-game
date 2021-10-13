@@ -128,8 +128,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 {
 	// Move fish based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
-	auto& motion_registry = registry.motions;
-	for(uint i = 0; i< motion_registry.size(); i++)
+	for(entt::entity entity: registry.view<Motion>())
 	{
 		Motion& motion = registry.get<Motion>(entity);
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
@@ -158,18 +157,16 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	}
 
 	// Check for collisions between all moving entities
-    ComponentContainer<Motion> &motion_container = registry.motions;
-	for(uint i = 0; i<motion_container.components.size(); i++)
+	for(entt::entity entity : registry.view<Motion>())
 	{
-		Motion& motion_i = motion_container.components[i];
-		Entity entity_i = motion_container.entities[i];
-		for(uint j = 0; j<motion_container.components.size(); j++) // i+1
+		Motion& motion = registry.get<Motion>(entity);
+		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
-			if (i == j)
+			if (entity == other)
 				continue;
 
-			Motion& motion_j = motion_container.components[j];
-			if (collides(motion_i, motion_j))
+			Motion& motion_other = registry.get<Motion>(other);
+			if (collides(motion, motion_other))
 			{
 				impulseCollisionResolution(motion, motion_other);
 				registry.emplace_or_replace<Collision>(entity, other);

@@ -1,13 +1,9 @@
-#version 330
+#version 330 
 
-// Input attributes
 in vec3 in_position;
-in vec3 in_color;
+in vec2 in_uv;
+out vec2 uv;
 
-out vec3 vcolor;
-out vec2 vpos;
-
-// Application data
 uniform mat3 transform;
 uniform mat3 projection;
 uniform float time;

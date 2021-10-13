@@ -9,6 +9,7 @@
 #include <sstream>
 
 Debug debugging;
+GameState game_state;
 float death_timer_counter_ms = 3000;
 
 
