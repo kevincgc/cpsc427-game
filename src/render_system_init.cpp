@@ -7,6 +7,7 @@
 #include "../ext/stb_image/stb_image.h"
 
 // This creates circular header inclusion, that is quite bad.
+#include "tiny_ecs_registry.hpp"
 
 // stlib
 #include <iostream>
@@ -162,10 +163,10 @@ void RenderSystem::initializeGlGeometryBuffers()
 	textured_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
 	textured_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
 	textured_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
-	textured_vertices[0].texcoord = { 0.f, 1.f };  
-	textured_vertices[1].texcoord = { 1.f, 1.f };  
-	textured_vertices[2].texcoord = { 1.f, 0.f };  
-	textured_vertices[3].texcoord = { 0.f, 0.f };  
+	textured_vertices[0].texcoord = { 0.f, 1.f };
+	textured_vertices[1].texcoord = { 1.f, 1.f };
+	textured_vertices[2].texcoord = { 1.f, 0.f };
+	textured_vertices[3].texcoord = { 0.f, 0.f };
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> textured_indices = { 0, 3, 1, 1, 3, 2 };
@@ -249,7 +250,6 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> screen_indices = { 0, 1, 2 };
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE, screen_vertices, screen_indices);
-
 }
 
 RenderSystem::~RenderSystem()
@@ -271,14 +271,14 @@ RenderSystem::~RenderSystem()
 	gl_has_errors();
 
 	// remove all entities created by the render system
-	while (registry.view<RenderRequest>().size() > 0)
-	    registry.clear<RenderRequest>();
+	while (registry.renderRequests.entities.size() > 0)
+	    registry.remove_all_components_of(registry.renderRequests.entities.back());
 }
 
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.emplace<ScreenState>(screen_state_entity);
+	registry.screenStates.emplace(screen_state_entity);
 
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);

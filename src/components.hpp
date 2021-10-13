@@ -3,7 +3,6 @@
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
-#include <entt.hpp>
 
 // Player component
 struct Player
@@ -37,8 +36,8 @@ struct Motion {
 struct Collision
 {
 	// Note, the first object is stored in the ECS container.entities
-	entt::entity other; // the second object involved in the collision
-	Collision(entt::entity& other) { this->other = other; };
+	Entity other; // the second object involved in the collision
+	Collision(Entity& other) { this->other = other; };
 };
 
 // map tiles
@@ -82,7 +81,7 @@ struct DebugComponent
 // A timer that will be associated to dying salmon
 struct DeathTimer
 {
-	float counter_ms = 1000;
+	float counter_ms = 3000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)

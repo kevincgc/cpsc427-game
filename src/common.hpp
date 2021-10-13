@@ -12,7 +12,6 @@
 #define NOMINMAX
 #include <gl3w.h>
 #include <GLFW/glfw3.h>
-#include <entt.hpp>
 
 // The glm library provides vector and matrix operations as in GLSL
 #include <glm/vec2.hpp>				// vec2
@@ -20,6 +19,8 @@
 #include <glm/vec3.hpp>             // vec3
 #include <glm/mat3x3.hpp>           // mat3
 using namespace glm;
+
+#include "tiny_ecs.hpp"
 
 // Simple utility functions to avoid mistyping directory name
 // audio_path("audio.ogg") -> data/audio/audio.ogg
@@ -30,7 +31,6 @@ inline std::string shader_path(const std::string& name) {return std::string(PROJ
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
-inline std::string maps_path(const std::string& name) {return data_path() + "/maps/" + std::string(name);};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
