@@ -37,6 +37,7 @@ bool flag_left = false;
 bool flag_fast = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
+vec2 path_target_pos;
 float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
 
 std::queue<std::string> gesture_queue;
@@ -386,7 +387,23 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
 	}
+
+
+	// Pathfinding debugging
+	// Print player position in map coords
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+	vec2 debug_pos = position_to_map_coords(player_motion.position);
+	//std::cout << debug_pos.x << ", " << debug_pos.y << std::endl; // starting pos: 0,1 means column 0, row 1,
+
+	// Clicking creates map position
+
+
+
 	return true;
+
+
+
 }
 
 // Reset the world state to its initial state
@@ -488,56 +505,26 @@ bool WorldSystem::is_over() const {
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
 
-	// Below is the acceleration/flag-based movement implementation
-
 	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& motion = registry.get<Motion>(player);
-
-	// TODO: Implementation with acceleration
-	//if (!registry.view<DeathTimer>().contains(player)) {
-	//	if (action == GLFW_PRESS) {
-	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
-	//		else if (key == GLFW_KEY_A  || key == GLFW_KEY_LEFT ) { move_left  = true;	}
-	//		if		(key == GLFW_KEY_W	|| key == GLFW_KEY_UP	) { move_up    = true;	}
-	//		else if (key == GLFW_KEY_S  || key == GLFW_KEY_DOWN ) { move_down  = true;	}
-	//	}
-
-	//	if (action == GLFW_RELEASE) {
-	//		if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { move_right = false;	}
-	//		else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { move_left  = false;	}
-	//		if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { move_up    = false;	}
-	//		else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { move_down  = false;	}
-	//	}
-	//}
+	Motion& motion		= registry.get<Motion>(player);
 
 	if (!registry.view<DeathTimer>().contains(player)) {
+		
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-			if (key == GLFW_KEY_W || key == GLFW_KEY_UP)
-			{
-				motion.velocity[1] = -1 * player_vel;
-			}
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
-			{
-				motion.velocity[0] = -1 * player_vel;
-			}
-			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
-			{
-				motion.velocity[0] = player_vel;
-			}
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
-			{
-				motion.velocity[1] = player_vel;
-			}
+			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { motion.velocity[1] = -1 * player_vel; }
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { motion.velocity[0] = -1 * player_vel; }
+			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] =		 player_vel; }
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { motion.velocity[1] =		 player_vel; }
 		}
 
 		if (action == GLFW_RELEASE) {
-			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = 0; }
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = 0; }
-			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = 0; }
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = 0; }
+			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = 0; }
+			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { motion.velocity[0] = 0; }
+			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { motion.velocity[1] = 0; }
+			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { motion.velocity[1] = 0; }
 		}
-	}
 
+	}
 
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
@@ -545,9 +532,36 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		glfwGetWindowSize(window, &w, &h);
 		restart_game();
 	}
+
 }
 
+// Pathfinding: Variables for pathfinding feature used only in on_mouse_button
+double x_pos_press, y_pos_press, x_pos_release, y_pos_release;
+
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
+
+	// Pathfinding: Clicking creates map position to travel to
+	// To separate it from gestures, we need to make sure it's just a click
+	// Implementation: A click means the distance between press and release is 0
+
+	// Capture press position
+	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
+	
+	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+		// Capture release position
+		glfwGetCursorPos(window, &x_pos_release, &y_pos_release);
+
+		// If the press and release distance is none, capture the x and y cursor positions to use as target for pathing
+		if (x_pos_release == x_pos_press && y_pos_release == y_pos_press) {
+			path_target_pos = { float(x_pos_release), float(y_pos_release) };
+			std::cout << "released cursor pos: " << path_target_pos.x << ", " << path_target_pos.y << std::endl;
+		}
+
+	}
+
+	
+
+	// Gestures: The following blocks are for the gesture feature
 
 	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 		if (action == GLFW_PRESS) {
