@@ -14,6 +14,9 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
+	if (motion.velocity.x < 0) {
+		transform.reflect();
+	}
 
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
@@ -80,7 +83,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 	}
-	// else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
 	else if (render_request.used_effect == EFFECT_ASSET_ID::MINOTAUR)
 	{
 
@@ -107,15 +109,29 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint flash_uloc = glGetUniformLocation(program, "flash");
 		glUniform1f(flash_uloc, flash);
 
+		// pass motion to the shader
+		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
+		int player_gesture = 0;
+
+		Motion& player_motion = registry.get<Motion>(entity);
+		if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
+			player_gesture = 0;
+		} else {
+			player_gesture = 1;
+		}
+	
+		glUniform1i(motion_uloc, player_gesture);
+		
+
 
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);
 		gl_has_errors();
 		assert(registry.view<RenderRequest>().contains(entity));
-		GLuint texture_id_salmon =
+		GLuint texture_id_minotaur =
 			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
 
-		glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		glBindTexture(GL_TEXTURE_2D, texture_id_minotaur);
 		gl_has_errors();
 	}
 	else

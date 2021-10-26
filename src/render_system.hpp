@@ -45,7 +45,7 @@ class RenderSystem {
 	const std::array<std::string, effect_count> effect_paths = { // correspond to EFFECT_ASSET_ID
 		shader_path("coloured"),
 		shader_path("pebble"),
-		shader_path("salmon"),
+		// shader_path("salmon"),
 		shader_path("textured"),
 		shader_path("water"),
 		shader_path("minotaur"), 
