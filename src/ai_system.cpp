@@ -45,4 +45,8 @@ void AISystem::step(float elapsed_ms)
 		
 	}
 
+	// ========= Feature: Pathfinding =========
+
+
+
 }

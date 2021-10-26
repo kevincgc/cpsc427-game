@@ -22,8 +22,8 @@
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
-const size_t MAX_TURTLES = 5;
-const size_t MAX_FISH = 5;
+const size_t MAX_TURTLES = 0; // Setting to 0 for pathfinding debugging
+const size_t MAX_FISH = 0; // Setting to 0 for pathfinding debugging
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
@@ -37,7 +37,7 @@ bool flag_left = false;
 bool flag_fast = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
-vec2 path_target_pos;
+vec2 path_target_map_pos; // For pathfinding feature
 float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
 
 std::queue<std::string> gesture_queue;
@@ -316,7 +316,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.view<SoftShell>().size() <= MAX_FISH && next_fish_spawn < 0.f) {
+	if (registry.view<SoftShell>().size() < MAX_FISH && next_fish_spawn < 0.f) {
 		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
 		next_fish_spawn = (FISH_DELAY_MS / 2) + uniform_dist(rng) * (next_fish_spawn / 2);
 		vec2 position;
@@ -540,27 +540,56 @@ double x_pos_press, y_pos_press, x_pos_release, y_pos_release;
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
 
-	// Pathfinding: Clicking creates map position to travel to
-	// To separate it from gestures, we need to make sure it's just a click
-	// Implementation: A click means the distance between press and release is 0
+	// ========= Feature: Pathfinding =========
+	// To separate mouse click from gestures, we need to make sure it's just a click, not a swipe
+	// Latency-friendly implementation:
+	//		A click means the distance between press and release is small. We choose 'small' instead 
+	//      of 0 because sometimes the pressing phase of clicks are a little long for humans. 
+	//		It's only made longer with lag.
 
 	// Capture press position
-	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
-	
+	if (action == GLFW_PRESS   && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
 	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+
 		// Capture release position
 		glfwGetCursorPos(window, &x_pos_release, &y_pos_release);
 
-		// If the press and release distance is none, capture the x and y cursor positions to use as target for pathing
-		if (x_pos_release == x_pos_press && y_pos_release == y_pos_press) {
-			path_target_pos = { float(x_pos_release), float(y_pos_release) };
-			std::cout << "released cursor pos: " << path_target_pos.x << ", " << path_target_pos.y << std::endl;
+		// If it's truly a click...
+		float click_threshold = 100;
+		if (abs(x_pos_release - x_pos_press) < click_threshold && abs(y_pos_release - y_pos_press) < click_threshold) {
+
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& player_motion = registry.get<Motion>(player);
+
+			// Implementation: There's a difference between camera coords and world coords.
+			// glfwGetCursorPos gets the position of the cursor in the window. So clicking
+			// the center of the window returns, for example, 1200/2=600 and 800/2=400.
+			// But the player's coords are different. Even though the player is in the
+			// center of the window, it's **world** coords are actually (initially) (75,225).
+			// So we need to get the coords relative to the player
+
+			// Get curusor screen coords
+			vec2 cursor_screen_pos = { float(x_pos_release - window_width_px/2), float(y_pos_release - window_height_px/2) };
+
+			// Get cursor world coords
+			vec2 target_world_pos = { player_motion.position.x + cursor_screen_pos.x, player_motion.position.y + cursor_screen_pos.y };
+			// std::cout << "cursor_world_pos " << target_world_pos.x << ", " << target_world_pos.y << std::endl;
+
+			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
+			vec2 target_map_pos = position_to_map_coords(target_world_pos);
+
+
+			// Debugging: Print coords
+			vec2 player_map_pos = position_to_map_coords(player_motion.position);
+			std::cout << "player map pos: "				<< player_map_pos.x			<< ", " << player_map_pos.y			<< std::endl; // starting pos: 0,1 means column 0, row 1,
+			std::cout << "released cursor map pos: "	<< target_map_pos.x	<< ", " << target_map_pos.y	<< std::endl; // 3,2
+			//std::cout << "released cursor screen pos: " << path_target_screen_pos.x << ", " << path_target_screen_pos.y << std::endl; // ~588,405
+			//std::cout << "player screen pos: "			<< player_motion.position.x << ", " << player_motion.position.y << std::endl; // starting pos: 75,225
+
 		}
 
 	}
-
-	
-
+	// ========================================
 	// Gestures: The following blocks are for the gesture feature
 
 	if (button == GLFW_MOUSE_BUTTON_RIGHT) {

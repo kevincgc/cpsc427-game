@@ -58,3 +58,7 @@ struct Mouse_spell {
 	void update_datastructs(std::map<std::string, bool>& gesture_statuses, std::queue<std::string> &gesture_queue, std::vector<vec2> &gesture_coords, std::string mouse_button, bool &flag_fast, float elapsed_ms);
 	void reset_spells(std::map < int, std::map <std::string, std::string>> &spellbook);
 };
+
+// From main.cpp - now globally accessible
+extern const int window_width_px;
+extern const int window_height_px;
