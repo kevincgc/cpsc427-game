@@ -622,20 +622,22 @@ float WorldSystem::map_coords_to_position(float map_coords) {
 }
 
 vec2 WorldSystem::position_to_map_coords(vec2 position) {
-	return {(int) (position.x / map_scale), (int) (position.y / map_scale)};
+	return {floor(position.x / map_scale), floor(position.y / map_scale)};
 }
 
 int WorldSystem::position_to_map_coords(float position) {
-	return (int) (position / map_scale);
+	return (int) floor(position / map_scale);
+}
+
+bool WorldSystem::is_within_bounds(vec2 map_coords) {
+	return map_coords.y >= 0
+		&& map_coords.y < game_state.map_tiles.size()
+		&& map_coords.x >= 0
+		&& map_coords.x < game_state.map_tiles[(int)(map_coords.y)].size();
 }
 
 MapTile WorldSystem::get_map_tile(vec2 map_coords) {
-	if (map_coords.y >= 0 && map_coords.y < game_state.map_tiles.size()) {
-		const auto row = game_state.map_tiles[(int)(map_coords.y)];
-		if (map_coords.x >= 0 && map_coords.x < row.size()) {
-			return row[(int)(map_coords.x)];
-		}
-	}
+	if (WorldSystem::is_within_bounds(map_coords)) return game_state.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
 
 	return MapTile::FREE_SPACE; // out of bounds
 }
