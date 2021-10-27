@@ -119,6 +119,11 @@ struct Flash
 	// flash the sprite
 };
 
+struct Attack
+{
+	// if the entity is in attack mode
+};
+
 // New Components for project
 struct Item
 {
@@ -186,8 +191,8 @@ const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 enum class EFFECT_ASSET_ID {
 	COLOURED = 0,
 	PEBBLE = COLOURED + 1,
-	SALMON = PEBBLE + 1,
-	TEXTURED = SALMON + 1,
+	// SALMON = PEBBLE + 1, // remove salmon
+	TEXTURED = PEBBLE + 1,
 	WATER = TEXTURED + 1,
 	MINOTAUR = WATER + 1,
 	ENEMY = MINOTAUR + 1,
