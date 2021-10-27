@@ -1,6 +1,7 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "ai_system.hpp"
 
 // stlib
 #include <cassert>
@@ -568,7 +569,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 			// center of the window, it's **world** coords are actually (initially) (75,225).
 			// So we need to get the coords relative to the player
 
-			// Get curusor screen coords
+			// Get cursor screen coords
 			vec2 cursor_screen_pos = { float(x_pos_release - window_width_px/2), float(y_pos_release - window_height_px/2) };
 
 			// Get cursor world coords
@@ -578,9 +579,11 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
 			vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
+			// Generate travel path (list of nodes)
+			vec2 player_map_pos = position_to_map_coords(player_motion.position);
+			AISystem::generate_path(player_map_pos, target_map_pos);
 
 			// Debugging: Print coords
-			vec2 player_map_pos = position_to_map_coords(player_motion.position);
 			std::cout << "player map pos: "				<< player_map_pos.x			<< ", " << player_map_pos.y			<< std::endl; // starting pos: 0,1 means column 0, row 1,
 			std::cout << "released cursor map pos: "	<< target_map_pos.x	<< ", " << target_map_pos.y	<< std::endl; // 3,2
 			//std::cout << "released cursor screen pos: " << path_target_screen_pos.x << ", " << path_target_screen_pos.y << std::endl; // ~588,405
