@@ -15,16 +15,16 @@
 #include "world_system.hpp"
 #include <entt.hpp>
 extern entt::registry registry;
+
+// init row of sprite sheet to render
 const int SPRITE_SHEET_WIDTH = 844;
 const int SPRITE_SHEET_HEIGHT = 1868;
 
 const float ANIMATION_FRAME_W = 53.f / SPRITE_SHEET_WIDTH; // 0-1
-const float ANIMATION_FRAME_H =50.f / SPRITE_SHEET_HEIGHT; 
+const float ANIMATION_FRAME_H = 50.f / SPRITE_SHEET_HEIGHT; 
 const float OFFSET_X = 0.f;
-const float OFFSET_Y = 90.f / SPRITE_SHEET_HEIGHT;
-// const int ANIMATION_SPEED = 3;
-// const int NUM_ANIMATION_FRAMES = 3;
-GLint frame = 0;
+const float OFFSET_Y = 0.f;
+
 
 // World initialization
 bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
