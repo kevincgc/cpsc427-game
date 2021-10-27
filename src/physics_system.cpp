@@ -44,6 +44,10 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
+bool tileIsWalkable(MapTile tile) {
+	return tile != MapTile::UNBREAKABLE_WALL && tile != MapTile::BREAKABLE_WALL;
+}
+
 
 // returns true if successfull, false if it didn't set
 bool setMotionPosition(Motion& motion, vec2 nextpos) {
@@ -66,7 +70,7 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 	for (const auto corner : corners) {
 		const MapTile tile = WorldSystem::get_map_tile(corner);
 
-		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+		if (!tileIsWalkable(tile) || corner.x < 0 || corner.y < 0) {
 			collision = true;
 			break;
 		}

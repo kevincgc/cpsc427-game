@@ -50,13 +50,23 @@ const float map_scale = 150.0;
 enum MapTile {
 	FREE_SPACE = 0,
 	BREAKABLE_WALL,
-	UNBREAKABLE_WALL
+	UNBREAKABLE_WALL,
+	ENTRANCE,
+	EXIT
+};
+
+// Level State
+struct LoadedLevel
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+	vec2 start_position;
 };
 
 // Global Game State
 struct GameState
 {
-	std::vector<std::vector<MapTile>> map_tiles;
+	std::string level_id;
+	LoadedLevel level;
 };
 extern GameState game_state;
 
