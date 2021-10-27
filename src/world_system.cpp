@@ -528,6 +528,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			{
 				motion.velocity[1] = player_vel;
 			}
+			// minotaur attack mode on spack key 
+			if (key == GLFW_KEY_SPACE && !registry.view<Attack>().contains(player))
+			{
+				registry.emplace<Attack>(player);
+			}
 		}
 
 		if (action == GLFW_RELEASE) {
@@ -535,6 +540,9 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = 0; }
 			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = 0; }
 			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = 0; }
+			if (key == GLFW_KEY_SPACE) {
+				registry.remove<Attack>(player);
+			}
 		}
 	}
 

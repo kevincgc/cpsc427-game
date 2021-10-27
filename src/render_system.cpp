@@ -101,7 +101,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
-		float time_total = (float)(glfwGetTime() * 10.0f);
+		float time_total = (float)(glfwGetTime());
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
@@ -109,14 +109,21 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint flash_uloc = glGetUniformLocation(program, "flash");
 		glUniform1f(flash_uloc, flash);
 
-		// pass motion to the shader
+		// pass gesture to the shader
 		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
 		int player_gesture = 0;
 
 		Motion& player_motion = registry.get<Motion>(entity);
-		if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
+		if (registry.view<DeathTimer>().contains(entity)) {
+			player_gesture = 9;
+		}
+		else if (registry.view<Attack>().contains(entity)) {
+			player_gesture = 3;
+		}
+		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
 			player_gesture = 0;
-		} else {
+		} 
+		else {
 			player_gesture = 1;
 		}
 	

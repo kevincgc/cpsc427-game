@@ -109,6 +109,11 @@ struct Flash
 	// flash the sprite
 };
 
+struct Attack
+{
+	// if the entity is in attack mode
+};
+
 // New Components for project
 struct Item
 {

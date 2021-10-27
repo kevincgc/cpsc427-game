@@ -32,7 +32,7 @@ const float ANIMATION_FRAME_H = 95.f / SHEET_HEIGHT;
 const float ANIMATION_FRAME_W = 96.f / SHEET_WIDTH;
 const float ANIMATION_FRAME_W_PADDING = 20.f / SHEET_WIDTH;
 
-const float FRAME_SPEED = 1.f;
+const float FRAME_SPEED = 8.f;
 
 
 
@@ -76,8 +76,13 @@ void main() {
 
   int frame;
   uv = in_uv;
-  frame = int(time / FRAME_SPEED) % num_animation_frames;
-
+  
+  if (gesture == 9 && int(time * FRAME_SPEED) >= 6) { // if death, do not iterate the frames
+    frame = 5;
+  } else {
+    frame = int(time * FRAME_SPEED) % num_animation_frames;
+  }
+  
   uv.x += ANIMATION_FRAME_W * frame + ANIMATION_FRAME_W_PADDING;
   uv.y += ANIMATION_FRAME_H * gesture;
 
