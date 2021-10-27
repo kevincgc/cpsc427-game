@@ -487,6 +487,14 @@ bool WorldSystem::is_over() const {
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
+	static std::map<int, bool> pressed_keys = std::map<int, bool>();
+
+	if (action == GLFW_PRESS) {
+		pressed_keys.insert({ key, true });
+	}
+	else if (action == GLFW_RELEASE && pressed_keys.find(key) != pressed_keys.end()) {
+		pressed_keys.erase(key);
+	} // not GLFW_REPEAT
 
 	// Below is the acceleration/flag-based movement implementation
 
@@ -511,41 +519,38 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	//}
 
 	if (!registry.view<DeathTimer>().contains(player)) {
-		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-			if (key == GLFW_KEY_W || key == GLFW_KEY_UP)
-			{
-				motion.velocity[1] = -1 * player_vel;
-			}
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
-			{
-				motion.velocity[0] = -1 * player_vel;
-			}
-			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
-			{
-				motion.velocity[0] = player_vel;
-			}
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
-			{
-				motion.velocity[1] = player_vel;
-			}
-			// minotaur attack mode on spack key 
-			if (key == GLFW_KEY_SPACE && !registry.view<Attack>().contains(player))
+		if (key == GLFW_KEY_SPACE) {
+			// minotaur attack mode on spack key
+			if (action == GLFW_PRESS && !registry.view<Attack>().contains(player))
 			{
 				registry.emplace<Attack>(player);
 			}
-		}
 
-		if (action == GLFW_RELEASE) {
-			if (key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = 0; }
-			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = 0; }
-			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = 0; }
-			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = 0; }
-			if (key == GLFW_KEY_SPACE) {
+			if (action == GLFW_RELEASE) {
 				registry.remove<Attack>(player);
 			}
 		}
-	}
 
+		if (action != GLFW_REPEAT) {
+			motion.velocity = {0, 0};
+
+			if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
+				motion.velocity.y = -1 * player_vel;
+			}
+
+			if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
+				motion.velocity.x = -1 * player_vel;
+			}
+
+			if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
+				motion.velocity.x = player_vel;
+			}
+
+			if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+				motion.velocity.y = player_vel;
+			}
+		}
+	}
 
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
