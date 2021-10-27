@@ -40,6 +40,10 @@ bool active_spell = false;
 float spell_timer = 6000.f;
 vec2 path_target_map_pos; // For pathfinding feature
 float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
+vec2 starting_map_pos;
+vec2 ending_map_pos;
+bool do_generate_path = false;
+
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -579,15 +583,25 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
 			vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
-			// Generate travel path (list of nodes)
-			vec2 player_map_pos = position_to_map_coords(player_motion.position);
-			AISystem::generate_path(player_map_pos, target_map_pos);
+			// Only continue if clicked a traversable node (i.e. not a wall)
+			if (get_map_tile(target_map_pos) == FREE_SPACE) {
+				// Generate travel path (list of nodes)
+				vec2 player_map_pos = position_to_map_coords(player_motion.position);
+				starting_map_pos = player_map_pos;
+				ending_map_pos = target_map_pos;
+				do_generate_path = true;
+				//AISystem::generate_path(player_map_pos, target_map_pos);
 
-			// Debugging: Print coords
-			std::cout << "player map pos: "				<< player_map_pos.x			<< ", " << player_map_pos.y			<< std::endl; // starting pos: 0,1 means column 0, row 1,
-			std::cout << "released cursor map pos: "	<< target_map_pos.x	<< ", " << target_map_pos.y	<< std::endl; // 3,2
-			//std::cout << "released cursor screen pos: " << path_target_screen_pos.x << ", " << path_target_screen_pos.y << std::endl; // ~588,405
-			//std::cout << "player screen pos: "			<< player_motion.position.x << ", " << player_motion.position.y << std::endl; // starting pos: 75,225
+				// Debugging: Print coords
+				std::cout << "player map pos: " << player_map_pos.x << ", " << player_map_pos.y << std::endl; // starting pos: 0,1 means column 0, row 1,
+				std::cout << "released cursor map pos: " << target_map_pos.x << ", " << target_map_pos.y << std::endl; // 3,2
+				//std::cout << "released cursor screen pos: " << path_target_screen_pos.x << ", " << path_target_screen_pos.y << std::endl; // ~588,405
+				//std::cout << "player screen pos: "			<< player_motion.position.x << ", " << player_motion.position.y << std::endl; // starting pos: 75,225
+
+			}
+			else {
+				std::cout << "Clicked on a wall!" << std::endl;
+			}
 
 		}
 

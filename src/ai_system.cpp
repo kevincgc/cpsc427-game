@@ -9,7 +9,6 @@
 // [[0,1], [1,1], [2,1], [3,1]]
 // corresponds to traveling 3 tiles to the right.
 std::vector<vec2> path;
-
 extern bool do_pathfinding_movement = false;
 float DIST_THRESHOLD = 200.f;
 
@@ -53,26 +52,93 @@ void AISystem::step(float elapsed_ms)
 	}
 
 	// ========= Feature: Pathfinding =========
-	// Move the player according to the path
+	if (do_generate_path) {
+		generate_path(starting_map_pos, ending_map_pos);
+	}
+
 	if (do_pathfinding_movement) {
 		std::cout << "Doing pathfinding movement..." << std::endl;
+
+		if (path.size() > 0) {
+			// Get the player's current map position
+			vec2 player_map_pos = { (int)(motion.position.x / map_scale), (int)(motion.position.y / map_scale) };
+
+			// Get the first destination in the path
+			vec2 target_node = path.front();
+			std::cout << "Target node [" << target_node.x << ", " << target_node.y << "]" << std::endl;
+
+			// Must convert node map coords (ex. [0,1]) to world coords (ex. [400,600])
+			// Otherwise player will stop at node edge, not node center.
+			// Adding extra map_scale / 2 to get coords for center of map tile.
+			vec2 target_node_coord = { map_scale * target_node.x + map_scale/2, map_scale * target_node.y + map_scale / 2 };
+
+			// If the player has not eached the target node...
+			if (target_node_coord.x != (int)motion.position.x || target_node_coord.y != (int)motion.position.y) {
+				std::cout << "Determining direction to move" << std::endl;
+				std::cout << "Target coords: [" << target_node_coord.x << ", " << target_node_coord.y << "]" << std::endl;
+				std::cout << "Player coods:  [" << (int)motion.position.x << ", " << (int)motion.position.y << "]" << std::endl;
+
+				//Move
+				float temp_vel = 100;
+				if (target_node_coord.x > (int)motion.position.x) { motion.velocity.x = temp_vel; }
+				else if (target_node_coord.x < (int)motion.position.x) { motion.velocity.x = -1*temp_vel; }
+				if (target_node_coord.y > (int)motion.position.y) { motion.velocity.y = temp_vel; }
+				else if (target_node_coord.y < (int)motion.position.y) { motion.velocity.y = -1*temp_vel; }
+
+			}
+
+
+			// If the player has not eached the target node...
+			//if (target_node != player_map_pos) {
+			//	// Determine the direction to move
+			//	std::cout << "Determining direction to move" << std::endl;
+
+			//	// Move right
+			//	float temp_vel = 100;
+			//	if (target_node.x > player_map_pos.x) {
+			//		motion.velocity.x = temp_vel;
+			//	}
+			//	// Move left
+			//	else if (target_node.x < player_map_pos.x) {
+			//		motion.velocity.x = -1 * temp_vel;
+
+			//	}
+			//	// Move down
+			//	else if (target_node.y > player_map_pos.y) {
+			//		motion.velocity.y = temp_vel;
+			//	}
+			//	// Move up
+			//	else if (target_node.y < player_map_pos.y) {
+			//		motion.velocity.y = -1 * temp_vel;
+			//	}
+
+			//}
+
+			// The player has reached the target node...
+			else {
+				std::cout << "Reached node" << std::endl;
+				// We've only reached the node edge, so we need to continue travelling until we've reached the node center
+				// Get node center coord
+
+
+				// Get player coord
+
+				// Stop movement
+				motion.velocity.x = 0;
+				motion.velocity.y = 0;
+
+				// Remove the first node in path (we've reached it)
+				path.erase(path.begin());
+			}
+
+		}
+
+		else {
+			std::cout << "Path size is 0" << std::endl;
+			do_pathfinding_movement = false;
+		}
+
 		
-		//while (path.size() > 0) {
-		//	vec2 node = path.front();
-		//	
-
-
-		//}
-		// Look at the first destination in path
-
-		// Move towards it until we reach it
-
-		// Look at the next destination in path
-
-		// Move towards it until we reach it
-
-		// Once we reach the destination or if there's a movement key input:
-		do_pathfinding_movement = false;
 
 	}
 
@@ -93,7 +159,7 @@ void AISystem::generate_path(vec2 starting_map_pos, vec2 ending_map_pos) {
 	// Push the starting pos into the path
 	queue.push_back(starting_map_pos);
 
-	while (queue.size() > 0 && generate_path == true) {
+	while (queue.size() > 0 && do_generate_path == true) {
 		// Get the first node in the queue
 		// Important: node is a vec2 which means a node that looks like [0,1] means
 		// that the x (the column) is 0 and the y (the row) is 1.
@@ -106,7 +172,7 @@ void AISystem::generate_path(vec2 starting_map_pos, vec2 ending_map_pos) {
 		// Reached end
 		if (n == ending_map_pos) {
 			std::cout << "reached end" << std::endl;
-			generate_path = false;
+			do_generate_path = false;
 
 			path = trace(parent, starting_map_pos, ending_map_pos);
 
