@@ -44,6 +44,10 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	motion_other.velocity = motion_other.velocity + impulse / motion_other.mass;
 }
 
+bool tileIsWalkable(MapTile tile) {
+	return tile != MapTile::UNBREAKABLE_WALL && tile != MapTile::BREAKABLE_WALL;
+}
+
 
 // returns true if successfull, false if it didn't set
 bool setMotionPosition(Motion& motion, vec2 nextpos) {
@@ -67,13 +71,13 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 	for (const auto corner : corners) {
 		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
 		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-		if (tile_x != MapTile::FREE_SPACE || !WorldSystem::is_within_bounds(test_point_x)) {
+		if (!tileIsWalkable(tile_x) != MapTile::FREE_SPACE || !WorldSystem::is_within_bounds(test_point_x)) {
 			collision_x = true;
 		}
 
 		const vec2 test_point_y = WorldSystem::position_to_map_coords({motion.position.x + corner.x, nextpos.y + corner.y});
 		const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
-		if (tile_y != MapTile::FREE_SPACE  || !WorldSystem::is_within_bounds(test_point_y)) {
+		if (!tileIsWalkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
 			collision_y = true;
 		}
 	}
@@ -149,8 +153,6 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
-
-	printf("%f %f\n", WorldSystem::position_to_map_coords(player_motion.position).x, WorldSystem::position_to_map_coords(player_motion.position).y);
 
 	// Deal with spell speed while moving
 	if (spellbook[1]["active"] == "true") {

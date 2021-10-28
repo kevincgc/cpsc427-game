@@ -21,6 +21,9 @@
 #include <chrono>
 using Clock = std::chrono::high_resolution_clock;
 
+// yaml
+#include "yaml-cpp/yaml.h"
+
 // Game configuration
 const size_t MAX_TURTLES = 5;
 const size_t MAX_FISH = 5;
@@ -392,27 +395,49 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
-	game_state.map_tiles.clear();
+	game_state.level.map_tiles.clear();
 
-	// load map
-	fprintf(stderr, "Started loading map 1\n");
-	std::ifstream file(maps_path("map1.txt"));
-	if (file.is_open()) {
-		std::string line;
-		while (std::getline(file, line)) { // read one line from file
-			std::istringstream str_stream(line);
+	// TODO set this up in a menu
+	game_state.level_id = "testing1";
 
-			int tile;
-			std::vector<MapTile> row;
-			while (str_stream >> tile) { // read all tiles from this line
-				row.push_back((MapTile) tile);
+	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
+	const std::string level_name = level_config["name"].as<std::string>();
+	const std::string level_type = level_config["type"].as<std::string>();
+
+	fprintf(stderr, "Started loading level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
+	if (level_type == "premade") {
+		// load map
+		fprintf(stderr, "Loading premade map\n");
+		std::ifstream file(levels_path(game_state.level_id + "/map.txt"));
+		if (file.is_open()) {
+			std::string line;
+			while (std::getline(file, line)) { // read one line from file
+				std::istringstream str_stream(line);
+
+				int tile;
+				std::vector<MapTile> row;
+				while (str_stream >> tile) { // read all tiles from this line
+					row.push_back((MapTile) tile);
+
+					if (tile == MapTile::ENTRANCE) {
+						// current is entrance
+						game_state.level.start_position = vec2(row.size() - 1, game_state.level.map_tiles.size());
+					}
+				}
+
+				// push this map row to the final vector
+				game_state.level.map_tiles.push_back(row);
 			}
-
-			// push this map row to the final vector
-			game_state.map_tiles.push_back(row);
 		}
+		fprintf(stderr, "Loaded premade map\n");
+	} else  if (level_type == "procedural") {
+		fprintf(stderr, "Loading procedural map\n");
+
+		// TODO
+		fprintf(stderr, "Loaded procedural map\n");
 	}
-	fprintf(stderr, "Finished loading map\n");
+
+	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
 	// Reset the game speed
 	current_speed = 1.f;
@@ -422,7 +447,11 @@ void WorldSystem::restart_game() {
 	registry.clear();
 
 	// Create a new Minotaur
-	player_minotaur = createMinotaur(renderer, { map_scale * 0.5, map_scale * 1.5 });
+	player_minotaur = createMinotaur(
+		renderer,
+		WorldSystem::map_coords_to_position(game_state.level.start_position)
+		+ vec2(map_scale / 2, map_scale / 2) // this is to make it spawn on the center of the tile
+	);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 
 	// reset player flash timer
@@ -631,13 +660,13 @@ int WorldSystem::position_to_map_coords(float position) {
 
 bool WorldSystem::is_within_bounds(vec2 map_coords) {
 	return map_coords.y >= 0
-		&& map_coords.y < game_state.map_tiles.size()
+		&& map_coords.y < game_state.level.map_tiles.size()
 		&& map_coords.x >= 0
-		&& map_coords.x < game_state.map_tiles[(int)(map_coords.y)].size();
+		&& map_coords.x < game_state.level.map_tiles[(int)(map_coords.y)].size();
 }
 
 MapTile WorldSystem::get_map_tile(vec2 map_coords) {
-	if (WorldSystem::is_within_bounds(map_coords)) return game_state.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
+	if (WorldSystem::is_within_bounds(map_coords)) return game_state.level.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
 
 	return MapTile::FREE_SPACE; // out of bounds
 }
