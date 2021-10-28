@@ -54,33 +54,43 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 	vec2 bounding_box = get_bounding_box(motion);
 	vec2 corners[] = {
 		// upper right
-		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, -bounding_box.y / 2)),
+		vec2(bounding_box.x / 2, -bounding_box.y / 2),
 
 		// upper left
-		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, -bounding_box.y / 2)),
+		vec2(-bounding_box.x / 2, -bounding_box.y / 2),
 
 		// lower left
-		WorldSystem::position_to_map_coords(nextpos + vec2(-bounding_box.x / 2, bounding_box.y / 2)),
+		vec2(-bounding_box.x / 2, bounding_box.y / 2),
 
 		// lower right
-		WorldSystem::position_to_map_coords(nextpos + vec2(bounding_box.x / 2, bounding_box.y / 2)),
+		vec2(bounding_box.x / 2, bounding_box.y / 2),
 	};
 
-	bool collision = false;
+	bool collision_x = false;
+	bool collision_y = false;
 	for (const auto corner : corners) {
-		const MapTile tile = WorldSystem::get_map_tile(corner);
+		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
+		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
+		if (!tileIsWalkable(tile_x) != MapTile::FREE_SPACE || !WorldSystem::is_within_bounds(test_point_x)) {
+			collision_x = true;
+		}
 
-		if (!tileIsWalkable(tile) || corner.x < 0 || corner.y < 0) {
-			collision = true;
-			break;
+		const vec2 test_point_y = WorldSystem::position_to_map_coords({motion.position.x + corner.x, nextpos.y + corner.y});
+		const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
+		if (!tileIsWalkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
+			collision_y = true;
 		}
 	}
 
-	if (!collision) {
-		motion.position = nextpos;
+	if (!collision_x) {
+		motion.position.x = nextpos.x;
 	}
 
-	return !collision;
+	if (!collision_y) {
+		motion.position.y = nextpos.y;
+	}
+
+	return !collision_x && !collision_y;
 }
 
 // TODO: Optimization needed for overlap handling/clipping, weird behaviour occurring with certain collisions
