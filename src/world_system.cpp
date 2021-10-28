@@ -23,27 +23,31 @@
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
-const size_t MAX_TURTLES = 0; // Setting to 0 for pathfinding debugging
-const size_t MAX_FISH = 0; // Setting to 0 for pathfinding debugging
+const size_t MAX_TURTLES     = 1;
+const size_t MAX_FISH        = 1;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
-const size_t FISH_DELAY_MS = 5000 * 3;
-const size_t ITEM_DELAY_MS = 3000 * 3;
-vec2 WorldSystem::camera = {0, 0};
-extern float player_vel = 300.f;
+const size_t FISH_DELAY_MS   = 5000 * 3;
+const size_t ITEM_DELAY_MS   = 3000 * 3;
+vec2 WorldSystem::camera     = {0, 0};
+extern float player_vel      = 300.f;
+extern float enemy_vel		 = 100.f;
 
 // My Settings
 auto t = Clock::now();
-bool flag_right = false;
-bool flag_left = false;
-bool flag_fast = false;
+bool flag_right   = false;
+bool flag_left    = false;
+bool flag_fast    = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
-vec2 path_target_map_pos; // For pathfinding feature
-extern float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
-vec2 starting_map_pos;
-vec2 ending_map_pos;
-bool do_generate_path = false;
 
+// For pathfinding feature
+bool do_generate_path = false;
+vec2 path_target_map_pos;
+vec2 starting_map_pos;
+vec2 ending_map_pos; 
+
+// !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
+extern float softshell_scale = 75.f; 
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -118,13 +122,6 @@ extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
 
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
-
-// Below is the acceleration/flag-based movement implementation
-////Movement
-//bool move_right = false;
-//bool move_left = false;
-//bool move_up = false;
-//bool move_down = false;
 
 //Debugging
 vec2 debug_pos = { 0,0 };
@@ -283,7 +280,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Spawning new turtles
 	next_turtle_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.view<HardShell>().size() <= MAX_TURTLES && next_turtle_spawn < 0.f) {
+	if (registry.view<HardShell>().size() < MAX_TURTLES && next_turtle_spawn < 0.f) {
 		// Reset timer
 		next_turtle_spawn = (TURTLE_DELAY_MS / 2) + uniform_dist(rng) * (TURTLE_DELAY_MS / 2);
 		// init position of enemy
@@ -597,45 +594,39 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 		float click_threshold = 100;
 		if (abs(x_pos_release - x_pos_press) < click_threshold && abs(y_pos_release - y_pos_press) < click_threshold) {
 
-			entt::entity player = registry.view<Player>().begin()[0];
-			Motion& player_motion = registry.get<Motion>(player);
-
 			// Implementation: There's a difference between camera coords and world coords.
 			// glfwGetCursorPos gets the position of the cursor in the window. So clicking
 			// the center of the window returns, for example, 1200/2=600 and 800/2=400.
 			// But the player's coords are different. Even though the player is in the
 			// center of the window, it's **world** coords are actually (initially) (75,225).
-			// So we need to get the coords relative to the player
+			// So we need to get the coords relative to the player for pathfinding.
+
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& player_motion = registry.get<Motion>(player);
 
 			// Get cursor screen coords
 			vec2 cursor_screen_pos = { float(x_pos_release - window_width_px/2), float(y_pos_release - window_height_px/2) };
 
 			// Get cursor world coords
 			vec2 target_world_pos = { player_motion.position.x + cursor_screen_pos.x, player_motion.position.y + cursor_screen_pos.y };
-			// std::cout << "cursor_world_pos " << target_world_pos.x << ", " << target_world_pos.y << std::endl;
 
 			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
 			vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
-			// Only continue if clicked a traversable node (i.e. not a wall)
+			// If clicked a traversable node (i.e. not a wall)...
 			if (get_map_tile(target_map_pos) == FREE_SPACE) {
-				// Generate travel path (list of nodes)
+
+				// Store starting and ending positions for ai position to look at
 				vec2 player_map_pos = position_to_map_coords(player_motion.position);
-				starting_map_pos = player_map_pos;
-				ending_map_pos = target_map_pos;
-				do_generate_path = true;
-				//AISystem::generate_path(player_map_pos, target_map_pos);
+				starting_map_pos    = player_map_pos;
+				ending_map_pos      = target_map_pos;
 
-				// Debugging: Print coords
-				std::cout << "player map pos: " << player_map_pos.x << ", " << player_map_pos.y << std::endl; // starting pos: 0,1 means column 0, row 1,
-				std::cout << "released cursor map pos: " << target_map_pos.x << ", " << target_map_pos.y << std::endl; // 3,2
-				//std::cout << "released cursor screen pos: " << path_target_screen_pos.x << ", " << path_target_screen_pos.y << std::endl; // ~588,405
-				//std::cout << "player screen pos: "			<< player_motion.position.x << ", " << player_motion.position.y << std::endl; // starting pos: 75,225
+				// Trigger a flag and let ai_system.cpp handle the rest
+				do_generate_path    = true;
+			}
 
-			}
-			else {
-				std::cout << "Clicked on a wall!" << std::endl;
-			}
+			// Did not clcik a traversable node...
+			else { std::cout << "Clicked on a wall!" << std::endl; }
 
 		}
 
