@@ -7,5 +7,6 @@ type: premade               # REQUIRED | either 'premade'|'procedural'
 
 # REQUIRED if `type` is 'procedural', has no effect on 'premade'
 procedural_options:
-    size: [10, 10]          # REQUIRED | size of the map [x, y]
+    size: [11, 11]          # REQUIRED | size of the map [x, y]. Must be odd and > 5
+    method: binarytree      # REQUIRED | method for procedural generation. 'binarytree'|'recursive'
 ```

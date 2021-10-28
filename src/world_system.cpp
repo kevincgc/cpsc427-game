@@ -392,13 +392,134 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	return true;
 }
 
+// based on the explanation from https://en.wikipedia.org/wiki/Maze_generation_algorithm (yes, really)
+void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y) {
+	int size_x = end_x - begin_x;
+	int size_y = end_y - begin_y;
+
+	if (size_x < 3 && size_y < 3) return;
+
+	int split_x = begin_x + 1;
+	int split_y = begin_y + 1;
+
+	if (size_y > size_x) {
+		// split horizontally
+    	std::uniform_int_distribution<int> rand_spot(begin_x, end_x - 1);
+		const int passage = rand_spot(rng);
+		for (int i = begin_x; i < end_x; i++) {
+			if (passage == i) {
+				maze[split_y][i] = MapTile::FREE_SPACE;
+			} else {
+				maze[split_y][i] = MapTile::BREAKABLE_WALL;
+			}
+		}
+
+		recursiveGenerateMaze(maze, begin_x, begin_y, end_x, split_y);
+		recursiveGenerateMaze(maze, begin_x, split_y + 1, end_x, end_y);
+	} else {
+		// split vertically
+		std::uniform_int_distribution<int> rand_spot(begin_y, end_y - 1);
+		const int passage = rand_spot(rng);
+		for (int i = begin_y; i < end_y; i++) {
+			if (passage == i) {
+				maze[i][split_x] = MapTile::FREE_SPACE;
+			} else {
+				maze[i][split_x] = MapTile::BREAKABLE_WALL;
+			}
+		}
+
+		recursiveGenerateMaze(maze, begin_x, begin_y, split_x, end_y);
+		recursiveGenerateMaze(maze, split_x + 1, begin_y, end_x, end_y);
+	}
+}
+
+std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile) {
+	fprintf(stderr, "Generating %s procedural maze %d x %d\n", method.c_str(), width, height);
+
+	// create vector
+	std::vector<std::vector<MapTile>> maze;
+	maze.resize(height, std::vector<MapTile>(width));
+	if (method != "recursive") { // recursive is additive
+		for (int i = 0; i < height; i++) {
+			std::fill(maze[i].begin(), maze[i].end(), MapTile::BREAKABLE_WALL);
+		}
+	}
+
+	// walls
+	std::fill(maze[0].begin(), maze[0].end(), MapTile::UNBREAKABLE_WALL);
+	std::fill(maze[height-1].begin(), maze[height-1].end(), MapTile::UNBREAKABLE_WALL);
+	for (int i = 0; i < height; i++) {
+		maze[i][0] = maze[i][width-1] = MapTile::UNBREAKABLE_WALL;
+	}
+
+	if (method == "recursive") {
+		recursiveGenerateMaze(maze, 1, 1, width - 1, height - 1);
+	} else if (method == "binarytree") {
+		// carve passages
+		// based on https://hurna.io/academy/algorithms/maze_generator/binary.html, modified for efficiency and format
+		for (int i = 1; i < height; i += 2) {
+			for (int j = 1; j < width; j += 2) {
+				bool up = i > 1 && maze[i - 2][j] == MapTile::FREE_SPACE;
+				bool left = j > 1 && maze[i][j - 2] == MapTile::FREE_SPACE;
+
+				maze[i][j] = MapTile::FREE_SPACE;
+				if (up && left) {
+					// there can only be one
+					if (uniform_dist(rng) < 0.5) {
+						up = false;
+					} else {
+						left = false;
+					}
+				}
+
+				if (up) {
+					maze[i - 1][j] = MapTile::FREE_SPACE;
+				} else if (left) {
+					maze[i][j - 1] = MapTile::FREE_SPACE;
+				}
+			}
+		}
+	}
+
+	// random start position
+	std::vector<int> possible_start_positions;
+	for (int i = 0; i < height; i++) {
+		if (tile_is_walkable(maze[i][1])) possible_start_positions.push_back(i);
+	}
+
+	int ind = std::uniform_int_distribution<int>(0, possible_start_positions.size() - 1)(rng);
+	const int start_position = possible_start_positions[ind];
+	maze[start_position][0] = MapTile::ENTRANCE;
+	start_tile = vec2(0.0, (float) start_position);
+
+	// random end position
+	std::vector<int> possible_end_positions;
+	for (int i = 0; i < height; i++) {
+		if (tile_is_walkable(maze[i][width - 2])) possible_end_positions.push_back(i);
+	}
+
+	// start at 3, because 0, 1 and 2 are too easy for some algorithms
+	ind = std::uniform_int_distribution<int>(3, possible_end_positions.size() - 1)(rng);
+	const int end_position = possible_end_positions[ind];
+	maze[end_position][width - 1] = MapTile::EXIT;
+
+	for (const auto vec : maze) {
+		for (const auto v2 : vec) {
+			printf("%d ", v2);
+		}
+		printf("\n");
+	}
+
+	return maze;
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
 	// TODO set this up in a menu
-	game_state.level_id = "testing1";
+	game_state.level_id = "recursive_procedural1";
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
@@ -433,7 +554,14 @@ void WorldSystem::restart_game() {
 	} else  if (level_type == "procedural") {
 		fprintf(stderr, "Loading procedural map\n");
 
-		// TODO
+		const auto procedural_options = level_config["procedural_options"];
+		const std::string method = procedural_options["method"].as<std::string>();
+		const std::vector<int> size = procedural_options["size"].as<std::vector<int>>();
+
+		assert(size[0] >= 5 && size[1] >= 5); // needs to be larger than 5
+		assert(size[0] % 2 != 0 && size[1] % 2 != 0); // needs to be odd number
+		game_state.level.map_tiles = generateProceduralMaze(method, size[0], size[1], game_state.level.start_position);
+
 		fprintf(stderr, "Loaded procedural map\n");
 	}
 
@@ -665,10 +793,12 @@ bool WorldSystem::is_within_bounds(vec2 map_coords) {
 		&& map_coords.x < game_state.level.map_tiles[(int)(map_coords.y)].size();
 }
 
+bool WorldSystem::tile_is_walkable(MapTile tile) {
+	return tile != MapTile::UNBREAKABLE_WALL && tile != MapTile::BREAKABLE_WALL;
+}
+
 MapTile WorldSystem::get_map_tile(vec2 map_coords) {
 	if (WorldSystem::is_within_bounds(map_coords)) return game_state.level.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
 
 	return MapTile::FREE_SPACE; // out of bounds
 }
-
-
