@@ -57,6 +57,7 @@ public:
 	static int position_to_map_coords(float map_coords);
 
 	static MapTile get_map_tile(vec2 map_coords);
+	static bool WorldSystem::is_within_bounds(vec2 map_coords);
 
 private:
 
