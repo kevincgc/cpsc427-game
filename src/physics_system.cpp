@@ -150,7 +150,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
 
-	printf("%f %f\n", WorldSystem::position_to_map_coords(player_motion.position).x, WorldSystem::position_to_map_coords(player_motion.position).y);
+	//printf("%f %f\n", WorldSystem::position_to_map_coords(player_motion.position).x, WorldSystem::position_to_map_coords(player_motion.position).y);
 
 	// Deal with spell speed while moving
 	if (spellbook[1]["active"] == "true") {

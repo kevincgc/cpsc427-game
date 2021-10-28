@@ -29,7 +29,7 @@ const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS = 5000 * 3;
 const size_t ITEM_DELAY_MS = 3000 * 3;
 vec2 WorldSystem::camera = {0, 0};
-float player_vel = 300.f;
+extern float player_vel = 300.f;
 
 // My Settings
 auto t = Clock::now();
@@ -524,7 +524,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	} // not GLFW_REPEAT
 
 	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& motion		= registry.get<Motion>(player);
+	Motion& motion = registry.get<Motion>(player);
 
 	if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -541,32 +541,37 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		}
 
 		if (action != GLFW_REPEAT) {
-			motion.velocity = {0, 0};
+			motion.velocity = { 0, 0 };
 
 			if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.y = -1 * player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.x = -1 * player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.x = player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.y = player_vel;
 			}
 
 		}
-	// Resetting game
-	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
-		int w, h;
-		glfwGetWindowSize(window, &w, &h);
-		restart_game();
-	}
+		// Resetting game
+		if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
+			int w, h;
+			glfwGetWindowSize(window, &w, &h);
+			restart_game();
+		}
 
+	}
 }
 
 // Pathfinding: Variables for pathfinding feature used only in on_mouse_button

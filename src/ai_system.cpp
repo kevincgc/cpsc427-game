@@ -198,40 +198,22 @@ void AISystem::step(float elapsed_ms)
 			vec2 target_node_coord = { map_scale * target_node.x + map_scale/2, map_scale * target_node.y + map_scale / 2 };
 
 			// If the player has not eached the target node...
-			/*if (target_node_coord.x != (int)motion.position.x || target_node_coord.y != (int)motion.position.y) {*/
 
 			int window = 5;
 			if (!(target_node_coord.x < motion.position.x + window && target_node_coord.x > motion.position.x - window &&
 				target_node_coord.y < motion.position.y + window && target_node_coord.y > motion.position.y - window)) {
 
-			//int window = 5;
-			//if ((abs(target_node_coord.x - (int)motion.position.x) > window ||
-			//	abs(target_node_coord.y - (int)motion.position.y) > window)) {
-			//	if (ai_debug) {
-			//		std::cout << "Determining direction to move" << std::endl;
-			//		std::cout << "Target coords: [" << target_node_coord.x << ", " << target_node_coord.y << "]" << std::endl;
-			//		std::cout << "Player coords:  [" << (int)motion.position.x << ", " << (int)motion.position.y << "]" << std::endl;
-			//	}
+				if (ai_debug) {
+					std::cout << "Determining direction to move" << std::endl;
+					std::cout << "Target coords: [" << target_node_coord.x << ", " << target_node_coord.y << "]" << std::endl;
+					std::cout << "Player coords:  [" << (int)motion.position.x << ", " << (int)motion.position.y << "]" << std::endl;
+				}
 
 				//Move
-				std::cout << "Target coords: [" << target_node_coord.x << ", " << target_node_coord.y << "]" << std::endl;
-				std::cout << "Player coords:  [" << motion.position.x << ", " << motion.position.y << "]" << std::endl;
-				if (target_node_coord.x > motion.position.x) { motion.velocity.x = player_move_speed; }
-				else if (target_node_coord.x < motion.position.x) { motion.velocity.x = -1* player_move_speed; }
-				if (target_node_coord.y > motion.position.y) { motion.velocity.y = player_move_speed; }
-				else if (target_node_coord.y < motion.position.y) { motion.velocity.y = -1* player_move_speed; }
-				//if (target_node_coord.x - (int)motion.position.x > 5) { 
-				//	motion.velocity.x = player_move_speed; 
-				//}
-				//else if (target_node_coord.x - (int)motion.position.x < 5) { 
-				//	motion.velocity.x = -1* player_move_speed; 
-				//}
-				//if (target_node_coord.y - (int)motion.position.y > 5) { 
-				//	motion.velocity.y = player_move_speed; 
-				//}
-				//else if (target_node_coord.y - (int)motion.position.y < 5) { 
-				//	motion.velocity.y = -1* player_move_speed; 
-				//}
+				if		(target_node_coord.x > motion.position.x) { motion.velocity.x = player_vel;		}
+				else if (target_node_coord.x < motion.position.x) { motion.velocity.x = -1* player_vel;  }
+				if		(target_node_coord.y > motion.position.y) { motion.velocity.y = player_vel;		}
+				else if (target_node_coord.y < motion.position.y) { motion.velocity.y = -1* player_vel;  }
 
 			}
 
