@@ -39,7 +39,7 @@ bool flag_fast = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
 vec2 path_target_map_pos; // For pathfinding feature
-float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
+extern float softshell_scale = 75.f; // !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
 vec2 starting_map_pos;
 vec2 ending_map_pos;
 bool do_generate_path = false;
@@ -87,30 +87,32 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 
 // helper function to check collision with wall
 
-bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
+extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
 	vec2 corners[] = {
-			// upper right
-			WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, - scale_y / 2)),
+		// upper right
+		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, - scale_y / 2)),
 
-			// upper left
-			WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
+		// upper left
+		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
 
-			// lower left
-			WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
+		// lower left
+		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
 
-			// lower right
-			WorldSystem::position_to_map_coords(position + vec2(scale_x/ 2, scale_y/ 2)),
-		};
+		// lower right
+		WorldSystem::position_to_map_coords(position + vec2(scale_x/ 2, scale_y/ 2)),
+	};
 
-		bool collision = false;
-		for (const auto corner : corners) {
-			const MapTile tile = WorldSystem::get_map_tile(corner);
+	bool collision = false;
 
-			if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
-				collision = true;
-				break;
-			}
+	for (const auto corner : corners) {
+		const MapTile tile = WorldSystem::get_map_tile(corner);
+
+		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+			collision = true;
+			break;
 		}
+	}
+
 	return collision;
 }
 
@@ -310,14 +312,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			motion.velocity = vec2(-25.f, 0.f);
 		}
 	}
-	else {
-		for (entt::entity turtle : registry.view<HardShell>()) {
-			Motion& motion = registry.get<Motion>(turtle);
-			motion.velocity = vec2(-100.f, 0.f);
-			// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
-			// 	  (uniform_dist(rng) - 0.5f) * 200);
-		}
-	}
+	//else {
+	//	for (entt::entity turtle : registry.view<HardShell>()) {
+	//		Motion& motion = registry.get<Motion>(turtle);
+	//		motion.velocity = vec2(-100.f, 0.f);
+	//		// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
+	//		// 	  (uniform_dist(rng) - 0.5f) * 200);
+	//	}
+	//}
 
 	// Spawning new fish
 	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
@@ -479,6 +481,9 @@ void WorldSystem::handle_collisions() {
 					m.velocity.x = 0;
 					m.velocity.y = 0;
 
+					// Stop pathfinding movement
+					do_pathfinding_movement = false;
+
 					// Below is the acceleration/flag-based movement implementation
 					//move_right = false;
 					//move_left = false;
@@ -516,6 +521,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	if (!registry.view<DeathTimer>().contains(player)) {
 		
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			do_pathfinding_movement = false;
 			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { motion.velocity[1] = -1 * player_vel; }
 			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { motion.velocity[0] = -1 * player_vel; }
 			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] =		 player_vel; }
@@ -523,6 +529,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		}
 
 		if (action == GLFW_RELEASE) {
+			do_pathfinding_movement = false;
 			if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { motion.velocity[0] = 0; }
 			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { motion.velocity[0] = 0; }
 			if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { motion.velocity[1] = 0; }
