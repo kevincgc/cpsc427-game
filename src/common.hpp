@@ -30,7 +30,7 @@ inline std::string shader_path(const std::string& name) {return std::string(PROJ
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
-inline std::string maps_path(const std::string& name) {return data_path() + "/maps/" + std::string(name);};
+inline std::string levels_path(const std::string& name) {return data_path() + "/levels/" + std::string(name);};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f

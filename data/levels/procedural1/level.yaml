@@ -1,0 +1,4 @@
+name: Procedural Map 1
+type: procedural
+procedural_options:
+    size: [10, 10]

@@ -148,7 +148,7 @@ elseif (IS_OS_WINDOWS)
     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #    "${ENTT}"
     #    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/entt.hpp")
-    
+
 
     target_compile_options(${PROJECT_NAME} PUBLIC
         # increase warning level
@@ -189,3 +189,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES}
 if(IS_OS_LINUX)
   target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
 endif()
+
+# YAML
+add_subdirectory(ext/yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
