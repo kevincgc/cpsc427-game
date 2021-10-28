@@ -25,6 +25,11 @@ void Transform::translate(vec2 offset)
 	mat = mat * T;
 }
 
+void Transform::reflect() {
+	mat3 R = { { -1.f, 0.f, 0.f },{ 0.f, 1.f, 0.f },{ 0.f, 0.f, 1.f } };
+	mat = mat * R;
+}
+
 bool gl_has_errors()
 {
 	GLenum error = glGetError();

@@ -44,6 +44,7 @@ struct Transform {
 	void scale(vec2 scale);
 	void rotate(float radians);
 	void translate(vec2 offset);
+	void reflect();
 };
 
 bool gl_has_errors();

@@ -49,8 +49,7 @@ entt::entity createTurtle(RenderSystem* renderer, vec2 position)
 	motion.angle = 0.f;
 	motion.velocity = { -100.f, 0.f };
 	motion.position = position;
-	// motion.scale = vec2({ -TURTLE_BB_WIDTH, TURTLE_BB_HEIGHT });
-	motion.scale = mesh.original_size * 75.f;
+	motion.scale = mesh.original_size * 60.f;
 	const entt::entity e = registry.create();
 	registry.emplace<HardShell>(e);
 	registry.emplace<Motion>(e, motion);
@@ -72,7 +71,7 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 75.f;
+	motion.scale = mesh.original_size * 60.f;
 	motion.scale.x *= 1.5;
 
 	const entt::entity e = registry.create();
@@ -84,24 +83,7 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 			EFFECT_ASSET_ID::MINOTAUR, // SALMON
 			GEOMETRY_BUFFER_ID::MINOTAUR); //SALMON
 	return e;
-	// Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
-	// Motion motion = Motion();
-	// motion.position = pos;
-	// motion.angle = 0.f;
-	// motion.velocity = { 0.f, 0.f };
-	// motion.scale = mesh.original_size * 150.f;
-	// motion.scale.x *= -1;
 
-	// const entt::entity e = registry.create();
-	// registry.emplace<Player>(e);
-	// registry.emplace<Motion>(e, motion);
-	// registry.emplace<Mesh*>(e, &mesh);
-	// registry.emplace<RenderRequest>(e,
-	// 	TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
-	// 	EFFECT_ASSET_ID::MINOTAUR,
-	// 	GEOMETRY_BUFFER_ID::MINOTAUR);
-
-	// return e;
 }
 
 entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
@@ -111,7 +93,7 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 150.f;
+	motion.scale = mesh.original_size * 75.f;
 	motion.scale.x *= -1;
 
 	const entt::entity e = registry.create();
