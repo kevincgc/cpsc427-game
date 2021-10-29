@@ -431,7 +431,9 @@ void WorldSystem::restart_game() {
 	game_state.level.map_tiles.clear();
 
 	// TODO set this up in a menu
-	game_state.level_id = "testing1";
+	// current options: "recursive_procedural1", "large1", and "test1"
+	// recursive_procedural is random map generation, default value for now
+	game_state.level_id = "recursive_procedural1";
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
