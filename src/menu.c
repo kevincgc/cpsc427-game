@@ -27,19 +27,20 @@
 struct nk_glfw glfw = { 0 };
 struct nk_context* ctx;
 struct nk_colorf bg;
-void init(static GLFWwindow* win, int window_width_px, int window_height_px) {
+void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px) {
     ctx = nk_glfw3_init(&glfw, win, NK_GLFW3_DEFAULT);
-    {struct nk_font_atlas* atlas;
-    nk_glfw3_font_stash_begin(&glfw, &atlas);
-    struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../data/fonts/kenvector_future_thin.ttf", 26, 0);
-    nk_glfw3_font_stash_end(&glfw);
-    nk_style_set_font(ctx, &future->handle);
-    //nk_style_load_all_cursors(ctx, atlas->cursors);
+    {
+        struct nk_font_atlas* atlas;
+        nk_glfw3_font_stash_begin(&glfw, &atlas);
+        struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../data/fonts/kenvector_future_thin.ttf", 26, 0);
+        nk_glfw3_font_stash_end(&glfw);
+        nk_style_set_font(ctx, &future->handle);
+        //nk_style_load_all_cursors(ctx, atlas->cursors);
     }
     bg.r = 0.45f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 1.0f;
 }
 
-void draw(static GLFWwindow* win)
+void drawMainMenu(static GLFWwindow* win, int *is_start_game)
 {
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
@@ -51,15 +52,14 @@ void draw(static GLFWwindow* win)
         static int op = EASY;
         static int property = 20;
         nk_layout_row_static(ctx, 90, 180, 4);
-        if (nk_button_label(ctx, "button"))
-            fprintf(stdout, "button pressed\n");
-
+        if (nk_button_label(ctx, "START GAME")) {
+            fprintf(stdout, "Starting Game\n");
+            *is_start_game = 1;
+        }
+            
         nk_layout_row_dynamic(ctx, 30, 2);
         if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
         if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-
-        nk_layout_row_dynamic(ctx, 25, 1);
-        nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
 
         nk_layout_row_dynamic(ctx, 20, 1);
         nk_label(ctx, "background:", NK_TEXT_LEFT);
@@ -76,7 +76,6 @@ void draw(static GLFWwindow* win)
         }
     }
     nk_end(ctx);
-    /* Draw */
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(bg.r, bg.g, bg.b, bg.a);
     /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state

@@ -22,6 +22,7 @@ extern entt::registry registry;
 enum class ProgramState {
 	INIT,
 	MENU,
+	START_GAME,
 	RESET_GAME,
 	RUNNING,
 	PAUSED,
@@ -30,8 +31,8 @@ enum class ProgramState {
 };
 
 extern "C" {
-	void init(static GLFWwindow* win, int window_width_px, int window_height_px);
-	void draw(GLFWwindow* window);
+	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px);
+	void drawMainMenu(GLFWwindow* window, int *is_start_game);
 }
 
 // Entry point
@@ -44,6 +45,7 @@ int main()
 	AISystem ai;
 	ProgramState state = ProgramState::INIT;
 	GLFWwindow* window;
+	auto t = Clock::now();
 
 	while (1) {
 		if (state == ProgramState::INIT) {
@@ -53,19 +55,25 @@ int main()
 				getchar();
 				return EXIT_FAILURE;
 			}
-			init(window, window_width_px, window_height_px);
+			initMainMenu(window, window_width_px, window_height_px);
 			state = ProgramState::MENU;
 		}
 		else if (state == ProgramState::MENU) {
-			draw(window);
-		}
-		else {
-			// initialize the main systems
+			int is_start_game = 0;
+			drawMainMenu(window, &is_start_game);
+			if (is_start_game) {
+				is_start_game = 0;
+				state = ProgramState::START_GAME;
+			}
+		} 
+		else if (state == ProgramState::START_GAME) {
 			renderer.init(window_width_px, window_height_px, window);
 			world.init(&renderer);
-
-			// variable timestep loop
-			auto t = Clock::now();
+			t = Clock::now();
+			state = ProgramState::RUNNING;
+		}
+		else {
+			
 			while (!world.is_over()) {
 				// Processes system messages, if this wasn't present the window would become
 				// unresponsive
