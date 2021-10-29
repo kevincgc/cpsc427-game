@@ -488,7 +488,7 @@ void WorldSystem::handle_collisions() {
 
 // Should the game be over ?
 bool WorldSystem::is_over() const {
-	return bool(glfwWindowShouldClose(window));
+	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
 
 // On key callback
@@ -516,7 +516,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	//	}
 	//}
 
-	if (!registry.view<DeathTimer>().contains(player)) {
+	if (!registry.view<DeathTimer>().contains(player) && state == ProgramState::RUNNING) {
 		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 			if (key == GLFW_KEY_W || key == GLFW_KEY_UP)
 			{
@@ -551,7 +551,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 		}
 	}
-
+	if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && state == ProgramState::RUNNING) {
+		state = ProgramState::PAUSED;
+	}
+	else if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && state == ProgramState::PAUSED) {
+		state = ProgramState::RUNNING;
+	}
 
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {

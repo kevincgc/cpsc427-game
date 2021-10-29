@@ -36,7 +36,14 @@ int main()
 	auto t = Clock::now();
 
 	while (!world.is_over()) {
-		if (state == ProgramState::INIT) {
+		glfwPollEvents();
+		auto now = Clock::now();
+		float elapsed_ms =
+			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
+		t = now;
+
+		switch (state) {
+		case ProgramState::INIT:
 			window = world.create_window(window_width_px, window_height_px);
 			if (!window) {
 				printf("Press any key to exit");
@@ -45,44 +52,48 @@ int main()
 			}
 			initMainMenu(window, window_width_px, window_height_px);
 			state = ProgramState::MENU;
-		}
-		else if (state == ProgramState::MENU) {
-			int is_start_game = 0;
-			drawMainMenu(window, &is_start_game);
-			if (is_start_game) {
-				is_start_game = 0;
+			break;
+		case ProgramState::MENU:
+		{
+			int out = 0;
+			drawMainMenu(window, &out);
+			if (out == 1) {
+				out = 0;
 				state = ProgramState::START_GAME;
 			}
-		} 
-		else if (state == ProgramState::START_GAME) {
+			else if (out == -1) {
+				state = ProgramState::EXIT;
+			}
+			break;
+		}
+		case ProgramState::START_GAME:
 			renderer.init(window_width_px, window_height_px, window);
 			world.init(&renderer);
 			t = Clock::now();
 			state = ProgramState::RUNNING;
+			break;
+		case ProgramState::RESET_GAME:
+			world.restart_game();
+			state = ProgramState::RUNNING;
+			break;
+		case ProgramState::RUNNING:
+		{
+			printf("Running");
+			world.step(elapsed_ms);
+			ai.step(elapsed_ms);
+			physics.step(elapsed_ms, window_width_px, window_height_px);
+			world.handle_collisions();
+			renderer.draw();
+			break;
 		}
-		else {
-			
-			while (!world.is_over()) {
-				// Processes system messages, if this wasn't present the window would become
-				// unresponsive
-				glfwPollEvents();
-
-				// Calculating elapsed times in milliseconds from the previous iteration
-				auto now = Clock::now();
-				float elapsed_ms =
-					(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
-				t = now;
-
-				world.step(elapsed_ms);
-				ai.step(elapsed_ms);
-				physics.step(elapsed_ms, window_width_px, window_height_px);
-				world.handle_collisions();
-
-				renderer.draw();
-
-				// TODO A2: you can implement the debug freeze here but other places are possible too.
-			}
-
+		case ProgramState::PAUSED:
+		{
+			printf("Paused");
+			renderer.draw();
+			break;
+		}
+		default:
+			return 0;
 		}
 	}
 

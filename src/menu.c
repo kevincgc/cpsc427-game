@@ -74,7 +74,7 @@ void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height
 }
 
 
-void drawMainMenu(static GLFWwindow* win, int *is_start_game)
+void drawMainMenu(static GLFWwindow* win, int *out)
 {
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
@@ -88,7 +88,7 @@ void drawMainMenu(static GLFWwindow* win, int *is_start_game)
         nk_layout_row_dynamic(ctx, 50, 1);
         if (nk_button_label(ctx, "START GAME")) {
             fprintf(stdout, "Starting Game\n");
-            *is_start_game = 1;
+            *out = 1;
         }
             
         nk_layout_row_dynamic(ctx, 30, 2);
@@ -97,7 +97,7 @@ void drawMainMenu(static GLFWwindow* win, int *is_start_game)
         nk_layout_row_dynamic(ctx, 50, 1);
         if (nk_button_label(ctx, "EXIT GAME")) {
             fprintf(stdout, "Exiting Game\n");
-            *is_start_game = 1;
+            *out = -1;
         }
     }
     setBackground(x);
@@ -115,3 +115,4 @@ void drawMainMenu(static GLFWwindow* win, int *is_start_game)
     //nk_glfw3_shutdown(&glfw);
     //glfwTerminate();
 }
+

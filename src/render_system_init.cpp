@@ -268,7 +268,6 @@ RenderSystem::~RenderSystem()
 	}
 	// delete allocated resources
 	glDeleteFramebuffers(1, &frame_buffer);
-	gl_has_errors();
 
 	// remove all entities created by the render system
 	while (registry.view<RenderRequest>().size() > 0)
