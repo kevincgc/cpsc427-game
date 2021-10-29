@@ -67,7 +67,6 @@ extern const int window_height_px;
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
 extern float player_vel;
 extern float enemy_vel;
-extern float softshell_scale;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
 extern bool  do_generate_path;

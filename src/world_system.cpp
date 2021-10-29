@@ -50,9 +50,6 @@ vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos; 
 
-// !!! hardcoded to 75.f, to be optimized, need to be the same with sprite scale
-extern float softshell_scale = 75.f; 
-
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
 std::vector <vec2> gesture_coords_right;
@@ -261,16 +258,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Removing out of screen entities
 	auto motions= registry.view<Motion>();
 
-	// Remove entities that leave the screen on the left side
-	// Iterate backwards to be able to remove without unterfering with the next object to visit
-	// (the containers exchange the last element with the current)
-	//for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-	//	Motion& motion = motions_registry.components[i];
-	//	if (motion.position.x + abs(motion.scale.x) < 0.f) {
-	//		registry.remove_all_components_of(motions_registry.entities[i]);
-	//	}
-	//}
-
 	for (auto entity: motions) {
 		//if (entity != player_minotaur) {
 		Motion& motion = motions.get<Motion>(entity);
@@ -278,73 +265,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			registry.destroy(entity);
 		}
 	 //}
-	}
-
-	// Spawning new turtles
-	next_turtle_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.view<HardShell>().size() < MAX_TURTLES && next_turtle_spawn < 0.f) {
-		// Reset timer
-		next_turtle_spawn = (TURTLE_DELAY_MS / 2) + uniform_dist(rng) * (TURTLE_DELAY_MS / 2);
-		// init position of enemy
-		vec2 position;
-		bool collision = true;
-		// if the enemy is created on the wall, change it's position till it's not
-		while (collision) {
-			position = vec2(screen_width -200.f,
-				50.f + uniform_dist(rng) * (screen_height - 100.f));
-			collision = collision_with_wall(position, softshell_scale, softshell_scale);
-		}
-		// Create turtle
-		entt::entity entity = createTurtle(renderer, position);
-		// Setting random initial position and constant velocity
-		Motion& motion = registry.get<Motion>(entity);
-		motion.mass = 200;
-		motion.coeff_rest = 0.9f;
-
-		motion.velocity = vec2(-100.f, 0.f);
-	}
-
-	// Slowdown Spell: Adjust enemy type 1 (previously turtle) speed
-	//if (gesture_statuses["gesture_LMB_down"] && gesture_statuses["gesture_RMB_down"]) {
-	//	for (entt::entity turtle : registry.view<HardShell>()) {
-	//		Motion& motion = registry.get<Motion>(turtle);
-	//		motion.velocity.x = motion.velocity.x / 2.f;
-	//		motion.velocity.y = motion.velocity.y / 2.f;
-	//	}
-	//}
-	//else {
-	//	for (entt::entity turtle : registry.view<HardShell>()) {
-	//		Motion& motion = registry.get<Motion>(turtle);
-	//		//bool positive_x = motion.velocity.x >= 0;
-	//		//bool positive_y = motion.velocity.y >= 0;
-	//		//if (positive_x) { motion.velocity.x = enemy_vel; }
-	//		//else { motion.velocity.x = -1 * enemy_vel; }
-	//		//if (positive_y) { motion.velocity.y = enemy_vel; }
-	//		//else { motion.velocity.y = -1 * enemy_vel; }
-
-	//		//motion.velocity = vec2(-100.f, 0.f);
-	//		// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
-	//		// 	  (uniform_dist(rng) - 0.5f) * 200);
-	//	}
-	//}
-
-	// Spawning new fish
-	next_fish_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (registry.view<SoftShell>().size() < MAX_FISH && next_fish_spawn < 0.f) {
-		// !!!  TODO A1: Create new fish with createFish({0,0}), as for the Turtles above
-		next_fish_spawn = (FISH_DELAY_MS / 2) + uniform_dist(rng) * (next_fish_spawn / 2);
-		vec2 position;
-		bool collision = true;
-		// if the enemy is created on the wall, change it's position till it's not
-		while (collision) {
-			position = vec2(screen_width -200.f,
-				50.f + uniform_dist(rng) * (screen_height - 100.f));
-			collision = collision_with_wall(position, softshell_scale, softshell_scale);
-		}
-		entt::entity fish = createFish(renderer, position);
-		// Setting random initial position and constant velocity
-		Motion& motion = registry.get<Motion>(fish);
-		motion.velocity = vec2(-200.f, 0.f);
 	}
 
     float min_counter_ms = 3000.f;
