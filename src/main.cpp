@@ -62,7 +62,10 @@ int main()
 			int selection = 0;
 			drawMainMenu(window, &selection);
 			if (selection == 1 && !has_completed_init) {
-				state = ProgramState::START_GAME;
+				renderer.init(window_width_px, window_height_px, window);
+				world.init(&renderer);
+				has_completed_init = true;
+				state = ProgramState::RUNNING;
 			}
 			else if (selection == 1 && has_completed_init) {
 				state = ProgramState::RESET_GAME;
@@ -84,12 +87,6 @@ int main()
 			}
 			break;
 		}
-		case ProgramState::START_GAME:
-			renderer.init(window_width_px, window_height_px, window);
-			world.init(&renderer);
-			t = Clock::now();
-			state = ProgramState::RUNNING;
-			break;
 		case ProgramState::RESET_GAME:
 			renderer.reinit(window_width_px, window_height_px, window);
 			world.restart_game();
@@ -107,7 +104,6 @@ int main()
 		case ProgramState::PAUSED:
 		{
 			int selection = 0;
-			//renderer.draw();
 			drawPauseMenu(window, &selection);
 			switch (selection) {
 			case 1:
@@ -129,8 +125,6 @@ int main()
 		case ProgramState::GAME_OVER:
 		{
 			int selection = 0;
-			printf("Game_over");
-			//renderer.draw();
 			drawGameOverMenu(window, &selection);
 			switch (selection) {
 			case 1:

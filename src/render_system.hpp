@@ -59,7 +59,9 @@ public:
 	// Initialize the window
 	bool init(int width, int height, GLFWwindow* window);
 
-	bool reinit(int width, int height, GLFWwindow* window_arg);
+	bool reinit(int width, int height, GLFWwindow* window_arg, bool is_init = 0);
+
+	void reinitSetBuffer(int width, int height, GLFWwindow* window_arg);
 
 	template <class T>
 	void bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices);
