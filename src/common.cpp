@@ -184,3 +184,5 @@ void Mouse_spell::reset_spells(std::map<int, std::map<std::string, std::string>>
 	// Set every spell's active status to "false"
 	for (auto &spell : spellbook) { spell.second["active"] = "false";}
 }
+
+ProgramState state = ProgramState::INIT;

@@ -10,15 +10,6 @@
 #define NK_KEYSTATE_BASED_INPUT
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <limits.h>
-#include <time.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <nuklear.h>
@@ -27,6 +18,48 @@
 struct nk_glfw glfw = { 0 };
 struct nk_context* ctx;
 struct nk_colorf bg;
+float x = 0;
+
+void setBackground(float H) {
+    int h = ((int)H) % 360;
+    if (h >= 0.0 && h < 60.0)
+    {
+        bg.r = 0.5;
+        bg.g = 0.25 + h / 240.;
+        bg.b = 0.25;
+    }
+    else if (h >= 60.0 && h < 120.0)
+    {
+        bg.r = 0.5 - (h - 60.) / 240;
+        bg.g = 0.5;
+        bg.b = 0.25;
+    }
+    else if (h >= 120.0 && h < 180.0)
+    {
+        bg.r = 0.25;
+        bg.g = 0.5;
+        bg.b = 0.25 + (h - 120.) / 240.;
+    }
+    else if (h >= 180.0 && h < 240.0)
+    {
+        bg.r = 0.25;
+        bg.g = 0.5 - (h - 180.) / 240;
+        bg.b = 0.5;
+    }
+    else if (h >= 240.0 && h < 300.0)
+    {
+        bg.r = 0.25 + (h - 240.) / 240.;
+        bg.g = 0.25;
+        bg.b = 0.5;
+    }
+    else if (h >= 300.0 && h < 360.0)
+    {
+        bg.r = 0.5;
+        bg.g = 0.25;
+        bg.b = 0.5 - (h - 300.) / 240;
+    }
+}
+
 void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px) {
     ctx = nk_glfw3_init(&glfw, win, NK_GLFW3_DEFAULT);
     {
@@ -40,6 +73,7 @@ void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height
     bg.r = 0.45f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 1.0f;
 }
 
+
 void drawMainMenu(static GLFWwindow* win, int *is_start_game)
 {
     glfwPollEvents();
@@ -51,7 +85,7 @@ void drawMainMenu(static GLFWwindow* win, int *is_start_game)
         enum { EASY, HARD };
         static int op = EASY;
         static int property = 20;
-        nk_layout_row_static(ctx, 90, 180, 4);
+        nk_layout_row_dynamic(ctx, 50, 1);
         if (nk_button_label(ctx, "START GAME")) {
             fprintf(stdout, "Starting Game\n");
             *is_start_game = 1;
@@ -60,21 +94,14 @@ void drawMainMenu(static GLFWwindow* win, int *is_start_game)
         nk_layout_row_dynamic(ctx, 30, 2);
         if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
         if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-
-        nk_layout_row_dynamic(ctx, 20, 1);
-        nk_label(ctx, "background:", NK_TEXT_LEFT);
-        nk_layout_row_dynamic(ctx, 25, 1);
-        if (nk_combo_begin_color(ctx, nk_rgb_cf(bg), nk_vec2(nk_widget_width(ctx), 400))) {
-            nk_layout_row_dynamic(ctx, 120, 1);
-            bg = nk_color_picker(ctx, bg, NK_RGBA);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
-            bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
-            bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
-            bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
-            nk_combo_end(ctx);
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "EXIT GAME")) {
+            fprintf(stdout, "Exiting Game\n");
+            *is_start_game = 1;
         }
     }
+    setBackground(x);
+    x += 0.05;
     nk_end(ctx);
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(bg.r, bg.g, bg.b, bg.a);

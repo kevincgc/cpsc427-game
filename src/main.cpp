@@ -19,17 +19,6 @@ const int window_height_px = 800;
 
 extern entt::registry registry;
 
-enum class ProgramState {
-	INIT,
-	MENU,
-	START_GAME,
-	RESET_GAME,
-	RUNNING,
-	PAUSED,
-	GAME_OVER,
-	EXIT
-};
-
 extern "C" {
 	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px);
 	void drawMainMenu(GLFWwindow* window, int *is_start_game);
@@ -43,11 +32,10 @@ int main()
 	RenderSystem renderer;
 	PhysicsSystem physics;
 	AISystem ai;
-	ProgramState state = ProgramState::INIT;
 	GLFWwindow* window;
 	auto t = Clock::now();
 
-	while (1) {
+	while (!world.is_over()) {
 		if (state == ProgramState::INIT) {
 			window = world.create_window(window_width_px, window_height_px);
 			if (!window) {

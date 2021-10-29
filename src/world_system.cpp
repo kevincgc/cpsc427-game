@@ -562,47 +562,48 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 }
 
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
+	if (state == ProgramState::RUNNING) {
+		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+			if (action == GLFW_PRESS) {
+				flag_right = true;
+				t = Clock::now();
+			}
+			else if (action == GLFW_RELEASE) {
+				flag_right = false;
 
-	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-		if (action == GLFW_PRESS) {
-			flag_right = true;
-			t = Clock::now();
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_right = false;
+				// Capture elapsed time
+				auto now = Clock::now();
+				float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
-			// Capture elapsed time
-			auto now = Clock::now();
-			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
-
-			if (!gesture_coords_right.empty()) {
-				// Modify datastructs
-				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_right, "RMB", flag_fast, elapsed_ms);
-				// Check Spell Cast
-				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-				// reset fast_flag;
-				flag_fast = false;
+				if (!gesture_coords_right.empty()) {
+					// Modify datastructs
+					mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_right, "RMB", flag_fast, elapsed_ms);
+					// Check Spell Cast
+					mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
+					// reset fast_flag;
+					flag_fast = false;
+				}
 			}
 		}
-	}
-	if (button == GLFW_MOUSE_BUTTON_LEFT) {
-		if (action == GLFW_PRESS) {
-			flag_left = true;
-			t = Clock::now();
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_left = false;
-			// Capture elapsed time
-			auto now = Clock::now();
-			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (action == GLFW_PRESS) {
+				flag_left = true;
+				t = Clock::now();
+			}
+			else if (action == GLFW_RELEASE) {
+				flag_left = false;
+				// Capture elapsed time
+				auto now = Clock::now();
+				float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
-			if (!gesture_coords_left.empty()) {
-				// Modify datastructs
-				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_left, "LMB", flag_fast, elapsed_ms);
-				// Check Spell Cast
-				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-				// reset fast_flag;
-				flag_fast = false;
+				if (!gesture_coords_left.empty()) {
+					// Modify datastructs
+					mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_left, "LMB", flag_fast, elapsed_ms);
+					// Check Spell Cast
+					mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
+					// reset fast_flag;
+					flag_fast = false;
+				}
 			}
 		}
 	}
