@@ -1,4 +1,3 @@
-
 #define GL3W_IMPLEMENTATION
 #include <GL/glew.h>
 
@@ -37,17 +36,10 @@ int main()
 	AISystem ai;
 	GLFWwindow* window;
 	bool has_completed_init = false;
-
-
-
-
+	auto t = Clock::now();
 
 	while (!world.is_over()) {
-		// Processes system messages, if this wasn't present the window would become
-		// unresponsive
 		glfwPollEvents();
-
-
 		auto now = Clock::now();
 		float elapsed_ms =
 			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
@@ -102,7 +94,7 @@ int main()
 		case ProgramState::RUNNING:
 		{
 			world.step(elapsed_ms);
-			ai.step(elapsed_ms);
+			ai.step();
 			physics.step(elapsed_ms, window_width_px, window_height_px);
 			world.handle_collisions();
 			renderer.draw();
