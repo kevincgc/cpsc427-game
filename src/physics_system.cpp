@@ -135,7 +135,7 @@ void preventCollisionOverlap(entt::entity entity, entt::entity other) {
 
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
-	// Move fish based on how much time has passed, this is to (partially) avoid
+	// Move entities based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 	for(entt::entity entity: registry.view<Motion>())
 	{

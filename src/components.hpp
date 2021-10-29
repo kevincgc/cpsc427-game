@@ -11,14 +11,12 @@ struct Player
 
 };
 
-// Turtles and pebbles have a hard shell
-struct HardShell
+struct Enemy
 {
 
 };
 
-// Fish and Salmon have a soft shell
-struct SoftShell
+struct Friendly
 {
 
 };
@@ -180,8 +178,8 @@ enum class TEXTURE_ASSET_ID {
 	// WALL_CROSS,
 	WALL = 0,
 
-	FISH,
-	TURTLE,
+	SPIKE,
+	DRONE,
 	MINOTAUR,
 
 	TEXTURE_COUNT

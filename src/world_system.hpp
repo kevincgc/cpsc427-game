@@ -79,9 +79,6 @@ private:
 
 	// Game state
 	RenderSystem* renderer;
-	float current_speed;
-	float next_turtle_spawn;
-	float next_fish_spawn;
 	float next_item_spawn;
 	float flash_timer;
 	entt::entity player_minotaur;
