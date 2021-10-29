@@ -139,6 +139,8 @@ WorldSystem::~WorldSystem() {
 		Mix_FreeChunk(salmon_dead_sound);
 	if (salmon_eat_sound != nullptr)
 		Mix_FreeChunk(salmon_eat_sound);
+	if (tada_sound != nullptr)
+		Mix_FreeChunk(tada_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -211,6 +213,7 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
 	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
+	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
 
 	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
@@ -297,6 +300,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
+	}
+
+	// check if player has won
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+	if (tile == MapTile::EXIT) {
+		// player has found the exit!
+		Mix_PlayChannel(-1, tada_sound, 0);
+		restart_game();
 	}
 
 	return true;
