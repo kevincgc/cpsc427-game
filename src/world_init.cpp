@@ -21,28 +21,27 @@
 // 	return e;
 // }
 
-entt::entity createFish(RenderSystem* renderer, vec2 position)
+entt::entity createSpike(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
 	motion.velocity = { -50, 0 };
 	motion.position = position;
-	// motion.scale = vec2({ -FISH_BB_WIDTH, FISH_BB_HEIGHT });
 	motion.scale = mesh.original_size * 75.f;
 	const entt::entity e = registry.create();
-	registry.emplace<SoftShell>(e);
+	registry.emplace<Enemy>(e);
 	registry.emplace<Motion>(e, motion);
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
-		TEXTURE_ASSET_ID::FISH,
+		TEXTURE_ASSET_ID::SPIKE,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
-	
+
 	return e;
 }
 
-entt::entity createTurtle(RenderSystem* renderer, vec2 position)
+entt::entity createDrone(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
@@ -51,11 +50,11 @@ entt::entity createTurtle(RenderSystem* renderer, vec2 position)
 	motion.position = position;
 	motion.scale = mesh.original_size * 60.f;
 	const entt::entity e = registry.create();
-	registry.emplace<HardShell>(e);
+	registry.emplace<Enemy>(e);
 	registry.emplace<Motion>(e, motion);
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
-		TEXTURE_ASSET_ID::TURTLE,
+		TEXTURE_ASSET_ID::DRONE,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
 

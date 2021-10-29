@@ -52,6 +52,7 @@ public:
 	static vec2 position_to_map_coords(vec2 map_coords);
 	static int position_to_map_coords(float map_coords);
 
+	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
 
@@ -74,9 +75,6 @@ private:
 
 	// Game state
 	RenderSystem* renderer;
-	float current_speed;
-	float next_turtle_spawn;
-	float next_fish_spawn;
 	float next_item_spawn;
 	float flash_timer;
 	entt::entity player_minotaur;
@@ -89,4 +87,8 @@ private:
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
+	// maze generation
+	void recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y);
+	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
 };

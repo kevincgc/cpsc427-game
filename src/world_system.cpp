@@ -130,11 +130,9 @@ Mouse_spell mouse_spell;
 //Debugging
 vec2 debug_pos = { 0,0 };
 
-// Create the fish world
+// Create the world
 WorldSystem::WorldSystem()
-	: points(0)
-	, next_turtle_spawn(0.f)
-	, next_fish_spawn(0.f) {
+	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
 }
@@ -393,6 +391,120 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	return true;
 }
 
+// based on the explanation from https://en.wikipedia.org/wiki/Maze_generation_algorithm (yes, really)
+void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y) {
+	int size_x = end_x - begin_x;
+	int size_y = end_y - begin_y;
+
+	if (size_x < 3 && size_y < 3) return;
+
+	int split_x = begin_x + 1;
+	int split_y = begin_y + 1;
+
+	if (size_y > size_x) {
+		// split horizontally
+    	std::uniform_int_distribution<int> rand_spot(begin_x, end_x - 1);
+		const int passage = rand_spot(rng);
+		for (int i = begin_x; i < end_x; i++) {
+			if (passage == i) {
+				maze[split_y][i] = MapTile::FREE_SPACE;
+			} else {
+				maze[split_y][i] = MapTile::BREAKABLE_WALL;
+			}
+		}
+
+		recursiveGenerateMaze(maze, begin_x, begin_y, end_x, split_y);
+		recursiveGenerateMaze(maze, begin_x, split_y + 1, end_x, end_y);
+	} else {
+		// split vertically
+		std::uniform_int_distribution<int> rand_spot(begin_y, end_y - 1);
+		const int passage = rand_spot(rng);
+		for (int i = begin_y; i < end_y; i++) {
+			if (passage == i) {
+				maze[i][split_x] = MapTile::FREE_SPACE;
+			} else {
+				maze[i][split_x] = MapTile::BREAKABLE_WALL;
+			}
+		}
+
+		recursiveGenerateMaze(maze, begin_x, begin_y, split_x, end_y);
+		recursiveGenerateMaze(maze, split_x + 1, begin_y, end_x, end_y);
+	}
+}
+
+std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile) {
+	fprintf(stderr, "Generating %s procedural maze %d x %d\n", method.c_str(), width, height);
+
+	// create vector
+	std::vector<std::vector<MapTile>> maze;
+	maze.resize(height, std::vector<MapTile>(width));
+	if (method != "recursive") { // recursive is additive
+		for (int i = 0; i < height; i++) {
+			std::fill(maze[i].begin(), maze[i].end(), MapTile::BREAKABLE_WALL);
+		}
+	}
+
+	// walls
+	std::fill(maze[0].begin(), maze[0].end(), MapTile::UNBREAKABLE_WALL);
+	std::fill(maze[height-1].begin(), maze[height-1].end(), MapTile::UNBREAKABLE_WALL);
+	for (int i = 0; i < height; i++) {
+		maze[i][0] = maze[i][width-1] = MapTile::UNBREAKABLE_WALL;
+	}
+
+	if (method == "recursive") {
+		recursiveGenerateMaze(maze, 1, 1, width - 1, height - 1);
+	} else if (method == "binarytree") {
+		// carve passages
+		// based on https://hurna.io/academy/algorithms/maze_generator/binary.html, modified for efficiency and format
+		for (int i = 1; i < height; i += 2) {
+			for (int j = 1; j < width; j += 2) {
+				bool up = i > 1 && maze[i - 2][j] == MapTile::FREE_SPACE;
+				bool left = j > 1 && maze[i][j - 2] == MapTile::FREE_SPACE;
+
+				maze[i][j] = MapTile::FREE_SPACE;
+				if (up && left) {
+					// there can only be one
+					if (uniform_dist(rng) < 0.5) {
+						up = false;
+					} else {
+						left = false;
+					}
+				}
+
+				if (up) {
+					maze[i - 1][j] = MapTile::FREE_SPACE;
+				} else if (left) {
+					maze[i][j - 1] = MapTile::FREE_SPACE;
+				}
+			}
+		}
+	}
+
+	// random start position
+	std::vector<int> possible_start_positions;
+	for (int i = 0; i < height; i++) {
+		if (tile_is_walkable(maze[i][1])) possible_start_positions.push_back(i);
+	}
+
+	int ind = std::uniform_int_distribution<int>(0, possible_start_positions.size() - 1)(rng);
+	const int start_position = possible_start_positions[ind];
+	maze[start_position][0] = MapTile::ENTRANCE;
+	start_tile = vec2(0.0, (float) start_position);
+
+	// random end position
+	std::vector<int> possible_end_positions;
+	for (int i = 0; i < height; i++) {
+		if (tile_is_walkable(maze[i][width - 2])) possible_end_positions.push_back(i);
+	}
+
+	// start at 3, because 0, 1 and 2 are too easy for some algorithms
+	ind = std::uniform_int_distribution<int>(3, possible_end_positions.size() - 1)(rng);
+	const int end_position = possible_end_positions[ind];
+	maze[end_position][width - 1] = MapTile::EXIT;
+
+	return maze;
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
@@ -429,23 +541,79 @@ void WorldSystem::restart_game() {
 				// push this map row to the final vector
 				game_state.level.map_tiles.push_back(row);
 			}
-		}
+		} else assert(false);
+		file.close();
+
 		fprintf(stderr, "Loaded premade map\n");
 	} else  if (level_type == "procedural") {
 		fprintf(stderr, "Loading procedural map\n");
 
-		// TODO
+		const auto procedural_options = level_config["procedural_options"];
+		const std::string method = procedural_options["method"].as<std::string>();
+		const std::vector<int> size = procedural_options["size"].as<std::vector<int>>();
+
+		assert(size[0] >= 5 && size[1] >= 5); // needs to be larger than 5
+		assert(size[0] % 2 != 0 && size[1] % 2 != 0); // needs to be odd number
+		game_state.level.map_tiles = generateProceduralMaze(method, size[0], size[1], game_state.level.start_position);
+
 		fprintf(stderr, "Loaded procedural map\n");
 	}
 
-	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-
-	// Reset the game speed
-	current_speed = 1.f;
+	for (const auto vec : game_state.level.map_tiles) {
+		for (const auto v2 : vec) {
+			printf("%d ", v2);
+		}
+		printf("\n");
+	}
 
 	// Remove all entities that we created
-	// All that have a motion, we could also iterate over all fish, turtles, ... but that would be more cumbersome
+	// All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
 	registry.clear();
+
+	const YAML::Node enemies = level_config["enemies"];
+	if (enemies) {
+		// find spawnable tiles
+		std::vector<vec2> spawnable_tiles;
+		auto maze = game_state.level.map_tiles;
+		for (uint i = 0; i < maze.size(); i++) {
+			auto row = maze[i];
+			for (uint j = 0; j < row.size(); j++) {
+				if (row[j] == MapTile::FREE_SPACE) {
+					// inverted coordinates
+					spawnable_tiles.push_back({j, i});
+				}
+			}
+		}
+
+		// subnodes of enemies
+		for (YAML::const_iterator it = enemies.begin(); it != enemies.end(); it++) {
+			std::string enemy_type = it->first.as<std::string>();
+			int enemy_count = it->second.as<int>();
+
+			while (enemy_count--) { // spawn enemy_count enemies
+				int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
+				vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
+				position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+				spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
+
+				entt::entity entity;
+				if (enemy_type == "spikes") {
+					entity = createSpike(renderer, position);
+				} else if (enemy_type == "drones") {
+					entity = createDrone(renderer, position);
+				} else {
+					assert(false); // unsupported enemy
+					return;
+				}
+
+				// TODO this should be controlled by AI, not an initial velocity
+				Motion& motion = registry.get<Motion>(entity);
+				motion.mass = 200;
+				motion.coeff_rest = 0.9f;
+				motion.velocity = vec2(-100.f, 0.f);
+			}
+		}
+	}
 
 	// Create a new Minotaur
 	player_minotaur = createMinotaur(
@@ -458,6 +626,8 @@ void WorldSystem::restart_game() {
 	// reset player flash timer
 	flash_timer = 1000.f;
 	registry.emplace<Flash>(player_minotaur);
+
+	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 }
 
 // Compute collisions between entities
@@ -471,8 +641,8 @@ void WorldSystem::handle_collisions() {
 		// For now, we are only interested in collisions that involve the salmon
 		if (registry.view<Player>().contains(entity)) {
 
-			// Checking Player - HardShell collisions
-			if (registry.view<HardShell>().contains(entity_other) || registry.view<SoftShell>().contains(entity_other)) {
+			// Checking Player - Enemy collisions
+			if (registry.view<Enemy>().contains(entity_other)) {
 				// initiate death unless already dying
 				if (!registry.view<DeathTimer>().contains(entity) && spellbook[3]["active"] == "false") {
 					// Scream, reset timer, and make the salmon sink
@@ -496,15 +666,6 @@ void WorldSystem::handle_collisions() {
 					//move_up = false;
 					//move_down = false;
 				}
-			}
-			// Checking Player - SoftShell collisions
-			else if (registry.view<SoftShell>().contains(entity_other)) {
-				// TODO: Implement other character actions
-				// if (!registry.view<DeathTimer>().contains(entity)) {
-				// 	// chew, count points, and set the LightUp timer
-				// 	registry.destroy(entity_other);
-				// 	Mix_PlayChannel(-1, salmon_eat_sound, 0);
-				// 	++points;
 			}
 		}
 	}
@@ -717,10 +878,12 @@ bool WorldSystem::is_within_bounds(vec2 map_coords) {
 		&& map_coords.x < game_state.level.map_tiles[(int)(map_coords.y)].size();
 }
 
+bool WorldSystem::tile_is_walkable(MapTile tile) {
+	return tile != MapTile::UNBREAKABLE_WALL && tile != MapTile::BREAKABLE_WALL;
+}
+
 MapTile WorldSystem::get_map_tile(vec2 map_coords) {
 	if (WorldSystem::is_within_bounds(map_coords)) return game_state.level.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
 
 	return MapTile::FREE_SPACE; // out of bounds
 }
-
-
