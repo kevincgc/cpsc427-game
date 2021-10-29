@@ -11,7 +11,6 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include "common.hpp"
-#include "menu.h"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -20,13 +19,17 @@ const int window_height_px = 800;
 
 extern entt::registry registry;
 
-typedef enum GameStates {
+enum class ProgramState {
 	MENU,
 	INIT,
 	RUNNING,
 	PAUSED,
 	OVER
 };
+
+extern "C" {
+	void draw(GLFWwindow* window, int window_width_px, int window_height_px);
+}
 
 // Entry point
 int main()
@@ -36,7 +39,7 @@ int main()
 	RenderSystem renderer;
 	PhysicsSystem physics;
 	AISystem ai;
-	GameState state = MENU;
+	ProgramState state = ProgramState::MENU;
 
 	// Initializing window
 	GLFWwindow* window = world.create_window(window_width_px, window_height_px);
@@ -47,7 +50,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 	
-	if (state == MENU) {
+	if (state == ProgramState::MENU) {
 		draw(window, window_width_px, window_height_px);
 	}
 	else {

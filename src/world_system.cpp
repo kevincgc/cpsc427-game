@@ -179,12 +179,18 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 	glfwWindowHint(GLFW_RESIZABLE, 0);
 
 	// Create the main window (for rendering, keyboard, and mouse input)
-	window = glfwCreateWindow(width, height, "Salmon Game Assignment", nullptr, nullptr);
+	window = glfwCreateWindow(width, height, "Maze Runners", nullptr, nullptr);
 	if (window == nullptr) {
 		fprintf(stderr, "Failed to glfwCreateWindow");
 		return nullptr;
 	}
-
+	glfwMakeContextCurrent(window);
+	glViewport(0, 0, width, height);
+    glewExperimental = 1;
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to setup GLEW\n");
+        exit(1);
+    }
 	// Setting callbacks to member functions (that's why the redirect is needed)
 	// Input is handled using GLFW, for more info see
 	// http://www.glfw.org/docs/latest/input_guide.html

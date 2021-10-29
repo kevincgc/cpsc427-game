@@ -22,5 +22,5 @@
 #include <nuklear.h>
 #include <nuklear_glfw_gl3.h>
 
-void draw(GLFWwindow* window, int window_width_px, int window_height_px);
+
 

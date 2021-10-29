@@ -2,18 +2,36 @@
 #define MAX_ELEMENT_BUFFER 128 * 1024
 #include "menu.h"
 
-void draw(GLFWwindow* window, int window_width_px, int window_height_px)
+void draw(static GLFWwindow* win, int window_width_px, int window_height_px)
 {
+    /* Platform */
     struct nk_glfw glfw = { 0 };
     struct nk_context* ctx;
     struct nk_colorf bg;
-
-    ctx = nk_glfw3_init(&glfw, window, NK_GLFW3_INSTALL_CALLBACKS);
+    ctx = nk_glfw3_init(&glfw, win, NK_GLFW3_DEFAULT);
+    /* Load Fonts: if none of these are loaded a default font will be used  */
+    /* Load Cursor: if you uncomment cursor loading please hide the cursor */
     {struct nk_font_atlas* atlas;
     nk_glfw3_font_stash_begin(&glfw, &atlas);
+    /*struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "../../../extra_font/DroidSans.ttf", 14, 0);*/
+    /*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
+    /*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
+    /*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
+    /*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
+    /*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
     nk_glfw3_font_stash_end(&glfw);
+    /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
+    /*nk_style_set_font(ctx, &droid->handle);*/}
+
+#ifdef INCLUDE_STYLE
+    /*set_style(ctx, THEME_WHITE);*/
+    /*set_style(ctx, THEME_RED);*/
+    /*set_style(ctx, THEME_BLUE);*/
+    /*set_style(ctx, THEME_DARK);*/
+#endif
+
     bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 1.0f;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(win))
     {
         /* Input */
         glfwPollEvents();
@@ -53,9 +71,20 @@ void draw(GLFWwindow* window, int window_width_px, int window_height_px)
             }
         }
         nk_end(ctx);
+
+        /* -------------- EXAMPLES ---------------- */
+#ifdef INCLUDE_CALCULATOR
+        calculator(ctx);
+#endif
+#ifdef INCLUDE_OVERVIEW
+        overview(ctx);
+#endif
+#ifdef INCLUDE_NODE_EDITOR
+        node_editor(ctx);
+#endif
         /* ----------------------------------------- */
 
-        glViewport(0, 0, window_width_px, window_height_px);
+        /* Draw */
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(bg.r, bg.g, bg.b, bg.a);
         /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state
@@ -64,7 +93,9 @@ void draw(GLFWwindow* window, int window_width_px, int window_height_px)
          * Make sure to either a.) save and restore or b.) reset your own state after
          * rendering the UI. */
         nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
-        glfwSwapBuffers(window);
-        }
+        glfwSwapBuffers(win);
     }
+    nk_glfw3_shutdown(&glfw);
+    glfwTerminate();
+    return 0;
 }
