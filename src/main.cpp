@@ -91,6 +91,7 @@ int main()
 			state = ProgramState::RUNNING;
 			break;
 		case ProgramState::RESET_GAME:
+			renderer.reinit(window_width_px, window_height_px, window);
 			world.restart_game();
 			state = ProgramState::RUNNING;
 			break;
@@ -110,6 +111,7 @@ int main()
 			drawPauseMenu(window, &selection);
 			switch (selection) {
 			case 1:
+				renderer.reinit(window_width_px, window_height_px, window);
 				state = ProgramState::RUNNING;
 				break;
 			case 2:

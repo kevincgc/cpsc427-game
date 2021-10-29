@@ -554,9 +554,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && state == ProgramState::RUNNING) {
 		state = ProgramState::PAUSED;
 	}
-	else if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && state == ProgramState::PAUSED) {
-		state = ProgramState::RUNNING;
-	}
 
 	// Resetting game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {

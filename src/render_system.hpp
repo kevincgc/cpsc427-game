@@ -59,6 +59,8 @@ public:
 	// Initialize the window
 	bool init(int width, int height, GLFWwindow* window);
 
+	bool reinit(int width, int height, GLFWwindow* window_arg);
+
 	template <class T>
 	void bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices);
 
@@ -74,6 +76,7 @@ public:
 	// The draw loop first renders to this texture, then it is used for the water
 	// shader
 	bool initScreenTexture();
+	bool reinitScreenTexture();
 
 	// Destroy resources associated to one or all entities created by the system
 	~RenderSystem();

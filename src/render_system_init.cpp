@@ -37,6 +37,12 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	// Load OpenGL function pointers
 	const int is_fine = glewInit();
 	assert(is_fine == 0);
+	registry.emplace<ScreenState>(screen_state_entity);
+
+	return reinit(width, height, window_arg);
+}
+
+bool RenderSystem::reinit(int width, int height, GLFWwindow* window_arg) {
 
 	// Create a frame buffer
 	frame_buffer = 0;
@@ -64,10 +70,9 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	gl_has_errors();
 
 	initScreenTexture();
-    initializeGlTextures();
+	initializeGlTextures();
 	initializeGlEffects();
 	initializeGlGeometryBuffers();
-
 	return true;
 }
 
@@ -277,8 +282,6 @@ RenderSystem::~RenderSystem()
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.emplace<ScreenState>(screen_state_entity);
-
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);
 
