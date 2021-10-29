@@ -1,3 +1,0 @@
-C:/Users/SKu T-Type/Desktop/427 Assignments/Project/Github/team10/CMakeFiles/salmon.dir
-C:/Users/SKu T-Type/Desktop/427 Assignments/Project/Github/team10/CMakeFiles/ALL_BUILD.dir
-C:/Users/SKu T-Type/Desktop/427 Assignments/Project/Github/team10/CMakeFiles/ZERO_CHECK.dir
