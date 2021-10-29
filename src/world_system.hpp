@@ -14,6 +14,9 @@
 #include "render_system.hpp"
 #include "components.hpp"
 
+// yaml
+#include "yaml-cpp/yaml.h"
+
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
 
@@ -84,6 +87,9 @@ private:
 	Mix_Chunk* salmon_dead_sound;
 	Mix_Chunk* salmon_eat_sound;
 
+	// entity spawning
+	std::vector<vec2> spawnable_tiles;
+
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
@@ -91,4 +97,6 @@ private:
 	// maze generation
 	void recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y);
 	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
+
+	void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
 };
