@@ -89,10 +89,11 @@ void drawMainMenu(static GLFWwindow* win, int *out)
             fprintf(stdout, "Starting Game\n");
             *out = 1;
         }
-            
-        nk_layout_row_dynamic(ctx, 30, 2);
-        if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-        if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "OPTIONS")) {
+            fprintf(stdout, "Options Menu\n");
+            *out = 2;
+        }
         nk_layout_row_dynamic(ctx, 50, 1);
         if (nk_button_label(ctx, "EXIT GAME")) {
             fprintf(stdout, "Exiting Game\n");
@@ -115,10 +116,38 @@ void drawMainMenu(static GLFWwindow* win, int *out)
     //glfwTerminate();
 }
 
-void drawPauseMenu(static GLFWwindow* win, int* out)
+void drawOptionsMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
 
+    if (nk_begin(ctx, "Main Menu", nk_rect(475, 200, 250, 400),
+        NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+    {
+        enum { EASY, HARD, MEDIUM};
+        static int op = EASY;
+        static int property = 20;
+        nk_layout_row_dynamic(ctx, 30, 1);
+        if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
+        if (nk_option_label(ctx, "medium", op == MEDIUM)) op = MEDIUM;
+        if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "BACK")) {
+            fprintf(stdout, "Main Menu\n");
+            *out = -1;
+        }
+    }
+    setBackground(x);
+    x += 0.05;
+    nk_end(ctx);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(bg.r, bg.g, bg.b, bg.a);
+    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+    glfwSwapBuffers(win);
+}
+
+void drawPauseMenu(static GLFWwindow* win, int* out)
+{
+    nk_glfw3_new_frame(&glfw);
     if (nk_begin(ctx, "Pause Menu", nk_rect(475, 200, 250, 400),
         NK_WINDOW_BORDER | NK_WINDOW_TITLE))
     {
@@ -147,21 +176,13 @@ void drawPauseMenu(static GLFWwindow* win, int* out)
         }
     }
     nk_end(ctx);
-    /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state
-        * with blending, scissor, face culling, depth test and viewport and
-        * defaults everything back into a default state.
-        * Make sure to either a.) save and restore or b.) reset your own state after
-        * rendering the UI. */
     nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
     glfwSwapBuffers(win);
-    //nk_glfw3_shutdown(&glfw);
-    //glfwTerminate();
 }
 
 void drawGameOverMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
-
     if (nk_begin(ctx, "You Died", nk_rect(475, 200, 250, 400),
         NK_WINDOW_BORDER | NK_WINDOW_TITLE))
     {
@@ -186,13 +207,6 @@ void drawGameOverMenu(static GLFWwindow* win, int* out)
     }
     glClear(GL_COLOR_BUFFER_BIT);
     nk_end(ctx);
-    /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state
-        * with blending, scissor, face culling, depth test and viewport and
-        * defaults everything back into a default state.
-        * Make sure to either a.) save and restore or b.) reset your own state after
-        * rendering the UI. */
     nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
     glfwSwapBuffers(win);
-    //nk_glfw3_shutdown(&glfw);
-    //glfwTerminate();
 }

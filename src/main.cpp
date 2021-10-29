@@ -22,6 +22,7 @@ extern entt::registry registry;
 extern "C" {
 	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px);
 	void drawMainMenu(GLFWwindow* window, int *is_start_game);
+	void drawOptionsMenu(static GLFWwindow* win, int* out);
 	void drawPauseMenu(static GLFWwindow* win, int* out);
 	void drawGameOverMenu(static GLFWwindow* win, int* out);
 }
@@ -66,8 +67,20 @@ int main()
 			else if (selection == 1 && has_completed_init) {
 				state = ProgramState::RESET_GAME;
 			}
+			else if (selection == 2) {
+				state = ProgramState::OPTIONS;
+			}
 			else if (selection == -1) {
 				state = ProgramState::EXIT;
+			}
+			break;
+		}
+		case ProgramState::OPTIONS: 
+		{
+			int selection = 0;
+			drawOptionsMenu(window, &selection);
+			if (selection == -1) {
+				state = ProgramState::MAIN_MENU;
 			}
 			break;
 		}
