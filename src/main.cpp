@@ -55,13 +55,11 @@ int main()
 		t = now;
 
 		world.step(elapsed_ms);
-		ai.step(elapsed_ms);
+		ai.step();
 		physics.step(elapsed_ms, window_width_px, window_height_px);
 		world.handle_collisions();
 
 		renderer.draw();
-
-		// TODO A2: you can implement the debug freeze here but other places are possible too.
 	}
 
 	return EXIT_SUCCESS;

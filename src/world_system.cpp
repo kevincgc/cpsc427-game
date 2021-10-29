@@ -1,6 +1,7 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "ai_system.hpp"
 
 // stlib
 #include <cassert>
@@ -25,17 +26,29 @@ using Clock = std::chrono::high_resolution_clock;
 #include "yaml-cpp/yaml.h"
 
 // Game configuration
-const size_t ITEM_DELAY_MS = 3000 * 3;
-vec2 WorldSystem::camera = {0, 0};
-float player_vel = 300.f;
+const size_t MAX_TURTLES     = 1;
+const size_t MAX_FISH        = 1;
+const size_t TURTLE_DELAY_MS = 2000 * 3;
+const size_t FISH_DELAY_MS   = 5000 * 3;
+const size_t ITEM_DELAY_MS   = 3000 * 3;
+vec2 WorldSystem::camera     = {0, 0};
+extern float player_vel      = 300.f;
+extern float enemy_vel		 = 100.f;
+float default_player_vel	 = 300.f;
 
 // My Settings
 auto t = Clock::now();
-bool flag_right = false;
-bool flag_left = false;
-bool flag_fast = false;
+bool flag_right   = false;
+bool flag_left    = false;
+bool flag_fast    = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
+
+// For pathfinding feature
+bool do_generate_path = false;
+vec2 path_target_map_pos;
+vec2 starting_map_pos;
+vec2 ending_map_pos; 
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -59,14 +72,14 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 			 {"active", "false"},
 		}
 	},
-	{2, {
-			{"name", "slowdown"},
-			{"speed", "slow"},
-			{"combo_1", "gesture_LMB_down"},
-			{"combo_2", "gesture_RMB_down"},
-			{"active", "false"}
-		}
-	},
+	//{2, {
+	//		{"name", "slowdown"},
+	//		{"speed", "slow"},
+	//		{"combo_1", "gesture_LMB_down"},
+	//		{"combo_2", "gesture_RMB_down"},
+	//		{"active", "false"}
+	//	}
+	//},
 	{3, {
 			{"name", "invincibility"},
 			{"speed", "none"},
@@ -77,15 +90,39 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 	}
 };
 
+// helper function to check collision with wall
+
+extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
+	vec2 corners[] = {
+		// upper right
+		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, - scale_y / 2)),
+
+		// upper left
+		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
+
+		// lower left
+		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
+
+		// lower right
+		WorldSystem::position_to_map_coords(position + vec2(scale_x/ 2, scale_y/ 2)),
+	};
+
+	bool collision = false;
+
+	for (const auto corner : corners) {
+		const MapTile tile = WorldSystem::get_map_tile(corner);
+
+		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
+			collision = true;
+			break;
+		}
+	}
+
+	return collision;
+}
+
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
-
-// Below is the acceleration/flag-based movement implementation
-////Movement
-//bool move_right = false;
-//bool move_left = false;
-//bool move_up = false;
-//bool move_down = false;
 
 //Debugging
 vec2 debug_pos = { 0,0 };
@@ -221,16 +258,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Removing out of screen entities
 	auto motions= registry.view<Motion>();
 
-	// Remove entities that leave the screen on the left side
-	// Iterate backwards to be able to remove without unterfering with the next object to visit
-	// (the containers exchange the last element with the current)
-	//for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-	//	Motion& motion = motions_registry.components[i];
-	//	if (motion.position.x + abs(motion.scale.x) < 0.f) {
-	//		registry.remove_all_components_of(motions_registry.entities[i]);
-	//	}
-	//}
-
 	for (auto entity: motions) {
 		//if (entity != player_minotaur) {
 		Motion& motion = motions.get<Motion>(entity);
@@ -238,22 +265,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			registry.destroy(entity);
 		}
 	 //}
-	}
-
-	// Adjust drone speed
-	if (gesture_statuses["gesture_LMB_down"] && gesture_statuses["gesture_RMB_down"]) {
-		for (entt::entity drone : registry.view<Enemy>()) {
-			Motion& motion = registry.get<Motion>(drone);
-			motion.velocity = vec2(-25.f, 0.f);
-		}
-	}
-	else {
-		for (entt::entity drone : registry.view<Enemy>()) {
-			Motion& motion = registry.get<Motion>(drone);
-			motion.velocity = vec2(-100.f, 0.f);
-			// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
-			// 	  (uniform_dist(rng) - 0.5f) * 200);
-		}
 	}
 
     float min_counter_ms = 3000.f;
@@ -282,34 +293,21 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			if (spell_timer < 0) {
 				std::cout << "Spell exhausted" << std::endl;
 				mouse_spell.reset_spells(spellbook);
-				spell_timer = 6000;
+				spell_timer = 10000;
 				active_spell = false;
 			}
 		}
 	}
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
-	player_vel = spellbook[1]["active"] == "true" ? 800.f : 300.f;
-
-	// Temporary implementation: Player movement being handled in step - continue later if needed
-	//entt::entity player = registry.view<Player>().begin()[0];
-
-	//if (!registry.view<DeathTimer>().contains(player)) {
-	//	Motion& motion = registry.get<Motion>(player);
-	//	float y_pos = motion.position[1];
-	//	float x_pos = motion.position[0];
-
-	//	if (move_up)	{ y_pos = -1 * player_vel;  }
-	//	if (move_left)  { x_pos = -1 * player_vel;  }
-	//	if (move_down)	{ y_pos = player_vel;		}
-	//	if (move_right) { x_pos = player_vel;		}
-	//}
+	player_vel = spellbook[1]["active"] == "true" ? 800.f : default_player_vel;
 
 	// process player flash timer
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
 	}
+
 	return true;
 }
 
@@ -433,7 +431,9 @@ void WorldSystem::restart_game() {
 	game_state.level.map_tiles.clear();
 
 	// TODO set this up in a menu
-	game_state.level_id = "testing1";
+	// current options: "recursive_procedural1", "large1", and "test1"
+	// recursive_procedural is random map generation, default value for now
+	game_state.level_id = "recursive_procedural1";
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
@@ -579,6 +579,9 @@ void WorldSystem::handle_collisions() {
 					m.velocity.x = 0;
 					m.velocity.y = 0;
 
+					// Stop pathfinding movement
+					do_pathfinding_movement = false;
+
 					// Below is the acceleration/flag-based movement implementation
 					//move_right = false;
 					//move_left = false;
@@ -609,29 +612,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		pressed_keys.erase(key);
 	} // not GLFW_REPEAT
 
-	// Below is the acceleration/flag-based movement implementation
-
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
-	// TODO: Implementation with acceleration
-	//if (!registry.view<DeathTimer>().contains(player)) {
-	//	if (action == GLFW_PRESS) {
-	//		if		(key == GLFW_KEY_D	|| key == GLFW_KEY_RIGHT) { move_right = true;	}
-	//		else if (key == GLFW_KEY_A  || key == GLFW_KEY_LEFT ) { move_left  = true;	}
-	//		if		(key == GLFW_KEY_W	|| key == GLFW_KEY_UP	) { move_up    = true;	}
-	//		else if (key == GLFW_KEY_S  || key == GLFW_KEY_DOWN ) { move_down  = true;	}
-	//	}
-
-	//	if (action == GLFW_RELEASE) {
-	//		if		(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) { move_right = false;	}
-	//		else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT)  { move_left  = false;	}
-	//		if		(key == GLFW_KEY_W || key == GLFW_KEY_UP)	 { move_up    = false;	}
-	//		else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN)  { move_down  = false;	}
-	//	}
-	//}
-
 	if (!registry.view<DeathTimer>().contains(player)) {
+
 		if (key == GLFW_KEY_SPACE) {
 			// minotaur attack mode on spack key
 			if (action == GLFW_PRESS && !registry.view<Attack>().contains(player))
@@ -645,35 +630,101 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		}
 
 		if (action != GLFW_REPEAT) {
-			motion.velocity = {0, 0};
+			motion.velocity = { 0, 0 };
 
 			if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.y = -1 * player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.x = -1 * player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.x = player_vel;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+				do_pathfinding_movement = false;
 				motion.velocity.y = player_vel;
 			}
-		}
-	}
 
-	// Resetting game
-	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
-		int w, h;
-		glfwGetWindowSize(window, &w, &h);
-		restart_game();
+		}
+		// Resetting game
+		if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
+			int w, h;
+			glfwGetWindowSize(window, &w, &h);
+			restart_game();
+		}
+
 	}
 }
 
+// Pathfinding: Variables for pathfinding feature used only in on_mouse_button
+double x_pos_press, y_pos_press, x_pos_release, y_pos_release;
+
 void WorldSystem::on_mouse_button(int button, int action, int mods) {
+
+	// ========= Feature: Pathfinding =========
+	// To separate mouse click from gestures, we need to make sure it's just a click, not a swipe
+	// Latency-friendly implementation:
+	//		A click means the distance between press and release is small. We choose 'small' instead 
+	//      of 0 because sometimes the pressing phase of clicks are a little long for humans. 
+	//		It's only made longer with lag.
+
+	// Capture press position
+	if (action == GLFW_PRESS   && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
+	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+
+		// Capture release position
+		glfwGetCursorPos(window, &x_pos_release, &y_pos_release);
+
+		// If it's truly a click...
+		float click_threshold = 100;
+		if (abs(x_pos_release - x_pos_press) < click_threshold && abs(y_pos_release - y_pos_press) < click_threshold) {
+
+			// Implementation: There's a difference between camera coords and world coords.
+			// glfwGetCursorPos gets the position of the cursor in the window. So clicking
+			// the center of the window returns, for example, 1200/2=600 and 800/2=400.
+			// But the player's coords are different. Even though the player is in the
+			// center of the window, it's **world** coords are actually (initially) (75,225).
+			// So we need to get the coords relative to the player for pathfinding.
+
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& player_motion = registry.get<Motion>(player);
+
+			// Get cursor screen coords
+			vec2 cursor_screen_pos = { float(x_pos_release - window_width_px/2), float(y_pos_release - window_height_px/2) };
+
+			// Get cursor world coords
+			vec2 target_world_pos = { player_motion.position.x + cursor_screen_pos.x, player_motion.position.y + cursor_screen_pos.y };
+
+			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
+			vec2 target_map_pos = position_to_map_coords(target_world_pos);
+
+			// If clicked a traversable node (i.e. not a wall)...
+			if (get_map_tile(target_map_pos) == FREE_SPACE) {
+
+				// Store starting and ending positions for ai position to look at
+				vec2 player_map_pos = position_to_map_coords(player_motion.position);
+				starting_map_pos    = player_map_pos;
+				ending_map_pos      = target_map_pos;
+
+				// Trigger a flag and let ai_system.cpp handle the rest
+				do_generate_path    = true;
+			}
+
+			// Did not clcik a traversable node...
+			else { std::cout << "Clicked on a wall!" << std::endl; }
+
+		}
+
+	}
+	// ========================================
+	// Gestures: The following blocks are for the gesture feature
 
 	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 		if (action == GLFW_PRESS) {
