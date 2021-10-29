@@ -99,5 +99,5 @@ private:
 	void recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y);
 	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
 
-	void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
+	void process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
 };
