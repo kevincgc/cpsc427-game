@@ -76,7 +76,6 @@ void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height
 
 void drawMainMenu(static GLFWwindow* win, int *out)
 {
-    glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
 
     if (nk_begin(ctx, "Main Menu", nk_rect(475, 200, 250, 400),
@@ -116,3 +115,84 @@ void drawMainMenu(static GLFWwindow* win, int *out)
     //glfwTerminate();
 }
 
+void drawPauseMenu(static GLFWwindow* win, int* out)
+{
+    nk_glfw3_new_frame(&glfw);
+
+    if (nk_begin(ctx, "Pause Menu", nk_rect(475, 200, 250, 400),
+        NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+    {
+        enum { EASY, HARD };
+        static int op = EASY;
+        static int property = 20;
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "RESUME GAME")) {
+            fprintf(stdout, "Starting Game\n");
+            *out = 1;
+        }
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "RESTART GAME")) {
+            fprintf(stdout, "Restarting Game\n");
+            *out = 2;
+        }
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "MAIN MENU")) {
+            fprintf(stdout, "Return To Main\n");
+            *out = 3;
+        }
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "EXIT GAME")) {
+            fprintf(stdout, "Exiting Game\n");
+            *out = -1;
+        }
+    }
+    nk_end(ctx);
+    /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state
+        * with blending, scissor, face culling, depth test and viewport and
+        * defaults everything back into a default state.
+        * Make sure to either a.) save and restore or b.) reset your own state after
+        * rendering the UI. */
+    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+    glfwSwapBuffers(win);
+    //nk_glfw3_shutdown(&glfw);
+    //glfwTerminate();
+}
+
+void drawGameOverMenu(static GLFWwindow* win, int* out)
+{
+    nk_glfw3_new_frame(&glfw);
+
+    if (nk_begin(ctx, "You Died", nk_rect(475, 200, 250, 400),
+        NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+    {
+        enum { EASY, HARD };
+        static int op = EASY;
+        static int property = 20;
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "TRY AGAIN")) {
+            fprintf(stdout, "Restarting Game\n");
+            *out = 1;
+        }
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "MAIN MENU")) {
+            fprintf(stdout, "Return To Main\n");
+            *out = 2;
+        }
+        nk_layout_row_dynamic(ctx, 50, 1);
+        if (nk_button_label(ctx, "EXIT GAME")) {
+            fprintf(stdout, "Exiting Game\n");
+            *out = -1;
+        }
+    }
+    glClear(GL_COLOR_BUFFER_BIT);
+    nk_end(ctx);
+    /* IMPORTANT: `nk_glfw_render` modifies some global OpenGL state
+        * with blending, scissor, face culling, depth test and viewport and
+        * defaults everything back into a default state.
+        * Make sure to either a.) save and restore or b.) reset your own state after
+        * rendering the UI. */
+    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+    glfwSwapBuffers(win);
+    //nk_glfw3_shutdown(&glfw);
+    //glfwTerminate();
+}

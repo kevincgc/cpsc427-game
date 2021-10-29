@@ -35,7 +35,6 @@ int main()
 	PhysicsSystem physics;
 	AISystem ai;
 	GLFWwindow* window;
-	bool has_completed_init = false;
 	auto t = Clock::now();
 
 	while (!world.is_over()) {
@@ -60,11 +59,9 @@ int main()
 		{
 			int selection = 0;
 			drawMainMenu(window, &selection);
-			if (selection == 1 && !has_completed_init) {
+			if (selection == 1) {
+				selection = 0;
 				state = ProgramState::START_GAME;
-			}
-			else if (selection == 1 && has_completed_init) {
-				state = ProgramState::RESET_GAME;
 			}
 			else if (selection == -1) {
 				state = ProgramState::EXIT;

@@ -62,7 +62,7 @@ struct Mouse_spell {
 
 enum class ProgramState {
 	INIT,
-	MENU,
+	MAIN_MENU,
 	START_GAME,
 	RESET_GAME,
 	RUNNING,
