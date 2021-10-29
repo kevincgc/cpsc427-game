@@ -14,6 +14,11 @@
 #include <GLFW/glfw3.h>
 #include <nuklear.h>
 #include <nuklear_glfw_gl3.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "../ext/project_path.hpp"
+
 
 struct nk_glfw glfw = { 0 };
 struct nk_context* ctx;
@@ -65,7 +70,13 @@ void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height
     {
         struct nk_font_atlas* atlas;
         nk_glfw3_font_stash_begin(&glfw, &atlas);
-        struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../data/fonts/kenvector_future_thin.ttf", 26, 0);
+        char* relPath = "/data/fonts/kenvector_future_thin.ttf";
+        size_t size = sizeof(char) * (strlen(PROJECT_SOURCE_DIR) + strlen(relPath) + 1);
+        char* path = (char*)malloc(size);
+        strcpy_s(path, size, PROJECT_SOURCE_DIR);
+        strcat_s(path, size, relPath);
+        struct nk_font* future = nk_font_atlas_add_from_file(atlas, path, 26, 0);
+        free(path);
         nk_glfw3_font_stash_end(&glfw);
         nk_style_set_font(ctx, &future->handle);
         //nk_style_load_all_cursors(ctx, atlas->cursors);
