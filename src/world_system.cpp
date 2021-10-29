@@ -34,6 +34,7 @@ const size_t ITEM_DELAY_MS   = 3000 * 3;
 vec2 WorldSystem::camera     = {0, 0};
 extern float player_vel      = 300.f;
 extern float enemy_vel		 = 100.f;
+float default_player_vel	 = 300.f;
 
 // My Settings
 auto t = Clock::now();
@@ -74,14 +75,14 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 			 {"active", "false"},
 		}
 	},
-	{2, {
-			{"name", "slowdown"},
-			{"speed", "slow"},
-			{"combo_1", "gesture_LMB_down"},
-			{"combo_2", "gesture_RMB_down"},
-			{"active", "false"}
-		}
-	},
+	//{2, {
+	//		{"name", "slowdown"},
+	//		{"speed", "slow"},
+	//		{"combo_1", "gesture_LMB_down"},
+	//		{"combo_2", "gesture_RMB_down"},
+	//		{"active", "false"}
+	//	}
+	//},
 	{3, {
 			{"name", "invincibility"},
 			{"speed", "none"},
@@ -305,17 +306,25 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		motion.velocity = vec2(-100.f, 0.f);
 	}
 
-	// Adjust turtle speed
-	if (gesture_statuses["gesture_LMB_down"] && gesture_statuses["gesture_RMB_down"]) {
-		for (entt::entity turtle : registry.view<HardShell>()) {
-			Motion& motion = registry.get<Motion>(turtle);
-			motion.velocity = vec2(-25.f, 0.f);
-		}
-	}
+	// Slowdown Spell: Adjust enemy type 1 (previously turtle) speed
+	//if (gesture_statuses["gesture_LMB_down"] && gesture_statuses["gesture_RMB_down"]) {
+	//	for (entt::entity turtle : registry.view<HardShell>()) {
+	//		Motion& motion = registry.get<Motion>(turtle);
+	//		motion.velocity.x = motion.velocity.x / 2.f;
+	//		motion.velocity.y = motion.velocity.y / 2.f;
+	//	}
+	//}
 	//else {
 	//	for (entt::entity turtle : registry.view<HardShell>()) {
 	//		Motion& motion = registry.get<Motion>(turtle);
-	//		motion.velocity = vec2(-100.f, 0.f);
+	//		//bool positive_x = motion.velocity.x >= 0;
+	//		//bool positive_y = motion.velocity.y >= 0;
+	//		//if (positive_x) { motion.velocity.x = enemy_vel; }
+	//		//else { motion.velocity.x = -1 * enemy_vel; }
+	//		//if (positive_y) { motion.velocity.y = enemy_vel; }
+	//		//else { motion.velocity.y = -1 * enemy_vel; }
+
+	//		//motion.velocity = vec2(-100.f, 0.f);
 	//		// motion.velocity = vec2( (uniform_dist(rng) - 0.5f) * 200,
 	//		// 	  (uniform_dist(rng) - 0.5f) * 200);
 	//	}
@@ -366,28 +375,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			if (spell_timer < 0) {
 				std::cout << "Spell exhausted" << std::endl;
 				mouse_spell.reset_spells(spellbook);
-				spell_timer = 6000;
+				spell_timer = 10000;
 				active_spell = false;
 			}
 		}
 	}
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
-	player_vel = spellbook[1]["active"] == "true" ? 800.f : 300.f;
-
-	// Temporary implementation: Player movement being handled in step - continue later if needed
-	//entt::entity player = registry.view<Player>().begin()[0];
-
-	//if (!registry.view<DeathTimer>().contains(player)) {
-	//	Motion& motion = registry.get<Motion>(player);
-	//	float y_pos = motion.position[1];
-	//	float x_pos = motion.position[0];
-
-	//	if (move_up)	{ y_pos = -1 * player_vel;  }
-	//	if (move_left)  { x_pos = -1 * player_vel;  }
-	//	if (move_down)	{ y_pos = player_vel;		}
-	//	if (move_right) { x_pos = player_vel;		}
-	//}
+	player_vel = spellbook[1]["active"] == "true" ? 800.f : default_player_vel;
 
 	// process player flash timer
 	flash_timer -= elapsed_ms_since_last_update;
@@ -395,22 +390,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
-
-	// Pathfinding debugging
-	// Print player position in map coords
-	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& player_motion = registry.get<Motion>(player);
-	vec2 debug_pos = position_to_map_coords(player_motion.position);
-	//std::cout << debug_pos.x << ", " << debug_pos.y << std::endl; // starting pos: 0,1 means column 0, row 1,
-
-	// Clicking creates map position
-
-
-
 	return true;
-
-
-
 }
 
 // Reset the world state to its initial state

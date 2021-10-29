@@ -23,6 +23,6 @@ private:
 
 
 public:
-	void step(float elapsed_ms);
+	void step();
 
 };

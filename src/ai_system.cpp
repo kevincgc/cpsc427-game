@@ -6,19 +6,19 @@
 
 
 // Pathfinding Datastructure
-// Hold a vector of coordinates. For example: If starting at [0,1]
-// [[0,1], [1,1], [2,1], [3,1]]
-// corresponds to traveling 3 tiles to the right.
+// Hold a vector of coordinates. 
+// For example: If starting at [0,1]:
+//   [[0,1], [1,1], [2,1], [3,1]]
+// corresponds to traveling 3 tiles to the right
 std::vector<vec2> path;
+
+// Variables
 extern bool  do_pathfinding_movement	 = false;
 	   bool	 do_calculate_new_enemy_path = false;
 	   bool	 ai_debug					 = false; // set to true to print debug statements
-	   float DIST_THRESHOLD			     = 200.f;
+	   float DIST_THRESHOLD			     = 200.f; // distance threshold between enemy and player
 
-// Determine the distance threshold between the enemy and player
-
-
-void AISystem::step(float elapsed_ms)
+void AISystem::step()
 {
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
@@ -28,20 +28,19 @@ void AISystem::step(float elapsed_ms)
 	{
 		Motion& entity_motion = registry.get<Motion>(entity);
 		vec2 entity_velocity = entity_motion.velocity;
-		float step_seconds = 1.0f * (elapsed_ms / 4000.f);
 
 		// If it's an enemy entity...
 		if ( entity != player)
 		{
-			if (within_threshold(player, entity))
-			{
+			// If enemy is close to player...
+			if (within_threshold(player, entity)) {
 				vec2 direction_vector = motion.position - entity_motion.position;
 				entity_motion.velocity = direction_vector;
-				//entity_motion.position += entity_motion.velocity * step_seconds;
 			}
+			// Enemy is not close to player
 			else {
 
-				// ========= Feature: Pathfinding (enemy maze navgiation) =========
+				// ========= Feature: Pathfinding (enemy maze navigation) =========
 			
 				// If enemy is travelling diagonally (ex from chasing a player), 
 				// randomly choose one or the other axis. This prevents the AI's 
@@ -62,7 +61,7 @@ void AISystem::step(float elapsed_ms)
 				vec2 next_pos_world = { entity_motion.position.x + (entity_motion.velocity.x), entity_motion.position.y + (entity_motion.velocity.y) };
 
 				// Get the world length in px for boundary checks
-				float world_length_px = game_state.map_tiles.size() * map_scale;
+				float world_length_px = game_state.level.map_tiles.size() * map_scale;
 
 				// Will get vector access error out of bounds if we don't do the following check
 				// If the next coords are in-bounds...
@@ -87,7 +86,7 @@ void AISystem::step(float elapsed_ms)
 
 						// If the next tile the enemy is projected to travel to is not a free space (i.e. it'll hit a wall)...
 						// or if it's out of map bounds... (for now, hard coded to avoid [0][1]
-						if (game_state.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
+						if (game_state.level.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
 							(next_pos_map.x == 0 && next_pos_map.y == 1)) {
 
 							// Get traversable adjacent map tiles
@@ -147,8 +146,8 @@ void AISystem::step(float elapsed_ms)
 			// The center is determined by a small square, hence window threshold
 			// Note target_node_coord is the center x,y pixels of a tile.
 			int window = 15;
-			if (!(target_node_coord.x < motion.position.x + window && target_node_coord.x > motion.position.x - window &&
-				  target_node_coord.y < motion.position.y + window && target_node_coord.y > motion.position.y - window)) {
+			if (!(motion.position.x < target_node_coord.x + window && motion.position.x > target_node_coord.x - window &&
+				motion.position.y < target_node_coord.y + window && motion.position.y > target_node_coord.y - window)) {
 
 				if (ai_debug) {
 					std::cout << "Determining direction to move" << std::endl;
@@ -157,10 +156,18 @@ void AISystem::step(float elapsed_ms)
 				}
 
 				//Move
-				if		(target_node_coord.x > motion.position.x) { motion.velocity.x =		player_vel; } // Move right
-				else if (target_node_coord.x < motion.position.x) { motion.velocity.x = -1* player_vel; } // Move left
-				if		(target_node_coord.y > motion.position.y) { motion.velocity.y =		player_vel;	} // Move down
-				else if (target_node_coord.y < motion.position.y) { motion.velocity.y = -1* player_vel; } // Move up
+				if		(target_node_coord.x > motion.position.x) {  motion.velocity.x =     player_vel;  } // Move right
+				else if (target_node_coord.x < motion.position.x) {  motion.velocity.x = -1* player_vel;  } // Move left
+				// Move down
+				if		(target_node_coord.y > motion.position.y) {
+					motion.velocity.y =		player_vel;
+					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
+				} 
+				// Move up
+				else if (target_node_coord.y < motion.position.y) { 
+					motion.velocity.y = -1* player_vel;
+					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
+				} 
 			}
 
 			// The player has reached the target node...
@@ -176,16 +183,11 @@ void AISystem::step(float elapsed_ms)
 				// creates a jitter effect. The problem is resolved if the game still sees the sprite as
 				// moving left as shown below.
 
-				if (motion.velocity.x < 0) { motion.velocity.x = -0.001; }
+				if (motion.velocity.x < 0) {  motion.velocity.x = -0.001f;  }
 				else { motion.velocity.x = 0; }
 				motion.velocity.y = 0;
 
-				//if (motion.velocity.x < 0) { motion.velocity.x = -10; }
-				//else { motion.velocity.x = 10; }
-				//if (motion.velocity.y < 0) { motion.velocity.y = -10; }
-				//else { motion.velocity.y = 10; }
-
-				// Sneakily move the player to center of the tile to prevent jitter
+				// Move the player to center of the tile to prevent jitter
 				motion.position = target_node_coord;
 
 				// Remove the first node in path because we've reached it
@@ -197,6 +199,7 @@ void AISystem::step(float elapsed_ms)
 		else {
 			if (ai_debug) { std::cout << "Path size is 0 - reached destination" << std::endl; }
 			do_pathfinding_movement = false;
+
 			motion.velocity.x = 0;
 			motion.velocity.y = 0;
 		}
@@ -210,7 +213,6 @@ void AISystem::generate_path(vec2 starting_map_pos, vec2 ending_map_pos) {
 	std::vector<vec2> visited;
 	std::vector<vec2>   queue;
 	std::set<vec2>  set_queue;
-	bool generate_path = true;
 
 	// Clear the previous path so we can construct a new one.
 	path.clear();
@@ -219,12 +221,13 @@ void AISystem::generate_path(vec2 starting_map_pos, vec2 ending_map_pos) {
 	queue.push_back(starting_map_pos);
 
 	while (queue.size() > 0 && do_generate_path == true) {
-		// Get the first node in the queue
 		// Important: node is a vec2 which means a node that looks like [0,1] means
 		// that the x (the column) is 0 and the y (the row) is 1.
 
+		// Pop the first node
 		vec2 n = queue.front();
 		queue.erase(queue.begin());
+
 		if (ai_debug) {
 			std::cout << "========================================" << std::endl;
 			std::cout << "Looking at node [ " << n.x << ", " << n.y << "]" << std::endl;
@@ -353,31 +356,31 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	std::vector<vec2> adj_nodes = {};
 
 	// Assuming map is square
-	size_t max_size = game_state.map_tiles.size();
+	size_t max_size = game_state.level.map_tiles.size();
 
 	// For now, assuming map_tile == 0 is the only traversable tile
 	// If adjacent node is within bounds and map_tile == 0, add to adjacency list.
 	// Check right
 	if (root_node.x + 1 <= max_size) {
-		if (game_state.map_tiles[root_node.y][root_node.x + 1] == FREE_SPACE) {
+		if (game_state.level.map_tiles[root_node.y][root_node.x + 1] == FREE_SPACE) {
 			adj_nodes.push_back({ root_node.x + 1, root_node.y });
 		}
 	}
 	// Check down
 	if (root_node.y + 1 <= max_size) {
-		if (game_state.map_tiles[root_node.y + 1][root_node.x] == FREE_SPACE) {
+		if (game_state.level.map_tiles[root_node.y + 1][root_node.x] == FREE_SPACE) {
 			adj_nodes.push_back({ root_node.x,root_node.y + 1 });
 		}
 	}
 	// Check left
 	if (root_node.x - 1 >= 0) {
-		if (game_state.map_tiles[root_node.y][root_node.x - 1] == FREE_SPACE) {
+		if (game_state.level.map_tiles[root_node.y][root_node.x - 1] == FREE_SPACE) {
 			adj_nodes.push_back({ root_node.x - 1, root_node.y });
 		}
 	}
 	// Check up
 	if (root_node.y - 1 >= 0) {
-		if (game_state.map_tiles[root_node.y - 1][root_node.x] == FREE_SPACE) {
+		if (game_state.level.map_tiles[root_node.y - 1][root_node.x] == FREE_SPACE) {
 			adj_nodes.push_back({ root_node.x, root_node.y - 1 });
 		}
 	}
