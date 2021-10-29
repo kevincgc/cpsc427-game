@@ -20,15 +20,18 @@ const int window_height_px = 800;
 extern entt::registry registry;
 
 enum class ProgramState {
-	MENU,
 	INIT,
+	MENU,
+	RESET_GAME,
 	RUNNING,
 	PAUSED,
-	OVER
+	GAME_OVER,
+	EXIT
 };
 
 extern "C" {
-	void draw(GLFWwindow* window, int window_width_px, int window_height_px);
+	void init(static GLFWwindow* win, int window_width_px, int window_height_px);
+	void draw(GLFWwindow* window);
 }
 
 // Entry point
@@ -39,48 +42,52 @@ int main()
 	RenderSystem renderer;
 	PhysicsSystem physics;
 	AISystem ai;
-	ProgramState state = ProgramState::MENU;
+	ProgramState state = ProgramState::INIT;
+	GLFWwindow* window;
 
-	// Initializing window
-	GLFWwindow* window = world.create_window(window_width_px, window_height_px);
-	if (!window) {
-		// Time to read the error message
-		printf("Press any key to exit");
-		getchar();
-		return EXIT_FAILURE;
-	}
-	
-	if (state == ProgramState::MENU) {
-		draw(window, window_width_px, window_height_px);
-	}
-	else {
-		// initialize the main systems
-		renderer.init(window_width_px, window_height_px, window);
-		world.init(&renderer);
-
-		// variable timestep loop
-		auto t = Clock::now();
-		while (!world.is_over()) {
-			// Processes system messages, if this wasn't present the window would become
-			// unresponsive
-			glfwPollEvents();
-
-			// Calculating elapsed times in milliseconds from the previous iteration
-			auto now = Clock::now();
-			float elapsed_ms =
-				(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
-			t = now;
-
-			world.step(elapsed_ms);
-			ai.step(elapsed_ms);
-			physics.step(elapsed_ms, window_width_px, window_height_px);
-			world.handle_collisions();
-
-			renderer.draw();
-
-			// TODO A2: you can implement the debug freeze here but other places are possible too.
+	while (1) {
+		if (state == ProgramState::INIT) {
+			window = world.create_window(window_width_px, window_height_px);
+			if (!window) {
+				printf("Press any key to exit");
+				getchar();
+				return EXIT_FAILURE;
+			}
+			init(window, window_width_px, window_height_px);
+			state = ProgramState::MENU;
 		}
+		else if (state == ProgramState::MENU) {
+			draw(window);
+		}
+		else {
+			// initialize the main systems
+			renderer.init(window_width_px, window_height_px, window);
+			world.init(&renderer);
 
+			// variable timestep loop
+			auto t = Clock::now();
+			while (!world.is_over()) {
+				// Processes system messages, if this wasn't present the window would become
+				// unresponsive
+				glfwPollEvents();
+
+				// Calculating elapsed times in milliseconds from the previous iteration
+				auto now = Clock::now();
+				float elapsed_ms =
+					(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
+				t = now;
+
+				world.step(elapsed_ms);
+				ai.step(elapsed_ms);
+				physics.step(elapsed_ms, window_width_px, window_height_px);
+				world.handle_collisions();
+
+				renderer.draw();
+
+				// TODO A2: you can implement the debug freeze here but other places are possible too.
+			}
+
+		}
 	}
 
 	return EXIT_SUCCESS;
