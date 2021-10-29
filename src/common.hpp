@@ -30,7 +30,7 @@ inline std::string shader_path(const std::string& name) {return std::string(PROJ
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
-inline std::string maps_path(const std::string& name) {return data_path() + "/maps/" + std::string(name);};
+inline std::string levels_path(const std::string& name) {return data_path() + "/levels/" + std::string(name);};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
@@ -72,3 +72,18 @@ enum class ProgramState {
 };
 
 extern ProgramState state;
+
+// From main.cpp - now globally accessible
+extern const int window_width_px;
+extern const int window_height_px;
+
+// From world_system.cpp - now globally accessible (especially for ai_system.cpp)
+extern float player_vel;
+extern float enemy_vel;
+extern vec2  starting_map_pos;
+extern vec2  ending_map_pos;
+extern bool  do_generate_path;
+extern bool  collision_with_wall(vec2 position, float scale_x, float scale_y);
+
+// From ai_system.cpp - set to false when world_system.cpp detects death
+extern bool do_pathfinding_movement;

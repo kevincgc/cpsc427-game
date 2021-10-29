@@ -1,0 +1,9 @@
+name: Procedural Map 1
+type: procedural
+procedural_options:
+    size: [13, 13]
+    method: binarytree
+
+enemies:
+    spikes: 2
+    drones: 3

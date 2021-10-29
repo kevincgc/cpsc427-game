@@ -169,7 +169,7 @@ void Mouse_spell::update_datastructs(std::map<std::string, bool> &gesture_status
 	}
 
 	// Determine the swipe speed
-	if (elapsed_ms < speed_threshold) {
+	if ((abs(dif_x) > min_distance  || abs(dif_y) > min_distance) && elapsed_ms < speed_threshold) {
 		// Debug
 		std::cout << "Fast swipe!" << std::endl;
 		flag_fast = true;
@@ -184,5 +184,3 @@ void Mouse_spell::reset_spells(std::map<int, std::map<std::string, std::string>>
 	// Set every spell's active status to "false"
 	for (auto &spell : spellbook) { spell.second["active"] = "false";}
 }
-
-ProgramState state = ProgramState::INIT;

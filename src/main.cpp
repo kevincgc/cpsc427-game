@@ -37,10 +37,17 @@ int main()
 	AISystem ai;
 	GLFWwindow* window;
 	bool has_completed_init = false;
-	auto t = Clock::now();
+
+
+
+
 
 	while (!world.is_over()) {
+		// Processes system messages, if this wasn't present the window would become
+		// unresponsive
 		glfwPollEvents();
+
+
 		auto now = Clock::now();
 		float elapsed_ms =
 			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;

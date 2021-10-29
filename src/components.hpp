@@ -11,14 +11,12 @@ struct Player
 
 };
 
-// Turtles and pebbles have a hard shell
-struct HardShell
+struct Enemy
 {
 
 };
 
-// Fish and Salmon have a soft shell
-struct SoftShell
+struct Friendly
 {
 
 };
@@ -50,13 +48,23 @@ const float map_scale = 150.0;
 enum MapTile {
 	FREE_SPACE = 0,
 	BREAKABLE_WALL,
-	UNBREAKABLE_WALL
+	UNBREAKABLE_WALL,
+	ENTRANCE,
+	EXIT
+};
+
+// Level State
+struct LoadedLevel
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+	vec2 start_position;
 };
 
 // Global Game State
 struct GameState
 {
-	std::vector<std::vector<MapTile>> map_tiles;
+	std::string level_id;
+	LoadedLevel level;
 };
 extern GameState game_state;
 
@@ -170,8 +178,8 @@ enum class TEXTURE_ASSET_ID {
 	// WALL_CROSS,
 	WALL = 0,
 
-	FISH,
-	TURTLE,
+	SPIKE,
+	DRONE,
 	MINOTAUR,
 
 	TEXTURE_COUNT

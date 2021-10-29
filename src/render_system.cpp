@@ -88,7 +88,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
-		
+
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
@@ -347,7 +347,7 @@ void RenderSystem::draw()
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
 
-	std::vector<std::vector<MapTile>> map_tiles = game_state.map_tiles;
+	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
 			drawTile({j, i}, map_tiles[i][j], projection_2D);

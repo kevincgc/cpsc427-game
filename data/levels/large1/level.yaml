@@ -1,0 +1,5 @@
+name: Large Map 1
+type: premade
+enemies:
+    spikes: 2
+    drones: 3
