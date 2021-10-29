@@ -35,7 +35,7 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	glfwSwapInterval(1); // vsync
 
 	// Load OpenGL function pointers
-	const int is_fine = gl3w_init();
+	const int is_fine = glewInit();
 	assert(is_fine == 0);
 
 	// Create a frame buffer
