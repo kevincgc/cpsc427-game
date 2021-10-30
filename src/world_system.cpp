@@ -26,18 +26,18 @@ using Clock = std::chrono::high_resolution_clock;
 int MAX_DRONES;
 int MAX_SPIKES;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
-const size_t FISH_DELAY_MS   = 5000 * 3;
-const size_t ITEM_DELAY_MS   = 3000 * 3;
-vec2 WorldSystem::camera     = {0, 0};
-vec2 player_vel				 = { 300.f, 300.f };
-vec2 enemy_vel				 = { 100.f, 100.f };
-vec2 default_player_vel		 = { 300.f, 300.f };
+const size_t FISH_DELAY_MS = 5000 * 3;
+const size_t ITEM_DELAY_MS = 3000 * 3;
+vec2 WorldSystem::camera = { 0, 0 };
+vec2 player_vel = { 300.f, 300.f };
+vec2 enemy_vel = { 100.f, 100.f };
+vec2 default_player_vel = { 300.f, 300.f };
 
 // My Settings
 auto t = Clock::now();
-bool flag_right   = false;
-bool flag_left    = false;
-bool flag_fast    = false;
+bool flag_right = false;
+bool flag_left = false;
+bool flag_fast = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
@@ -96,7 +96,7 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
 	vec2 corners[] = {
 		// upper right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, - scale_y / 2)),
+		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, -scale_y / 2)),
 
 		// upper left
 		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
@@ -105,7 +105,7 @@ extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
 		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
 
 		// lower right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x/ 2, scale_y/ 2)),
+		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, scale_y / 2)),
 	};
 
 	bool collision = false;
@@ -156,7 +156,7 @@ WorldSystem::~WorldSystem() {
 
 // Debugging
 namespace {
-	void glfw_err_cb(int error, const char *desc) {
+	void glfw_err_cb(int error, const char* desc) {
 		fprintf(stderr, "%d: %s", error, desc);
 	}
 }
@@ -187,7 +187,7 @@ GLFWwindow* WorldSystem::create_window() {
 
 	// obtain user's screen resolution
 	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-	float user_aspect_ratio = (float) (mode->width) / (mode->height);
+	float user_aspect_ratio = (float)(mode->width) / (mode->height);
 
 	// game initally designed with a 1200 x 800 window with 1920 x 1080 resolution, so scale the window size to maintain this ratio with the user's screen
 	// keeps the aspect ratio of the game intact across different machines
@@ -204,14 +204,20 @@ GLFWwindow* WorldSystem::create_window() {
 		fprintf(stderr, "Failed to glfwCreateWindow");
 		return nullptr;
 	}
-
+	glfwMakeContextCurrent(window);
+	glViewport(0, 0, window_width_px, window_height_px);
+	glewExperimental = 1;
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to setup GLEW\n");
+		exit(1);
+	}
 	// Setting callbacks to member functions (that's why the redirect is needed)
 	// Input is handled using GLFW, for more info see
 	// http://www.glfw.org/docs/latest/input_guide.html
 	glfwSetWindowUserPointer(window, this);
 	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
 	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
-	auto mouse_button_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button( _0, _1, _2 ); };
+	auto mouse_button_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button(_0, _1, _2); };
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
 	glfwSetMouseButtonCallback(window, mouse_button_redirect);
@@ -256,7 +262,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	enemy_vel *= global_scaling_vector;
 
 	// Set all states to default
-    restart_game();
+	restart_game();
 }
 
 // Update our game world
@@ -278,15 +284,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Removing out of screen entities
 	auto motions = registry.view<Motion>();
 
-	for (auto entity: motions) {
+	for (auto entity : motions) {
 		Motion& motion = motions.get<Motion>(entity);
 		if (motion.position.x + abs(motion.scale.x) < 0.f) {
 			registry.destroy(entity);
 		}
 	}
 
-    float min_counter_ms = 3000.f;
-	for (entt::entity entity: registry.view<DeathTimer>()) {
+	float min_counter_ms = 3000.f;
+	for (entt::entity entity : registry.view<DeathTimer>()) {
 		// progress timer
 		DeathTimer& counter = registry.get<DeathTimer>(entity);
 		counter.counter_ms -= elapsed_ms_since_last_update;
@@ -297,14 +303,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-            restart_game();
+			state = ProgramState::GAME_OVER;
 			return true;
 		}
 	}
 
 	// Temporary implementation: General timer for spell duration. Later implementation will have spell-specific timers
 	// Deactivate spells based on time
-	for (auto &spell : spellbook) {
+	for (auto& spell : spellbook) {
 		if (spell.second["active"] == "true") { active_spell = true; }
 		if (active_spell) {
 			spell_timer -= elapsed_ms_since_last_update;
@@ -318,7 +324,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
-	player_vel = spellbook[1]["active"] == "true" ? default_player_vel*2.5f : default_player_vel;
+	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
 
 	// process player flash timer
 	flash_timer -= elapsed_ms_since_last_update;
@@ -357,7 +363,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 }
 
 // based on the explanation from https://en.wikipedia.org/wiki/Maze_generation_algorithm (yes, really)
-void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y) {
+void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>>& maze, int begin_x, int begin_y, int end_x, int end_y) {
 	int size_x = end_x - begin_x;
 	int size_y = end_y - begin_y;
 
@@ -368,26 +374,29 @@ void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze,
 
 	if (size_y > size_x) {
 		// split horizontally
-    	std::uniform_int_distribution<int> rand_spot(begin_x, end_x - 1);
+		std::uniform_int_distribution<int> rand_spot(begin_x, end_x - 1);
 		const int passage = rand_spot(rng);
 		for (int i = begin_x; i < end_x; i++) {
 			if (passage == i) {
 				maze[split_y][i] = MapTile::FREE_SPACE;
-			} else {
+			}
+			else {
 				maze[split_y][i] = MapTile::BREAKABLE_WALL;
 			}
 		}
 
 		recursiveGenerateMaze(maze, begin_x, begin_y, end_x, split_y);
 		recursiveGenerateMaze(maze, begin_x, split_y + 1, end_x, end_y);
-	} else {
+	}
+	else {
 		// split vertically
 		std::uniform_int_distribution<int> rand_spot(begin_y, end_y - 1);
 		const int passage = rand_spot(rng);
 		for (int i = begin_y; i < end_y; i++) {
 			if (passage == i) {
 				maze[i][split_x] = MapTile::FREE_SPACE;
-			} else {
+			}
+			else {
 				maze[i][split_x] = MapTile::BREAKABLE_WALL;
 			}
 		}
@@ -398,7 +407,7 @@ void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze,
 
 }
 
-std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile) {
+std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::string method, int width, int height, vec2& start_tile) {
 	fprintf(stderr, "Generating %s procedural maze %d x %d\n", method.c_str(), width, height);
 
 	// create vector
@@ -412,14 +421,15 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 
 	// walls
 	std::fill(maze[0].begin(), maze[0].end(), MapTile::UNBREAKABLE_WALL);
-	std::fill(maze[height-1].begin(), maze[height-1].end(), MapTile::UNBREAKABLE_WALL);
+	std::fill(maze[height - 1].begin(), maze[height - 1].end(), MapTile::UNBREAKABLE_WALL);
 	for (int i = 0; i < height; i++) {
-		maze[i][0] = maze[i][width-1] = MapTile::UNBREAKABLE_WALL;
+		maze[i][0] = maze[i][width - 1] = MapTile::UNBREAKABLE_WALL;
 	}
 
 	if (method == "recursive") {
 		recursiveGenerateMaze(maze, 1, 1, width - 1, height - 1);
-	} else if (method == "binarytree") {
+	}
+	else if (method == "binarytree") {
 		// carve passages
 		// based on https://hurna.io/academy/algorithms/maze_generator/binary.html, modified for efficiency and format
 		for (int i = 1; i < height; i += 2) {
@@ -432,14 +442,16 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 					// there can only be one
 					if (uniform_dist(rng) < 0.5) {
 						up = false;
-					} else {
+					}
+					else {
 						left = false;
 					}
 				}
 
 				if (up) {
 					maze[i - 1][j] = MapTile::FREE_SPACE;
-				} else if (left) {
+				}
+				else if (left) {
 					maze[i][j - 1] = MapTile::FREE_SPACE;
 				}
 			}
@@ -455,7 +467,7 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 	int ind = std::uniform_int_distribution<int>(0, possible_start_positions.size() - 1)(rng);
 	const int start_position = possible_start_positions[ind];
 	maze[start_position][0] = MapTile::ENTRANCE;
-	start_tile = vec2(0.0, (float) start_position);
+	start_tile = vec2(0.0, (float)start_position);
 
 	// random end position
 	std::vector<int> possible_end_positions;
@@ -480,11 +492,13 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 		if (it->second.IsScalar()) {
 			// spawn exactly this number of entities
 			entity_count = it->second.as<int>();
-		} else if (it->second.IsSequence()) {
+		}
+		else if (it->second.IsSequence()) {
 			// spawn random number of entities
 			std::vector<int> ct = it->second.as<std::vector<int>>();
 			entity_count = std::uniform_int_distribution<int>(ct[0], ct[1])(rng);
-		} else assert(false);
+		}
+		else assert(false);
 
 		while (entity_count--) { // callback for entity_count entities
 			int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
@@ -524,7 +538,7 @@ void WorldSystem::restart_game() {
 				int tile;
 				std::vector<MapTile> row;
 				while (str_stream >> tile) { // read all tiles from this line
-					row.push_back((MapTile) tile);
+					row.push_back((MapTile)tile);
 
 					if (tile == MapTile::ENTRANCE) {
 						// current is entrance
@@ -535,11 +549,13 @@ void WorldSystem::restart_game() {
 				// push this map row to the final vector
 				game_state.level.map_tiles.push_back(row);
 			}
-		} else assert(false);
+		}
+		else assert(false);
 		file.close();
 
 		fprintf(stderr, "Loaded premade map\n");
-	} else if (level_type == "procedural") {
+	}
+	else if (level_type == "procedural") {
 		fprintf(stderr, "Loading procedural map\n");
 
 		const auto procedural_options = level_config["procedural_options"];
@@ -551,10 +567,11 @@ void WorldSystem::restart_game() {
 		game_state.level.map_tiles = generateProceduralMaze(method, size[0], size[1], game_state.level.start_position);
 
 		fprintf(stderr, "Loaded procedural map\n");
-	} else assert(false); // unknown level type
+	}
+	else assert(false); // unknown level type
 
-	// Remove all entities that we created
-	// All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
+ // Remove all entities that we created
+ // All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
 	registry.clear();
 
 	// find spawnable tiles for both items and enemies
@@ -565,7 +582,7 @@ void WorldSystem::restart_game() {
 		for (uint j = 0; j < row.size(); j++) {
 			if (row[j] == MapTile::FREE_SPACE) {
 				// inverted coordinates
-				spawnable_tiles.push_back({j, i});
+				spawnable_tiles.push_back({ j, i });
 			}
 		}
 	}
@@ -573,31 +590,35 @@ void WorldSystem::restart_game() {
 	// create enemies for this level
 	const YAML::Node enemies = level_config["enemies"];
 	if (enemies) {
-		process_entity_node(enemies, [this] (std::string enemy_type, vec2 position) {
+		process_entity_node(enemies, [this](std::string enemy_type, vec2 position) {
 			if (enemy_type == "spikes") {
 				createSpike(renderer, position);
-			} else if (enemy_type == "drones") {
+			}
+			else if (enemy_type == "drones") {
 				createDrone(renderer, position);
-			} else {
+			}
+			else {
 				assert(false); // unsupported enemy
 				return;
 			}
-		});
+			});
 	}
 
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {
-		process_entity_node(enemies, [this] (std::string item_type, vec2 position) {
+		process_entity_node(enemies, [this](std::string item_type, vec2 position) {
 			if (item_type == "extra_lives") {
 				// TODO create item here
-			} else if (item_type == "wall_breaker") {
+			}
+			else if (item_type == "wall_breaker") {
 				// TODO create item here
-			} else {
+			}
+			else {
 				assert(false); // unsupported item
 				return;
 			}
-		});
+			});
 	}
 
 	// Create a new Minotaur
@@ -636,7 +657,7 @@ void WorldSystem::handle_collisions() {
 					registry.emplace<DeathTimer>(entity);
 					Mix_PlayChannel(-1, salmon_dead_sound, 0);
 					Colour& c = registry.get<Colour>(entity);
-					c.colour = vec3( 0.27, 0.27, 0.27 );
+					c.colour = vec3(0.27, 0.27, 0.27);
 
 
 					// Reset player speed/movement to 0
@@ -662,24 +683,24 @@ void WorldSystem::handle_collisions() {
 
 // Should the game be over ?
 bool WorldSystem::is_over() const {
-	return bool(glfwWindowShouldClose(window));
+	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
 	static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
-	if (action == GLFW_PRESS) {
+	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
 		pressed_keys.insert({ key, true });
 	}
-	else if (action == GLFW_RELEASE && pressed_keys.find(key) != pressed_keys.end()) {
+	else if (action == GLFW_RELEASE && pressed_keys.find(key) != pressed_keys.end() && state == ProgramState::RUNNING) {
 		pressed_keys.erase(key);
 	} // not GLFW_REPEAT
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& motion = registry.get<Motion>(player);
 
-	if (!registry.view<DeathTimer>().contains(player)) {
+	if (!registry.view<DeathTimer>().contains(player) && state == ProgramState::RUNNING) {
 
 		if (key == GLFW_KEY_SPACE) {
 			// minotaur attack mode on spack key
@@ -720,6 +741,9 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 
 		}
+		if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+			state = ProgramState::PAUSED;
+		}
 		// Resetting game
 		if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
 			int w, h;
@@ -743,96 +767,98 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 	//		It's only made longer with lag.
 
 	// Capture press position
-	if (action == GLFW_PRESS   && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
-	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+	if (state == ProgramState::RUNNING) {
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
+		if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
 
-		// Capture release position
-		glfwGetCursorPos(window, &x_pos_release, &y_pos_release);
+			// Capture release position
+			glfwGetCursorPos(window, &x_pos_release, &y_pos_release);
 
-		// If it's truly a click...
-		float click_threshold = 100;
-		if (abs(x_pos_release - x_pos_press) < click_threshold && abs(y_pos_release - y_pos_press) < click_threshold) {
+			// If it's truly a click...
+			float click_threshold = 100;
+			if (abs(x_pos_release - x_pos_press) < click_threshold && abs(y_pos_release - y_pos_press) < click_threshold) {
 
-			// Implementation: There's a difference between camera coords and world coords.
-			// glfwGetCursorPos gets the position of the cursor in the window. So clicking
-			// the center of the window returns, for example, 1200/2=600 and 800/2=400.
-			// But the player's coords are different. Even though the player is in the
-			// center of the window, it's **world** coords are actually (initially) (75,225).
-			// So we need to get the coords relative to the player for pathfinding.
+				// Implementation: There's a difference between camera coords and world coords.
+				// glfwGetCursorPos gets the position of the cursor in the window. So clicking
+				// the center of the window returns, for example, 1200/2=600 and 800/2=400.
+				// But the player's coords are different. Even though the player is in the
+				// center of the window, it's **world** coords are actually (initially) (75,225).
+				// So we need to get the coords relative to the player for pathfinding.
 
-			entt::entity player = registry.view<Player>().begin()[0];
-			Motion& player_motion = registry.get<Motion>(player);
+				entt::entity player = registry.view<Player>().begin()[0];
+				Motion& player_motion = registry.get<Motion>(player);
 
-			// Get cursor screen coords
-			vec2 cursor_screen_pos = { float(x_pos_release - window_width_px/2), float(y_pos_release - window_height_px/2) };
+				// Get cursor screen coords
+				vec2 cursor_screen_pos = { float(x_pos_release - window_width_px / 2), float(y_pos_release - window_height_px / 2) };
 
-			// Get cursor world coords
-			vec2 target_world_pos = { player_motion.position.x + cursor_screen_pos.x, player_motion.position.y + cursor_screen_pos.y };
+				// Get cursor world coords
+				vec2 target_world_pos = { player_motion.position.x + cursor_screen_pos.x, player_motion.position.y + cursor_screen_pos.y };
 
-			// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
-			vec2 target_map_pos = position_to_map_coords(target_world_pos);
+				// Get cursor map coords (returns something like (0,1)) representing column 0, row 1.
+				vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
-			// If clicked a traversable node (i.e. not a wall)...
-			if (get_map_tile(target_map_pos) == FREE_SPACE) {
+				// If clicked a traversable node (i.e. not a wall)...
+				if (get_map_tile(target_map_pos) == FREE_SPACE) {
 
-				// Store starting and ending positions for ai position to look at
-				vec2 player_map_pos = position_to_map_coords(player_motion.position);
-				starting_map_pos    = player_map_pos;
-				ending_map_pos      = target_map_pos;
+					// Store starting and ending positions for ai position to look at
+					vec2 player_map_pos = position_to_map_coords(player_motion.position);
+					starting_map_pos = player_map_pos;
+					ending_map_pos = target_map_pos;
 
-				// Trigger a flag and let ai_system.cpp handle the rest
-				do_generate_path    = true;
+					// Trigger a flag and let ai_system.cpp handle the rest
+					do_generate_path = true;
+				}
+
+				// Did not click a traversable node...
+				else { std::cout << "Clicked on a wall!" << std::endl; }
+
 			}
 
-			// Did not click a traversable node...
-			else { std::cout << "Clicked on a wall!" << std::endl; }
-
 		}
+		// ========================================
+		// Gestures: The following blocks are for the gesture feature
 
-	}
-	// ========================================
-	// Gestures: The following blocks are for the gesture feature
+		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+			if (action == GLFW_PRESS) {
+				flag_right = true;
+				t = Clock::now();
+			}
+			else if (action == GLFW_RELEASE) {
+				flag_right = false;
 
-	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-		if (action == GLFW_PRESS) {
-			flag_right = true;
-			t = Clock::now();
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_right = false;
+				// Capture elapsed time
+				auto now = Clock::now();
+				float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
-			// Capture elapsed time
-			auto now = Clock::now();
-			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
-
-			if (!gesture_coords_right.empty()) {
-				// Modify datastructs
-				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_right, "RMB", flag_fast, elapsed_ms);
-				// Check Spell Cast
-				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-				// reset fast_flag;
-				flag_fast = false;
+				if (!gesture_coords_right.empty()) {
+					// Modify datastructs
+					mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_right, "RMB", flag_fast, elapsed_ms);
+					// Check Spell Cast
+					mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
+					// reset fast_flag;
+					flag_fast = false;
+				}
 			}
 		}
-	}
-	if (button == GLFW_MOUSE_BUTTON_LEFT) {
-		if (action == GLFW_PRESS) {
-			flag_left = true;
-			t = Clock::now();
-		}
-		else if (action == GLFW_RELEASE) {
-			flag_left = false;
-			// Capture elapsed time
-			auto now = Clock::now();
-			float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (action == GLFW_PRESS) {
+				flag_left = true;
+				t = Clock::now();
+			}
+			else if (action == GLFW_RELEASE) {
+				flag_left = false;
+				// Capture elapsed time
+				auto now = Clock::now();
+				float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 
-			if (!gesture_coords_left.empty()) {
-				// Modify datastructs
-				mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_left, "LMB", flag_fast, elapsed_ms);
-				// Check Spell Cast
-				mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
-				// reset fast_flag;
-				flag_fast = false;
+				if (!gesture_coords_left.empty()) {
+					// Modify datastructs
+					mouse_spell.update_datastructs(gesture_statuses, gesture_queue, gesture_coords_left, "LMB", flag_fast, elapsed_ms);
+					// Check Spell Cast
+					mouse_spell.check_spell(gesture_queue, spellbook, flag_fast);
+					// reset fast_flag;
+					flag_fast = false;
+				}
 			}
 		}
 	}
@@ -845,11 +871,11 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 }
 
 vec2 WorldSystem::map_coords_to_position(vec2 map_coords) {
-	return {map_scale.x * map_coords.x, map_scale.y * map_coords.y};
+	return { map_scale.x * map_coords.x, map_scale.y * map_coords.y };
 }
 
 vec2 WorldSystem::position_to_map_coords(vec2 position) {
-	return {floor(position.x / map_scale.x), floor(position.y / map_scale.y)};
+	return { floor(position.x / map_scale.x), floor(position.y / map_scale.y) };
 }
 
 bool WorldSystem::is_within_bounds(vec2 map_coords) {

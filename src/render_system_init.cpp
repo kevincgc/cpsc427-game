@@ -35,9 +35,17 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	glfwSwapInterval(1); // vsync
 
 	// Load OpenGL function pointers
-	const int is_fine = gl3w_init();
+	const int is_fine = glewInit();
 	assert(is_fine == 0);
+	registry.emplace<ScreenState>(screen_state_entity);
+	reinitSetBuffer(width, height, window_arg);
+	initializeGlTextures();
+	initializeGlEffects();
+	initializeGlGeometryBuffers();
+	return reinit(width, height, window_arg, true);
+}
 
+void RenderSystem::reinitSetBuffer(int width, int height, GLFWwindow* window_arg) {
 	// Create a frame buffer
 	frame_buffer = 0;
 	glGenFramebuffers(1, &frame_buffer);
@@ -62,12 +70,14 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	gl_has_errors();
+}
+
+bool RenderSystem::reinit(int width, int height, GLFWwindow* window_arg, bool is_init) {
+	if (!is_init) {
+		reinitSetBuffer(width, height, window_arg);
+	}
 
 	initScreenTexture();
-    initializeGlTextures();
-	initializeGlEffects();
-	initializeGlGeometryBuffers();
-
 	return true;
 }
 
@@ -268,7 +278,6 @@ RenderSystem::~RenderSystem()
 	}
 	// delete allocated resources
 	glDeleteFramebuffers(1, &frame_buffer);
-	gl_has_errors();
 
 	// remove all entities created by the render system
 	while (registry.view<RenderRequest>().size() > 0)
@@ -278,8 +287,6 @@ RenderSystem::~RenderSystem()
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.emplace<ScreenState>(screen_state_entity);
-
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);
 
