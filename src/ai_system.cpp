@@ -17,6 +17,8 @@ extern bool  do_pathfinding_movement	 = false;
 	   bool	 do_calculate_new_enemy_path = false;
 	   bool	 ai_debug					 = false; // set to true to print debug statements
 	   float DIST_THRESHOLD			     = 200.f; // distance threshold between enemy and player
+	   float swing_threshold			 = 100.f; // Enemy has to  be close enough to register as a hit
+	   float vertical_threshold			 = 60.f;  // Enemy can't be too far above or below player to register as a hit
 
 void AISystem::step()
 {
@@ -32,11 +34,32 @@ void AISystem::step()
 		// If it's an enemy entity...
 		if ( entity != player)
 		{
-			// If enemy is close to player...
-			if (within_threshold(player, entity)) {
+
+			// =========== Swinging Attack =========== 
+
+			// If enemy is close to player for swinging...
+			if (within_threshold(player, entity, swing_threshold) && player_swing && abs(entity_motion.position.y - motion.position.y) < vertical_threshold ){
+				
+				// If enemy is to the right of the player and the player is facing right
+   				if (entity_motion.position.x > motion.position.x && motion.velocity.x >= 0) {
+					registry.destroy(entity);
+					break;
+				}
+
+				// If enemy is to the left of the player and the player is facing left
+				// Warning: Right now the render system renders the sprite as facing left if velocity.x < 0
+				else if (entity_motion.position.x < motion.position.x && motion.velocity.x < 0) {
+					registry.destroy(entity);
+					break;
+				}
+			}
+
+			// If enemy is close to player for chasing...
+			if (within_threshold(player, entity, DIST_THRESHOLD)) {
 				vec2 direction_vector = motion.position - entity_motion.position;
 				entity_motion.velocity = direction_vector;
 			}
+
 			// Enemy is not close to player
 			else {
 
@@ -389,14 +412,14 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	return adj_nodes;
 }
 
-bool AISystem::within_threshold(entt::entity entity, entt::entity other)
+bool AISystem::within_threshold(entt::entity entity, entt::entity other, float threshold)
 {
 	Motion& entity_motion = registry.get<Motion>(entity);
 	Motion& other_motion = registry.get<Motion>(other);
 	
 	vec2 direction_vector = entity_motion.position - other_motion.position;
 	float distance = sqrt(dot(direction_vector, direction_vector));
-	return distance <= DIST_THRESHOLD;
+	return distance <= threshold;
 }
 
 bool AISystem::safe_zone_check(Motion &entity_motion, vec2 tile_world_coord) {
