@@ -61,8 +61,11 @@ struct Mouse_spell {
 };
 
 // From main.cpp - now globally accessible
-extern const int window_width_px;
-extern const int window_height_px;
+extern int window_width_px;
+extern int window_height_px;
+extern float global_scaling_factor;
+extern vec2 global_scaling_vector;
+extern vec2 map_scale;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
 extern float player_vel;

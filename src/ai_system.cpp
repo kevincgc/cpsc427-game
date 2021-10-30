@@ -72,10 +72,10 @@ void AISystem::step()
 					bool go_y = rand() % 2;
 					if (go_y) {
 						entity_motion.velocity.x = 0;
-						entity_motion.velocity.y = enemy_vel;
+						entity_motion.velocity.y = enemy_vel.y;
 					}
 					else {
-						entity_motion.velocity.x = enemy_vel;
+						entity_motion.velocity.x = enemy_vel.x;
 						entity_motion.velocity.y = 0;
 					}
 				}
@@ -84,16 +84,16 @@ void AISystem::step()
 				vec2 next_pos_world = { entity_motion.position.x + (entity_motion.velocity.x), entity_motion.position.y + (entity_motion.velocity.y) };
 
 				// Get the world length in px for boundary checks
-				float world_length_px = game_state.level.map_tiles.size() * map_scale;
+				vec2 world_length_px = { game_state.level.map_tiles.size() * map_scale.x, game_state.level.map_tiles.size() * map_scale.y };
 
 				// Will get vector access error out of bounds if we don't do the following check
 				// If the next coords are in-bounds...
-				if (next_pos_world.x >= -70 && next_pos_world.y >= 0 && next_pos_world.x <= world_length_px && next_pos_world.y <= world_length_px) {
-					vec2 next_pos_map = { (int)(next_pos_world.x / map_scale), (int)(next_pos_world.y / map_scale) };
-					vec2 curr_pos_map = { (int)(entity_motion.position.x / map_scale), (int)(entity_motion.position.y / map_scale) };
+				if (next_pos_world.x >= -70 && next_pos_world.y >= 0 && next_pos_world.x <= world_length_px.x && next_pos_world.y <= world_length_px.y) {
+					vec2 next_pos_map = { (int)(next_pos_world.x / map_scale.x), (int)(next_pos_world.y / map_scale.y) };
+					vec2 curr_pos_map = { (int)(entity_motion.position.x / map_scale.x), (int)(entity_motion.position.y / map_scale.y) };
 
 					// Get the current tile's world coords
-					vec2 tile_world_coord = { map_scale * curr_pos_map.x, map_scale * curr_pos_map.y };
+					vec2 tile_world_coord = { map_scale.x * curr_pos_map.x, map_scale.y * curr_pos_map.y };
 
 					// Check to prevent wall corner collision. See function for more details
 					bool in_safe_zone = safe_zone_check(entity_motion, tile_world_coord);
@@ -122,22 +122,22 @@ void AISystem::step()
 							// Travel in that direction
 							// Travel right
 							if (random_node.x > curr_pos_map.x) {
-								entity_motion.velocity.x = enemy_vel;
+								entity_motion.velocity.x = enemy_vel.x;
 								entity_motion.velocity.y = 0;
 							}
 							// Travel left
 							else if (random_node.x < curr_pos_map.x) {
-								entity_motion.velocity.x = -1 * enemy_vel;
+								entity_motion.velocity.x = -1 * enemy_vel.x;
 								entity_motion.velocity.y = 0;
 							}
 							// Travel down
 							if (random_node.y > curr_pos_map.y) {
-								entity_motion.velocity.y = enemy_vel;
+								entity_motion.velocity.y = enemy_vel.y;
 								entity_motion.velocity.x = 0;
 							}
 							// Travel up
 							else if (random_node.y < curr_pos_map.y) {
-								entity_motion.velocity.y = -1 * enemy_vel;
+								entity_motion.velocity.y = -1 * enemy_vel.y;
 								entity_motion.velocity.x = 0;
 							}
 						}
@@ -154,7 +154,7 @@ void AISystem::step()
 
 		if (path.size() > 0) {
 			// Get the player's current map position
-			vec2 player_map_pos = { (int)(motion.position.x / map_scale), (int)(motion.position.y / map_scale) };
+			vec2 player_map_pos = { (int)(motion.position.x / map_scale.x), (int)(motion.position.y / map_scale.y) };
 
 			// Get the first destination in the path
 			vec2 target_node = path.front();
@@ -163,7 +163,7 @@ void AISystem::step()
 			// Must convert node map coords (ex. [0,1]) to world coords (ex. [400,600])
 			// Otherwise player will stop at node edge, not node center.
 			// Adding extra map_scale / 2 to get coords for center of map tile.
-			vec2 target_node_coord = { map_scale * target_node.x + map_scale/2, map_scale * target_node.y + map_scale / 2 };
+			vec2 target_node_coord = { map_scale.x * target_node.x + map_scale.x/2, map_scale.y * target_node.y + map_scale.y / 2 };
 
 			// If the player has not reached the center* of the target node...
 			// The center is determined by a small square, hence window threshold
@@ -179,16 +179,17 @@ void AISystem::step()
 				}
 
 				//Move
-				if		(target_node_coord.x > motion.position.x) {  motion.velocity.x =     player_vel;  } // Move right
-				else if (target_node_coord.x < motion.position.x) {  motion.velocity.x = -1* player_vel;  } // Move left
+				if		(target_node_coord.x > motion.position.x) {  motion.velocity.x =     player_vel.x;  } // Move right
+				else if (target_node_coord.x < motion.position.x) {  motion.velocity.x = -1* player_vel.y;  } // Move left
+				// Move down
 				// Move down
 				if		(target_node_coord.y > motion.position.y) {
-					motion.velocity.y =		player_vel;
+					motion.velocity.y =		player_vel.y;
 					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
 				} 
 				// Move up
 				else if (target_node_coord.y < motion.position.y) { 
-					motion.velocity.y = -1* player_vel;
+					motion.velocity.y = -1* player_vel.y;
 					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
 				} 
 			}
@@ -414,6 +415,9 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 
 bool AISystem::within_threshold(entt::entity entity, entt::entity other, float threshold)
 {
+	float dist_threshold_x = 140.f * global_scaling_vector.x;
+	float dist_threshold_y = 140.f * global_scaling_vector.y;
+	float DIST_THRESHOLD = sqrt(pow(dist_threshold_x, 2) + pow(dist_threshold_y, 2)); // scaled distance threshold between enemy and player
 	Motion& entity_motion = registry.get<Motion>(entity);
 	Motion& other_motion = registry.get<Motion>(other);
 	
@@ -438,19 +442,19 @@ bool AISystem::safe_zone_check(Motion &entity_motion, vec2 tile_world_coord) {
 
 	// Debugging
 	if (ai_debug) {
-		std::cout << "Safe zone x range: " << tile_world_coord.x + map_scale * .25 << " - " << tile_world_coord.x + map_scale * .75 << std::endl;
-		std::cout << "Safe zone y range: " << tile_world_coord.y + map_scale * .25 << " - " << tile_world_coord.y + map_scale * .75 << std::endl;
+		std::cout << "Safe zone x range: " << tile_world_coord.x + map_scale.x * .25 << " - " << tile_world_coord.x + map_scale.x * .75 << std::endl;
+		std::cout << "Safe zone y range: " << tile_world_coord.y + map_scale.x * .25 << " - " << tile_world_coord.y + map_scale.x * .75 << std::endl;
 		std::cout << "Enemy position: " << entity_motion.position.x << ", " << entity_motion.position.y << std::endl;
 	}
 
 	// If the enemy is moving vertically, make sure they're in the vertical safe zone
 	if (entity_motion.velocity.y != 0) {
-		if (entity_motion.position.x <= tile_world_coord.x + map_scale * .25) {
-			entity_motion.velocity.x = enemy_vel;
+		if (entity_motion.position.x <= tile_world_coord.x + map_scale.x * .25) {
+			entity_motion.velocity.x = enemy_vel.x;
 			return false;
 		}
-		else if (entity_motion.position.x >= tile_world_coord.x + map_scale * .75) {
-			entity_motion.velocity.x = -1 * enemy_vel;
+		else if (entity_motion.position.x >= tile_world_coord.x + map_scale.x * .75) {
+			entity_motion.velocity.x = -1 * enemy_vel.x;
 			return false;
 		}
 		else {
@@ -460,12 +464,12 @@ bool AISystem::safe_zone_check(Motion &entity_motion, vec2 tile_world_coord) {
 	}
 	// If the enemy is moving horizontally, make sure they're in the horizontal safe zone
 	else if (entity_motion.velocity.x != 0) {
-		if (entity_motion.position.y <= tile_world_coord.y + map_scale * .25) {
-			entity_motion.velocity.y = enemy_vel;
+		if (entity_motion.position.y <= tile_world_coord.y + map_scale.y * .25) {
+			entity_motion.velocity.y = enemy_vel.y;
 			return false;
 		}
-		else if (entity_motion.position.y >= tile_world_coord.y + map_scale * .75) {
-			entity_motion.velocity.y = -1 * enemy_vel;
+		else if (entity_motion.position.y >= tile_world_coord.y + map_scale.y * .75) {
+			entity_motion.velocity.y = -1 * enemy_vel.y;
 			return false;
 		}
 		else {

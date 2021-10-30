@@ -14,8 +14,13 @@
 
 using Clock = std::chrono::high_resolution_clock;
 
-const int window_width_px = 1200;
-const int window_height_px = 800;
+// default window size (modified depending on resolution)
+int window_width_px = 1200;
+int window_height_px = 800;
+// global scaler according to resolution of screen - modified in WorldSystem::createWindow
+vec2 global_scaling_vector = { 1.f, 1.f };
+// map scale used to transform map coordinates to pixels
+vec2 map_scale = { 150.f, 150.f };
 
 extern entt::registry registry;
 
@@ -29,7 +34,7 @@ int main()
 	AISystem ai;
 
 	// Initializing window
-	GLFWwindow* window = world.create_window(window_width_px, window_height_px);
+	GLFWwindow* window = world.create_window();
 	if (!window) {
 		// Time to read the error message
 		printf("Press any key to exit");
