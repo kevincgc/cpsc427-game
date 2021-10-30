@@ -1,5 +1,5 @@
 # team10
-Team 10 would like to take a grace day for the Milestone 1 submission. We will be handing it in before 23:59 on Tuesday, 2021-10-12.
+Team 10 would like to take a grace day for the Milestone 2 submission. We will be handing it in before 23:59 on Monday, 2021-11-01.
 
 This commit is our submission for M1.
 
