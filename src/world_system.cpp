@@ -29,9 +29,9 @@ const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS   = 5000 * 3;
 const size_t ITEM_DELAY_MS   = 3000 * 3;
 vec2 WorldSystem::camera     = {0, 0};
-extern float player_vel      = 300.f;
-extern float enemy_vel		 = 100.f;
-float default_player_vel	 = 300.f;
+vec2 player_vel				 = { 300.f, 300.f };
+vec2 enemy_vel				 = { 100.f, 100.f };
+vec2 default_player_vel		 = { 300.f, 300.f };
 
 // My Settings
 auto t = Clock::now();
@@ -159,7 +159,7 @@ namespace {
 
 // World initialization
 // Note, this has a lot of OpenGL specific things, could be moved to the renderer
-GLFWwindow* WorldSystem::create_window(int width, int height) {
+GLFWwindow* WorldSystem::create_window() {
 	///////////////////////////////////////
 	// Initialize GLFW
 	glfwSetErrorCallback(glfw_err_cb);
@@ -181,8 +181,21 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 #endif
 	glfwWindowHint(GLFW_RESIZABLE, 0);
 
+	// obtain user's screen resolution
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	float user_aspect_ratio = (float) (mode->width) / (mode->height);
+
+	// game initally designed with a 1200 x 800 window with 1920 x 1080 resolution, so scale the window size to maintain this ratio with the user's screen
+	// keeps the aspect ratio of the game intact across different machines
+	window_width_px = mode->width * (1200.f / 1920.f);
+	window_height_px = mode->height * (800.f / 1080.f);
+	float width_scaling = window_width_px / 1200.f;
+	float height_scaling = window_height_px / 800.f;
+	// Will be used to scale all rendered components and movement attributes in the game
+	global_scaling_vector = { width_scaling, height_scaling };
+
 	// Create the main window (for rendering, keyboard, and mouse input)
-	window = glfwCreateWindow(width, height, "Salmon Game Assignment", nullptr, nullptr);
+	window = glfwCreateWindow(window_width_px, window_height_px, "Maze Runners", nullptr, nullptr);
 	if (window == nullptr) {
 		fprintf(stderr, "Failed to glfwCreateWindow");
 		return nullptr;
@@ -232,6 +245,12 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
+	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
+	map_scale = 150.f * global_scaling_vector;
+	player_vel *= global_scaling_vector;
+	default_player_vel *= global_scaling_vector;
+	enemy_vel *= global_scaling_vector;
+
 	// Set all states to default
     restart_game();
 }
@@ -244,7 +263,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Updating window title with points
 	std::stringstream title_ss;
-	title_ss << "Points: " << points;
+	// TODO: add timer
+	title_ss << "Elapsed time: " << points;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// setting coordinates of camera
@@ -294,7 +314,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	// Temporary implementation: Handle speed-up spell: Player moves faster
-	player_vel = spellbook[1]["active"] == "true" ? 800.f : default_player_vel;
+	player_vel = spellbook[1]["active"] == "true" ? default_player_vel*2.5f : default_player_vel;
 
 	// process player flash timer
 	flash_timer -= elapsed_ms_since_last_update;
@@ -443,12 +463,10 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 			entity_count = std::uniform_int_distribution<int>(ct[0], ct[1])(rng);
 		} else assert(false);
 
-		fprintf(stderr, "%d\n", entity_count);
-
 		while (entity_count--) { // callback for entity_count entities
 			int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
 			vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
-			position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+			position += vec2(map_scale.x / 2, map_scale.y / 2); // to spawn in the middle of the tile
 			spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
 
 			spawn_callback(entity_type, position);
@@ -561,7 +579,7 @@ void WorldSystem::restart_game() {
 
 	// Create a new Minotaur
 	vec2 minotaur_position = WorldSystem::map_coords_to_position(game_state.level.start_position);
-	minotaur_position += vec2(map_scale / 2, map_scale / 2); // this is to make it spawn on the center of the tile
+	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 
@@ -654,22 +672,22 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
 				do_pathfinding_movement = false;
-				motion.velocity.y = -1 * player_vel;
+				motion.velocity.y = -1 * player_vel.y;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 				do_pathfinding_movement = false;
-				motion.velocity.x = -1 * player_vel;
+				motion.velocity.x = -1 * player_vel.x;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
 				do_pathfinding_movement = false;
-				motion.velocity.x = player_vel;
+				motion.velocity.x = player_vel.x;
 			}
 
 			if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
 				do_pathfinding_movement = false;
-				motion.velocity.y = player_vel;
+				motion.velocity.y = player_vel.y;
 			}
 
 		}
@@ -737,7 +755,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				do_generate_path    = true;
 			}
 
-			// Did not clcik a traversable node...
+			// Did not click a traversable node...
 			else { std::cout << "Clicked on a wall!" << std::endl; }
 
 		}
@@ -798,19 +816,11 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 }
 
 vec2 WorldSystem::map_coords_to_position(vec2 map_coords) {
-	return {map_scale * map_coords.x, map_scale * map_coords.y};
-}
-
-float WorldSystem::map_coords_to_position(float map_coords) {
-	return map_scale * map_coords;
+	return {map_scale.x * map_coords.x, map_scale.y * map_coords.y};
 }
 
 vec2 WorldSystem::position_to_map_coords(vec2 position) {
-	return {floor(position.x / map_scale), floor(position.y / map_scale)};
-}
-
-int WorldSystem::position_to_map_coords(float position) {
-	return (int) floor(position / map_scale);
+	return {floor(position.x / map_scale.x), floor(position.y / map_scale.y)};
 }
 
 bool WorldSystem::is_within_bounds(vec2 map_coords) {

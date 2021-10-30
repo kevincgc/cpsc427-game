@@ -28,7 +28,7 @@ public:
 	WorldSystem();
 
 	// Creates a window
-	GLFWwindow* create_window(int width, int height);
+	GLFWwindow* create_window();
 
 	// camera
 	static vec2 camera;
@@ -51,10 +51,7 @@ public:
 	// map coords conversion
 	// the vec2 functions do both x and y, the float functions will do only one
 	static vec2 map_coords_to_position(vec2 position);
-	static float map_coords_to_position(float position);
 	static vec2 position_to_map_coords(vec2 map_coords);
-	static int position_to_map_coords(float map_coords);
-
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
