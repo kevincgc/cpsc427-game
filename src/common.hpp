@@ -68,8 +68,8 @@ extern vec2 global_scaling_vector;
 extern vec2 map_scale;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
-extern float player_vel;
-extern float enemy_vel;
+extern vec2  player_vel;
+extern vec2  enemy_vel;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
 extern bool  do_generate_path;

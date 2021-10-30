@@ -491,7 +491,7 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 		while (entity_count--) { // callback for entity_count entities
 			int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
 			vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
-			position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+			position += vec2(map_scale.x / 2, map_scale.y / 2); // to spawn in the middle of the tile
 			spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
 
 			spawn_callback(entity_type, position);
