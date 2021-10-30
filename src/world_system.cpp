@@ -245,6 +245,12 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
+	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
+	map_scale = 150.f * global_scaling_vector;
+	player_vel *= global_scaling_vector;
+	default_player_vel *= global_scaling_vector;
+	enemy_vel *= global_scaling_vector;
+
 	// Set all states to default
     restart_game();
 }
@@ -443,12 +449,6 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
-
-	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
-	map_scale = 150.f * global_scaling_vector;
-	player_vel *= global_scaling_vector;
-	default_player_vel *= global_scaling_vector;
-	enemy_vel *= global_scaling_vector;
 
 	// TODO set this up in a menu
 	// current options: "recursive_procedural1", "large1", and "test1"
