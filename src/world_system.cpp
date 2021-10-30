@@ -23,8 +23,8 @@
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
-const size_t MAX_TURTLES     = 1;
-const size_t MAX_FISH        = 1;
+int MAX_DRONES;
+int MAX_SPIKES;
 const size_t TURTLE_DELAY_MS = 2000 * 3;
 const size_t FISH_DELAY_MS   = 5000 * 3;
 const size_t ITEM_DELAY_MS   = 3000 * 3;
@@ -40,12 +40,16 @@ bool flag_left    = false;
 bool flag_fast    = false;
 bool active_spell = false;
 float spell_timer = 6000.f;
+std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 // For pathfinding feature
 bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos;
+
+// For attack
+bool player_swing = false;
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -322,6 +326,24 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
+	// Temporary for crossplay playability: Handle enemy respawn
+	// Problems: spawns in walls, spawns on player
+	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
+
+	//	entt::entity entity;
+	//	int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
+	//	vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
+	//	position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+	//	spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
+
+	//	entity = createSpike(renderer, position);
+
+	//	// TODO this should be controlled by AI, not an initial velocity
+	//	Motion& motion = registry.get<Motion>(entity);
+	//	motion.mass = 200;
+	//	motion.coeff_rest = 0.9f;
+	//	motion.velocity = vec2(-100.f, 0.f);
+	//}
 	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
@@ -373,6 +395,7 @@ void WorldSystem::recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze,
 		recursiveGenerateMaze(maze, begin_x, begin_y, split_x, end_y);
 		recursiveGenerateMaze(maze, split_x + 1, begin_y, end_x, end_y);
 	}
+
 }
 
 std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile) {
@@ -588,6 +611,9 @@ void WorldSystem::restart_game() {
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
+
+
+
 }
 
 // Compute collisions between entities
@@ -660,10 +686,13 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			if (action == GLFW_PRESS && !registry.view<Attack>().contains(player))
 			{
 				registry.emplace<Attack>(player);
+				player_swing = true;
+
 			}
 
 			if (action == GLFW_RELEASE) {
 				registry.remove<Attack>(player);
+				player_swing = false;
 			}
 		}
 
