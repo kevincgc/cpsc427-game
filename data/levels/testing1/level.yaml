@@ -1,5 +1,5 @@
 name: Testing Map 1
 type: premade
 enemies:
-    spikes: 2
-    drones: 2
+    spikes: 1
+    drones: [1, 2]
