@@ -22,9 +22,6 @@
 #include <chrono>
 using Clock = std::chrono::high_resolution_clock;
 
-// yaml
-#include "yaml-cpp/yaml.h"
-
 // Game configuration
 const size_t MAX_TURTLES     = 1;
 const size_t MAX_FISH        = 1;
@@ -48,7 +45,7 @@ float spell_timer = 6000.f;
 bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
-vec2 ending_map_pos; 
+vec2 ending_map_pos;
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -142,6 +139,8 @@ WorldSystem::~WorldSystem() {
 		Mix_FreeChunk(salmon_dead_sound);
 	if (salmon_eat_sound != nullptr)
 		Mix_FreeChunk(salmon_eat_sound);
+	if (tada_sound != nullptr)
+		Mix_FreeChunk(tada_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -214,6 +213,7 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
 	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
+	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
 
 	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
@@ -251,20 +251,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Remove debug info from the last step
-        //while (registry.debugComponents.entities.size() > 0)
-        //	registry.remove_all_components_of(registry.debugComponents.entities.back());
-
 	// Removing out of screen entities
-	auto motions= registry.view<Motion>();
+	auto motions = registry.view<Motion>();
 
 	for (auto entity: motions) {
-		//if (entity != player_minotaur) {
 		Motion& motion = motions.get<Motion>(entity);
 		if (motion.position.x + abs(motion.scale.x) < 0.f) {
 			registry.destroy(entity);
 		}
-	 //}
 	}
 
     float min_counter_ms = 3000.f;
@@ -306,6 +300,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
+	}
+
+	// check if player has won
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+	if (tile == MapTile::EXIT) {
+		// player has found the exit!
+		Mix_PlayChannel(-1, tada_sound, 0);
+		restart_game();
 	}
 
 	return true;
@@ -425,15 +428,43 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 	return maze;
 }
 
+void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback) {
+	// all subnodes
+	for (YAML::const_iterator it = node.begin(); it != node.end(); it++) {
+		std::string entity_type = it->first.as<std::string>();
+		int entity_count = 0;
+
+		if (it->second.IsScalar()) {
+			// spawn exactly this number of entities
+			entity_count = it->second.as<int>();
+		} else if (it->second.IsSequence()) {
+			// spawn random number of entities
+			std::vector<int> ct = it->second.as<std::vector<int>>();
+			entity_count = std::uniform_int_distribution<int>(ct[0], ct[1])(rng);
+		} else assert(false);
+
+		fprintf(stderr, "%d\n", entity_count);
+
+		while (entity_count--) { // callback for entity_count entities
+			int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
+			vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
+			position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+			spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
+
+			spawn_callback(entity_type, position);
+		}
+	}
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
 	// TODO set this up in a menu
-	// current options: "recursive_procedural1", "large1", and "test1"
-	// recursive_procedural is random map generation, default value for now
-	game_state.level_id = "recursive_procedural1";
+	// current options: "procedural1", "large1", and "testing1"
+	// procedural is random map generation, default value for now
+	game_state.level_id = "testing1";
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
@@ -467,7 +498,7 @@ void WorldSystem::restart_game() {
 		file.close();
 
 		fprintf(stderr, "Loaded premade map\n");
-	} else  if (level_type == "procedural") {
+	} else if (level_type == "procedural") {
 		fprintf(stderr, "Loading procedural map\n");
 
 		const auto procedural_options = level_config["procedural_options"];
@@ -479,70 +510,59 @@ void WorldSystem::restart_game() {
 		game_state.level.map_tiles = generateProceduralMaze(method, size[0], size[1], game_state.level.start_position);
 
 		fprintf(stderr, "Loaded procedural map\n");
-	}
-
-	for (const auto vec : game_state.level.map_tiles) {
-		for (const auto v2 : vec) {
-			printf("%d ", v2);
-		}
-		printf("\n");
-	}
+	} else assert(false); // unknown level type
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
 	registry.clear();
 
-	const YAML::Node enemies = level_config["enemies"];
-	if (enemies) {
-		// find spawnable tiles
-		std::vector<vec2> spawnable_tiles;
-		auto maze = game_state.level.map_tiles;
-		for (uint i = 0; i < maze.size(); i++) {
-			auto row = maze[i];
-			for (uint j = 0; j < row.size(); j++) {
-				if (row[j] == MapTile::FREE_SPACE) {
-					// inverted coordinates
-					spawnable_tiles.push_back({j, i});
-				}
-			}
-		}
-
-		// subnodes of enemies
-		for (YAML::const_iterator it = enemies.begin(); it != enemies.end(); it++) {
-			std::string enemy_type = it->first.as<std::string>();
-			int enemy_count = it->second.as<int>();
-
-			while (enemy_count--) { // spawn enemy_count enemies
-				int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
-				vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
-				position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
-				spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
-
-				entt::entity entity;
-				if (enemy_type == "spikes") {
-					entity = createSpike(renderer, position);
-				} else if (enemy_type == "drones") {
-					entity = createDrone(renderer, position);
-				} else {
-					assert(false); // unsupported enemy
-					return;
-				}
-
-				// TODO this should be controlled by AI, not an initial velocity
-				Motion& motion = registry.get<Motion>(entity);
-				motion.mass = 200;
-				motion.coeff_rest = 0.9f;
-				motion.velocity = vec2(-100.f, 0.f);
+	// find spawnable tiles for both items and enemies
+	spawnable_tiles.clear();
+	auto maze = game_state.level.map_tiles;
+	for (uint i = 0; i < maze.size(); i++) {
+		auto row = maze[i];
+		for (uint j = 0; j < row.size(); j++) {
+			if (row[j] == MapTile::FREE_SPACE) {
+				// inverted coordinates
+				spawnable_tiles.push_back({j, i});
 			}
 		}
 	}
 
+	// create enemies for this level
+	const YAML::Node enemies = level_config["enemies"];
+	if (enemies) {
+		process_entity_node(enemies, [this] (std::string enemy_type, vec2 position) {
+			if (enemy_type == "spikes") {
+				createSpike(renderer, position);
+			} else if (enemy_type == "drones") {
+				createDrone(renderer, position);
+			} else {
+				assert(false); // unsupported enemy
+				return;
+			}
+		});
+	}
+
+	// create items for this level
+	const YAML::Node items = level_config["items"];
+	if (items) {
+		process_entity_node(enemies, [this] (std::string item_type, vec2 position) {
+			if (item_type == "extra_lives") {
+				// TODO create item here
+			} else if (item_type == "wall_breaker") {
+				// TODO create item here
+			} else {
+				assert(false); // unsupported item
+				return;
+			}
+		});
+	}
+
 	// Create a new Minotaur
-	player_minotaur = createMinotaur(
-		renderer,
-		WorldSystem::map_coords_to_position(game_state.level.start_position)
-		+ vec2(map_scale / 2, map_scale / 2) // this is to make it spawn on the center of the tile
-	);
+	vec2 minotaur_position = WorldSystem::map_coords_to_position(game_state.level.start_position);
+	minotaur_position += vec2(map_scale / 2, map_scale / 2); // this is to make it spawn on the center of the tile
+	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 
 	// reset player flash timer
@@ -671,8 +691,8 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 	// ========= Feature: Pathfinding =========
 	// To separate mouse click from gestures, we need to make sure it's just a click, not a swipe
 	// Latency-friendly implementation:
-	//		A click means the distance between press and release is small. We choose 'small' instead 
-	//      of 0 because sometimes the pressing phase of clicks are a little long for humans. 
+	//		A click means the distance between press and release is small. We choose 'small' instead
+	//      of 0 because sometimes the pressing phase of clicks are a little long for humans.
 	//		It's only made longer with lag.
 
 	// Capture press position
