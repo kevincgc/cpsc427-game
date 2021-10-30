@@ -486,8 +486,6 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 			entity_count = std::uniform_int_distribution<int>(ct[0], ct[1])(rng);
 		} else assert(false);
 
-		fprintf(stderr, "%d\n", entity_count);
-
 		while (entity_count--) { // callback for entity_count entities
 			int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
 			vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
@@ -603,12 +601,9 @@ void WorldSystem::restart_game() {
 	}
 
 	// Create a new Minotaur
-	player_minotaur = createMinotaur(
-		renderer,
-		WorldSystem::map_coords_to_position(game_state.level.start_position)
-		+ vec2(map_scale.x / 2, map_scale.y / 2) // this is to make it spawn on the center of the tile
-	);
-
+	vec2 minotaur_position = WorldSystem::map_coords_to_position(game_state.level.start_position);
+	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
+	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 
 	// reset player flash timer
