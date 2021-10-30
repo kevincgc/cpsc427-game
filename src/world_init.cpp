@@ -26,9 +26,11 @@ entt::entity createSpike(RenderSystem* renderer, vec2 position)
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
-	motion.velocity = { -50, 0 };
+	motion.velocity = { -50.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
 	motion.position = position;
-	motion.scale = mesh.original_size * 75.f;
+	motion.scale = mesh.original_size * 75.f * global_scaling_vector;
+	motion.mass = 200;
+	motion.coeff_rest = 0.9f;
 	const entt::entity e = registry.create();
 	registry.emplace<Enemy>(e);
 	registry.emplace<Motion>(e, motion);
@@ -46,9 +48,11 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
-	motion.velocity = { -100.f, 0.f };
+	motion.velocity = { -100.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
 	motion.position = position;
-	motion.scale = mesh.original_size * 60.f;
+	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
+	motion.mass = 200;
+	motion.coeff_rest = 0.9f;
 	const entt::entity e = registry.create();
 	registry.emplace<Enemy>(e);
 	registry.emplace<Motion>(e, motion);
@@ -70,9 +74,8 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 60.f;
-	motion.scale.x *= 1.5;
-
+	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
+	motion.scale.x *= 1.5f;
 	const entt::entity e = registry.create();
 	registry.emplace<Player>(e);
 	registry.emplace<Motion>(e, motion);

@@ -24,6 +24,10 @@ struct nk_glfw glfw = { 0 };
 struct nk_context* ctx;
 struct nk_colorf bg;
 float x = 0;
+int width;
+int height;
+float scale_x;
+float scale_y;
 
 void setBackground(float H) {
     int h = ((int)H) % 360;
@@ -65,7 +69,11 @@ void setBackground(float H) {
     }
 }
 
-void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px) {
+void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in) {
+    height = window_height_px;
+    width = window_width_px;
+    scale_x = scale_x_in;
+    scale_y = scale_y_in;
     ctx = nk_glfw3_init(&glfw, win, NK_GLFW3_DEFAULT);
     {
         struct nk_font_atlas* atlas;
@@ -75,7 +83,7 @@ void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height
         char *path = (char *) malloc(size);
         strcpy_s(path, size, PROJECT_SOURCE_DIR);
         strcat_s(path, size, relPath);
-        struct nk_font *future = nk_font_atlas_add_from_file(atlas, path, 26, 0);
+        struct nk_font *future = nk_font_atlas_add_from_file(atlas, path, 26 * scale_x_in, 0);
         free(path);
         nk_glfw3_font_stash_end(&glfw);
         nk_style_set_font(ctx, &future->handle);
@@ -89,23 +97,20 @@ void drawMainMenu(static GLFWwindow* win, int *out)
 {
     nk_glfw3_new_frame(&glfw);
 
-    if (nk_begin(ctx, "Main Menu", nk_rect(475, 200, 250, 400),
+    if (nk_begin(ctx, "Main Menu", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
     {
-        enum { EASY, HARD };
-        static int op = EASY;
-        static int property = 20;
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "START GAME")) {
             fprintf(stdout, "Starting Game\n");
             *out = 1;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "OPTIONS")) {
             fprintf(stdout, "Options Menu\n");
             *out = 2;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "EXIT GAME")) {
             fprintf(stdout, "Exiting Game\n");
             *out = -1;
@@ -131,17 +136,17 @@ void drawOptionsMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
 
-    if (nk_begin(ctx, "Main Menu", nk_rect(475, 200, 250, 400),
+    if (nk_begin(ctx, "Options", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
     {
         enum { EASY, HARD, MEDIUM};
         static int op = EASY;
         static int property = 20;
-        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_layout_row_dynamic(ctx, 30 * scale_x, 1);
         if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
         if (nk_option_label(ctx, "medium", op == MEDIUM)) op = MEDIUM;
         if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "BACK")) {
             fprintf(stdout, "Main Menu\n");
             *out = -1;
@@ -159,28 +164,28 @@ void drawOptionsMenu(static GLFWwindow* win, int* out)
 void drawPauseMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
-    if (nk_begin(ctx, "Pause Menu", nk_rect(475, 200, 250, 400),
+    if (nk_begin(ctx, "Pause Menu", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
         NK_WINDOW_BORDER | NK_WINDOW_TITLE))
     {
         enum { EASY, HARD };
         static int op = EASY;
         static int property = 20;
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "RESUME GAME")) {
             fprintf(stdout, "Starting Game\n");
             *out = 1;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "RESTART GAME")) {
             fprintf(stdout, "Restarting Game\n");
             *out = 2;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "MAIN MENU")) {
             fprintf(stdout, "Return To Main\n");
             *out = 3;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "EXIT GAME")) {
             fprintf(stdout, "Exiting Game\n");
             *out = -1;
@@ -194,23 +199,23 @@ void drawPauseMenu(static GLFWwindow* win, int* out)
 void drawGameOverMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
-    if (nk_begin(ctx, "You Died", nk_rect(475, 200, 250, 400),
+    if (nk_begin(ctx, "You Died", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
         NK_WINDOW_BORDER | NK_WINDOW_TITLE))
     {
         enum { EASY, HARD };
         static int op = EASY;
         static int property = 20;
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "TRY AGAIN")) {
             fprintf(stdout, "Restarting Game\n");
             *out = 1;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "MAIN MENU")) {
             fprintf(stdout, "Return To Main\n");
             *out = 2;
         }
-        nk_layout_row_dynamic(ctx, 50, 1);
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "EXIT GAME")) {
             fprintf(stdout, "Exiting Game\n");
             *out = -1;

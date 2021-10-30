@@ -40,11 +40,6 @@ struct Collision
 };
 
 // map tiles
-/**
- * This map scale can be used as such:
- *	- to transform map coordinates to pixels do: {map_scale * map_coords.x, map_scale * map_coords.y}
- */
-const float map_scale = 150.0;
 enum MapTile {
 	FREE_SPACE = 0,
 	BREAKABLE_WALL,

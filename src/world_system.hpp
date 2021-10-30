@@ -14,6 +14,9 @@
 #include "render_system.hpp"
 #include "components.hpp"
 
+// yaml
+#include "yaml-cpp/yaml.h"
+
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
 
@@ -25,7 +28,7 @@ public:
 	WorldSystem();
 
 	// Creates a window
-	GLFWwindow* create_window(int width, int height);
+	GLFWwindow* create_window();
 
 	// camera
 	static vec2 camera;
@@ -48,10 +51,7 @@ public:
 	// map coords conversion
 	// the vec2 functions do both x and y, the float functions will do only one
 	static vec2 map_coords_to_position(vec2 position);
-	static float map_coords_to_position(float position);
 	static vec2 position_to_map_coords(vec2 map_coords);
-	static int position_to_map_coords(float map_coords);
-
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
@@ -83,6 +83,10 @@ private:
 	Mix_Music* background_music;
 	Mix_Chunk* salmon_dead_sound;
 	Mix_Chunk* salmon_eat_sound;
+	Mix_Chunk* tada_sound;
+
+	// entity spawning
+	std::vector<vec2> spawnable_tiles;
 
 	// C++ random number generator
 	std::default_random_engine rng;
@@ -91,4 +95,6 @@ private:
 	// maze generation
 	void recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y);
 	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
+
+	void process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
 };

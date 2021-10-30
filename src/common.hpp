@@ -74,16 +74,20 @@ enum class ProgramState {
 extern ProgramState state;
 
 // From main.cpp - now globally accessible
-extern const int window_width_px;
-extern const int window_height_px;
+extern int window_width_px;
+extern int window_height_px;
+extern float global_scaling_factor;
+extern vec2 global_scaling_vector;
+extern vec2 map_scale;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
-extern float player_vel;
-extern float enemy_vel;
+extern vec2  player_vel;
+extern vec2  enemy_vel;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
 extern bool  do_generate_path;
 extern bool  collision_with_wall(vec2 position, float scale_x, float scale_y);
+extern bool  player_swing;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;

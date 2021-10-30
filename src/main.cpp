@@ -13,14 +13,18 @@
 
 using Clock = std::chrono::high_resolution_clock;
 
-const int window_width_px = 1200;
-const int window_height_px = 800;
+int window_width_px = 1200;
+int window_height_px = 800;
+// global scaler according to resolution of screen - modified in WorldSystem::createWindow
+vec2 global_scaling_vector = { 1.f, 1.f };
+// map scale used to transform map coordinates to pixels
+vec2 map_scale = { 150.f, 150.f };
 
 extern entt::registry registry;
 
 extern "C" {
-	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px);
-	void drawMainMenu(GLFWwindow* window, int *is_start_game);
+	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in);
+	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu(static GLFWwindow* win, int* out);
 	void drawPauseMenu(static GLFWwindow* win, int* out);
 	void drawGameOverMenu(static GLFWwindow* win, int* out);
@@ -47,13 +51,13 @@ int main()
 
 		switch (state) {
 		case ProgramState::INIT:
-			window = world.create_window(window_width_px, window_height_px);
+			window = world.create_window();
 			if (!window) {
 				printf("Press any key to exit");
 				getchar();
 				return EXIT_FAILURE;
 			}
-			initMainMenu(window, window_width_px, window_height_px);
+			initMainMenu(window, window_width_px, window_height_px, global_scaling_vector.x, global_scaling_vector.y);
 			state = ProgramState::MAIN_MENU;
 			break;
 		case ProgramState::MAIN_MENU:
@@ -77,7 +81,7 @@ int main()
 			}
 			break;
 		}
-		case ProgramState::OPTIONS: 
+		case ProgramState::OPTIONS:
 		{
 			int selection = 0;
 			drawOptionsMenu(window, &selection);
