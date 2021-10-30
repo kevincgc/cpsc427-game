@@ -193,8 +193,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	// transform map coords to position
 	vec2 position = {WorldSystem::map_coords_to_position(map_coords)};
 
-	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale/2.0, map_scale/2.0));
-	transform.scale({-map_scale, map_scale});
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale.x/2.0, map_scale.y/2.0));
+	transform.scale({-map_scale.x, map_scale.y});
 
 	const RenderRequest render_request = {
 		texture_asset,
