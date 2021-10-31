@@ -28,6 +28,9 @@ extern "C" {
 	void drawOptionsMenu(static GLFWwindow* win, int* out);
 	void drawPauseMenu(static GLFWwindow* win, int* out);
 	void drawGameOverMenu(static GLFWwindow* win, int* out);
+
+	void initOptionsMenu();
+	void closeOptionsMenu();
 }
 
 // Entry point
@@ -74,6 +77,7 @@ int main()
 				state = ProgramState::RESET_GAME;
 			}
 			else if (selection == 2) {
+				initOptionsMenu();
 				state = ProgramState::OPTIONS;
 			}
 			else if (selection == -1) {
@@ -86,6 +90,7 @@ int main()
 			int selection = 0;
 			drawOptionsMenu(window, &selection);
 			if (selection == -1) {
+				closeOptionsMenu();
 				state = ProgramState::MAIN_MENU;
 			}
 			break;

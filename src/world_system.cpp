@@ -516,11 +516,6 @@ void WorldSystem::restart_game() {
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
-	// TODO set this up in a menu
-	// current options: "procedural1", "large1", and "testing1"
-	// procedural is random map generation, default value for now
-	game_state.level_id = "testing1";
-
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
 	const std::string level_type = level_config["type"].as<std::string>();
@@ -745,13 +740,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				state = ProgramState::PAUSED;
 			}
-			// Resetting game
-			if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
-				int w, h;
-				glfwGetWindowSize(window, &w, &h);
-				restart_game();
-			}
-
 		}
 	}
 }
