@@ -58,7 +58,7 @@ struct LoadedLevel
 // Global Game State
 struct GameState
 {
-	std::string level_id;
+	std::string level_id = "procedural1";
 	LoadedLevel level;
 };
 extern GameState game_state;

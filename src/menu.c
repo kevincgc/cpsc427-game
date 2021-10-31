@@ -29,6 +29,14 @@ int height;
 float scale_x;
 float scale_y;
 
+char **levels;
+int levels_size;
+static char *selected_level = NULL;
+
+char **get_menu_options(int *num_options); // from CPP
+void clear_menu_options(char **levels, int num_options); // from CPP
+void set_level(char *level); // from cpp
+
 void setBackground(float H) {
     int h = ((int)H) % 360;
     if (h >= 0.0 && h < 60.0)
@@ -132,6 +140,15 @@ void drawMainMenu(static GLFWwindow* win, int *out)
     //glfwTerminate();
 }
 
+void initOptionsMenu() {
+    levels = get_menu_options(&levels_size);
+    selected_level = NULL;
+}
+
+void closeOptionsMenu() {
+    clear_menu_options(levels, levels_size);
+}
+
 void drawOptionsMenu(static GLFWwindow* win, int* out)
 {
     nk_glfw3_new_frame(&glfw);
@@ -139,13 +156,21 @@ void drawOptionsMenu(static GLFWwindow* win, int* out)
     if (nk_begin(ctx, "Options", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
     {
-        enum { EASY, HARD, MEDIUM};
-        static int op = EASY;
+        int changed = 0;
         static int property = 20;
         nk_layout_row_dynamic(ctx, 30 * scale_x, 1);
-        if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-        if (nk_option_label(ctx, "medium", op == MEDIUM)) op = MEDIUM;
-        if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+
+        for (int i = 0; i < levels_size; i++) {
+            if (nk_option_label(ctx, levels[i], selected_level == levels[i])) {
+                if (selected_level != levels[i]) changed = 1;
+                selected_level = levels[i];
+            }
+        }
+
+        if (changed) {
+            set_level(selected_level);
+        }
+
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "BACK")) {
             fprintf(stdout, "Main Menu\n");
