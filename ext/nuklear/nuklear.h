@@ -210,6 +210,7 @@
 /// ## API
 ///
 */
+#include <stdarg.h>
 #ifndef NK_SINGLE_FILE
   #define NK_SINGLE_FILE
 #endif

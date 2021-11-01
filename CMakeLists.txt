@@ -88,11 +88,14 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     # Since we're on OSX or Linux, we can just use pkgconfig.
     find_package(PkgConfig REQUIRED)
 
-    pkg_search_module(GLEW REQUIRED glew)
+    # pkg_search_module(GLEW REQUIRED glew)
     pkg_search_module(GLFW REQUIRED glfw3)
     #pkg_search_module(ENTT REQUIRED entt)
     pkg_search_module(SDL2 REQUIRED sdl2)
     pkg_search_module(SDL2MIXER REQUIRED SDL2_mixer)
+
+    find_package(GLEW REQUIRED)
+    include_directories(${GLEW_INCLUDE_DIRS})
 
     # Link Frameworks on OSX
     if (IS_OS_MAC)
@@ -108,7 +111,7 @@ elseif (IS_OS_WINDOWS)
     set(GLFW_FOUND TRUE)
     set(GLEW_FOUND TRUE)
     set(SDL2_FOUND TRUE)
-	
+
     set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include")
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")

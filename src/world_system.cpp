@@ -2,6 +2,7 @@
 #include "world_system.hpp"
 #include "world_init.hpp"
 #include "ai_system.hpp"
+#include <GLFW/glfw3.h>
 
 // stlib
 #include <cassert>
