@@ -5,7 +5,6 @@
 
 #include "common.hpp"
 #include "components.hpp"
-//#include "tiny_ecs.hpp"
 #include <entt.hpp>
 #include <ft2build.h>
 
