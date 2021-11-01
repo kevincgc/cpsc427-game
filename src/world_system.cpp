@@ -1,6 +1,8 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "physics_system.hpp"
+
 
 // stlib
 #include <cassert>
@@ -9,7 +11,6 @@
 #include <fstream>
 #include <string>
 
-#include "physics_system.hpp"
 
 // myLibs
 #include <iostream>
@@ -32,6 +33,7 @@ float player_vel = 300.f;
 
 // My Settings
 auto t = Clock::now();
+
 bool flag_right = false;
 bool flag_left = false;
 bool flag_fast = false;
@@ -121,13 +123,17 @@ Mouse_spell mouse_spell;
 //Debugging
 vec2 debug_pos = { 0,0 };
 
+
+
 // Create the fish world
 WorldSystem::WorldSystem()
 	: points(0)
-	, next_turtle_spawn(0.f)
-	, next_fish_spawn(0.f) {
+	, next_turtle_spawn(0)
+	, next_fish_spawn(0) 
+     {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+	
 }
 
 WorldSystem::~WorldSystem() {
@@ -211,6 +217,8 @@ GLFWwindow* WorldSystem::create_window(int width, int height) {
 	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
 
+	
+
 	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 			audio_path("music.wav").c_str(),
@@ -227,7 +235,6 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Playing background music indefinitely
 	Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
-
 	// Set all states to default
     restart_game();
 }
@@ -246,6 +253,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// setting coordinates of camera
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
+
 
 	// Remove debug info from the last step
         //while (registry.debugComponents.entities.size() > 0)
@@ -535,6 +543,20 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			else if (key == GLFW_KEY_A || key == GLFW_KEY_LEFT) { motion.velocity[0] = 0; }
 			if (key == GLFW_KEY_W || key == GLFW_KEY_UP) { motion.velocity[1] = 0; }
 			else if (key == GLFW_KEY_S || key == GLFW_KEY_DOWN) { motion.velocity[1] = 0; }
+		}
+
+
+		
+	}
+
+	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		if (key == GLFW_KEY_H)
+		{
+			tips.in_help_mode = 1;
+		}
+		else
+		{
+			tips.in_help_mode = 0;
 		}
 	}
 

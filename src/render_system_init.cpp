@@ -33,6 +33,8 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // vsync
+	
+
 
 	// Load OpenGL function pointers
 	const int is_fine = gl3w_init();
@@ -64,6 +66,8 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	gl_has_errors();
 
 	initScreenTexture();
+	initText();
+	createProjectionMatrix();
     initializeGlTextures();
 	initializeGlEffects();
 	initializeGlGeometryBuffers();
@@ -111,6 +115,7 @@ void RenderSystem::initializeGlEffects()
 	}
 }
 
+
 // One could merge the following two functions as a template function...
 template <class T>
 void RenderSystem::bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices)
@@ -143,6 +148,9 @@ void RenderSystem::initializeGlMeshes()
 			meshes[(int)geom_index].vertex_indices);
 	}
 }
+
+
+
 
 void RenderSystem::initializeGlGeometryBuffers()
 {
@@ -252,6 +260,8 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 }
 
+
+
 RenderSystem::~RenderSystem()
 {
 	// Don't need to free gl resources since they last for as long as the program,
@@ -323,6 +333,23 @@ bool gl_compile_shader(GLuint shader)
 	}
 
 	return true;
+}
+
+void RenderSystem::initText()
+{
+
+	// initialize library, and pass it the Renderer part
+	if (FT_Init_FreeType(&ft)) {
+		fprintf(stderr, "Could not init freetype library\n");
+		assert(false);
+	}
+
+	if (FT_New_Face(ft, fonts_path("RobotoCondensed-Bold.ttf").c_str(), 0, &face)) {
+		fprintf(stderr, "Could not open font\n");
+		assert(false);
+	}
+
+
 }
 
 bool loadEffectFromFile(

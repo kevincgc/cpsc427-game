@@ -31,6 +31,7 @@ public:
 	// Creates a window
 	GLFWwindow* create_window(int width, int height);
 
+
 	// camera
 	static vec2 camera;
 

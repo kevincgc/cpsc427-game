@@ -7,6 +7,7 @@
 #include "components.hpp"
 //#include "tiny_ecs.hpp"
 #include <entt.hpp>
+#include <ft2build.h>
 
 extern entt::registry registry;
 
@@ -33,12 +34,14 @@ class RenderSystem {
 	};
 
 	// Make sure these paths remain in sync with the associated enumerators.
-	const std::array<std::string, texture_count> texture_paths = {
+	const std::array<std::string, texture_count > texture_paths = {
 		textures_path("wall.png"), //<div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
 	};
+
+
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -75,19 +78,31 @@ public:
 	// shader
 	bool initScreenTexture();
 
+	// generate help text(automatic explaination)
+	void initText();
+
+
 	// Destroy resources associated to one or all entities created by the system
 	~RenderSystem();
 
 	// Draw all entities
 	void draw();
 
+	FT_Library ft;
+
+	FT_Face face;
+
 	mat3 createProjectionMatrix();
+	
+	mat3 createProjectionMatrixforText();
 
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(entt::entity entity, const mat3& projection);
-	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection);
+	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3& projection);
+	void drawText(const char* text, vec2 position, vec2 scale, const mat3& projection);
 	void drawToScreen();
+	
 
 	// Window handle
 	GLFWwindow* window;
@@ -96,11 +111,17 @@ private:
 
 	// Screen texture handles
 	GLuint frame_buffer;
+
 	GLuint off_screen_render_buffer_color;
 	GLuint off_screen_render_buffer_depth;
-
 	entt::entity screen_state_entity = registry.create();
+
+	
+
 };
 
 bool loadEffectFromFile(
 	const std::string& vs_path, const std::string& fs_path, GLuint& out_program);
+
+
+

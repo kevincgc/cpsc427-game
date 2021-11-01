@@ -41,7 +41,7 @@ file(GLOB SOURCE_FILES src/*.cpp src/*.hpp)
 #	src/mini_ecs.cpp
 # 	src/pebbles.cpp
 
-#    ext/project_path.hpp
+#   ext/project_path.hpp
 #	src/common.hpp
 #	src/fish.hpp
 #	src/salmon.hpp
@@ -68,6 +68,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 0)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/stb_image/)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/gl3w)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/entt/)
+target_include_directories(${PROJECT_NAME} PUBLIC ext/freetype/include/)
 #include_directories('ext/entt')
 
 # Find OpenGL
@@ -87,6 +88,7 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     # Since we're on OSX or Linux, we can just use pkgconfig.
     find_package(PkgConfig REQUIRED)
 
+    pkg_search_module(freetype REQUIRED freetype)
     pkg_search_module(GLFW REQUIRED glfw3)
     #pkg_search_module(ENTT REQUIRED entt)
     pkg_search_module(SDL2 REQUIRED sdl2)
@@ -106,25 +108,32 @@ elseif (IS_OS_WINDOWS)
     set(GLFW_FOUND TRUE)
     set(SDL2_FOUND TRUE)
     #set(ENTT_FOUND TRUE)
+    set(FREETYPE_FOUND TRUE)
 
+    set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include/freetype")
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")
     #set(ENTT_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/entt")
 
     if (${CMAKE_SIZEOF_VOID_P} MATCHES "8")
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.lib")
         set(GLFW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x64.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.lib")
-	set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
+	    set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
 
+    set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.dll")
 	set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
 	set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
 	set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
+    
     #set(ENTT "${CMAKE_CURRENT_SOURCE_DIR}/ext/entt/entt.hpp")
     else()
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.lib")
         set(GLFW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x86.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.lib")
-	set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
 
+
+	set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
 	set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
 	set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
 	set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.dll")
@@ -144,6 +153,11 @@ elseif (IS_OS_WINDOWS)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDLMIXER_DLL}"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${FREETYPE_DLL}"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/freetype.dll")
+  
     #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #    "${ENTT}"
@@ -176,14 +190,17 @@ if (NOT GLFW_FOUND OR NOT SDL2_FOUND)
       message(FATAL_ERROR "Can't find SDL." )
    endif()
 endif()
+ if (NOT FREETYPE_FOUND)
+    message (FATAL_ERROR "Can't find FREETYPE.")
+endif()
 
+target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
 #target_include_directories(${PROJECT_NAME} PUBLIC ${ENTT_INCLUDE_DIRS})
 
 #target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} ${ENTT} glm::glm)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
-
+target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
 
 # Needed to add this
 if(IS_OS_LINUX)
