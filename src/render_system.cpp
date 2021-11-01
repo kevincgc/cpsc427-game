@@ -491,7 +491,7 @@ void RenderSystem::draw()
 	char* renderedText_2;
 	if (tips.in_help_mode)
 	{
-		renderedText_1 = "Movement keys: arrorws/W(up)/A(left)/S(down)/D(right)";
+		renderedText_1 = "Movement keys: arrows/W(up)/A(left)/S(down)/D(right)";
 		renderedText_2 = "Click to find path.";
 	}
 	else
