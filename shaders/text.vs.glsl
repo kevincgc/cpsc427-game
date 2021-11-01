@@ -12,3 +12,6 @@ void main()
     gl_Position = vec4(pos, 1.0);
     TexCoords = vertex.zw;
 }  
+
+
+//Referece: https://learnopengl.com/In-Practice/Text-Rendering

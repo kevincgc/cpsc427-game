@@ -335,6 +335,8 @@ bool gl_compile_shader(GLuint shader)
 	return true;
 }
 
+/* reference:
+	https ://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
 void RenderSystem::initText()
 {
 

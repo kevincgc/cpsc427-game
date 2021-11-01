@@ -1,4 +1,4 @@
-// internal
+﻿// internal
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include <iostream>
@@ -244,7 +244,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 }
 
 
-
+/* tutorial reference :
+/ https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
 void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const mat3& projection)
 {
 	// prepare for transformation
@@ -348,14 +349,6 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 		gl_has_errors();
 	}
 
-	/*glDisableVertexAttribArray(attribute_coord);
-	glDeleteTextures(1, &tex);
-
-	FT_Done_Face(face);
-	FT_Done_FreeType(ft);
-
-	glDeleteBuffers(1, &text_vbo);*/
-		
 
 }
 
@@ -473,14 +466,14 @@ void RenderSystem::draw()
 	char* renderedText;
 	if (tips.in_help_mode)
 	{
-		renderedText = "Tooltips:XXXXXXXXXXXX";
+		renderedText = "Movement keys: arrorws/W(up)/A(left)/S(down)/D(right)";
 	}
 	else
 	{
 		renderedText = "";
 	}
 
-	drawText(renderedText, { 400,60 }, { 3.5,-3.5 }, projection_2D);
+	drawText(renderedText, { 1/2* w+100,60 }, { 2,-2.5 }, projection_2D);
 
 	
 	// Truely render to the screen
