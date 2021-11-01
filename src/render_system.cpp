@@ -255,7 +255,8 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	FT_GlyphSlot g = face->glyph;
 
 	// setting text's pixel size
-	FT_Set_Pixel_Sizes(face, 0, 20);
+	pixel_size = 20;
+	FT_Set_Pixel_Sizes(face, 0, pixel_size);
 
 
 	// get program shader
@@ -463,17 +464,21 @@ void RenderSystem::draw()
 
 	
 	// render help text
-	char* renderedText;
+	char* renderedText_1;
+	char* renderedText_2;
 	if (tips.in_help_mode)
 	{
-		renderedText = "Movement keys: arrorws/W(up)/A(left)/S(down)/D(right)";
+		renderedText_1 = "Movement keys: arrorws/W(up)/A(left)/S(down)/D(right)";
+		renderedText_2 = "Click to find path.";
 	}
 	else
 	{
-		renderedText = "";
+		renderedText_1 = "";
+		renderedText_2 = "";
 	}
 
-	drawText(renderedText, { 1/2* w+100,60 }, { 2,-2.5 }, projection_2D);
+	drawText(renderedText_1, { 1/2* w+ 10 * pixel_size,60 }, { 2,-2.5 }, projection_2D);
+	drawText(renderedText_2, { 1 / 2 * w + 25* pixel_size, 60 +  2 * pixel_size }, { 2,-2.5 }, projection_2D);
 
 	
 	// Truely render to the screen
