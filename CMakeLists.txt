@@ -116,7 +116,7 @@ elseif (IS_OS_WINDOWS)
     set(FREETYPE_FOUND TRUE)
 
     set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include/freetype")
-	
+
     set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include")
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")
@@ -130,14 +130,14 @@ elseif (IS_OS_WINDOWS)
         set(GLFW_C "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3_mt-x64.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.lib")
 	    set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
-        
+
         set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.dll")
         set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x64.dll")
 	    set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
 	    set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
 	    set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
     else()
-        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win86/freetype-x86.lib")
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.lib")
         set(GLEW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.lib")
         set(GLEW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32s-x86.lib")
         set(GLFW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x86.lib")
@@ -145,8 +145,8 @@ elseif (IS_OS_WINDOWS)
         set(GLFW_C "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3_mt-x86.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.lib")
 	      set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
-        
-        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win86/freetype-x86.dll")
+
+        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.dll")
         set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.dll")
 	      set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
 	      set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
@@ -174,7 +174,7 @@ elseif (IS_OS_WINDOWS)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${FREETYPE_DLL}"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/freetype.dll")
-  
+
     #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #    "${ENTT}"
