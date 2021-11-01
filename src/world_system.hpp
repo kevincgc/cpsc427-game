@@ -14,12 +14,11 @@
 #include "render_system.hpp"
 #include "components.hpp"
 
+// yaml
+#include "yaml-cpp/yaml.h"
+
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
-//extern bool move_right;
-//extern bool move_left;
-//extern bool move_up;
-//extern bool move_down;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -29,7 +28,7 @@ public:
 	WorldSystem();
 
 	// Creates a window
-	GLFWwindow* create_window(int width, int height);
+	GLFWwindow* create_window();
 
 
 	// camera
@@ -53,11 +52,13 @@ public:
 	// map coords conversion
 	// the vec2 functions do both x and y, the float functions will do only one
 	static vec2 map_coords_to_position(vec2 position);
-	static float map_coords_to_position(float position);
 	static vec2 position_to_map_coords(vec2 map_coords);
-	static int position_to_map_coords(float map_coords);
-
+	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
+	static bool is_within_bounds(vec2 map_coords);
+
+	// restart level
+	void restart_game();
 
 private:
 
@@ -67,9 +68,6 @@ private:
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button(int button, int action, int mods);
 
-	// restart level
-	void restart_game();
-
 	// OpenGL window handle
 	GLFWwindow* window;
 
@@ -78,9 +76,6 @@ private:
 
 	// Game state
 	RenderSystem* renderer;
-	float current_speed;
-	float next_turtle_spawn;
-	float next_fish_spawn;
 	float next_item_spawn;
 	float flash_timer;
 	entt::entity player_minotaur;
@@ -89,8 +84,18 @@ private:
 	Mix_Music* background_music;
 	Mix_Chunk* salmon_dead_sound;
 	Mix_Chunk* salmon_eat_sound;
+	Mix_Chunk* tada_sound;
+
+	// entity spawning
+	std::vector<vec2> spawnable_tiles;
 
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
+	// maze generation
+	void recursiveGenerateMaze(std::vector<std::vector<MapTile>> &maze, int begin_x, int begin_y, int end_x, int end_y);
+	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
+
+	void process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
 };

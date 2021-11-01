@@ -47,7 +47,7 @@ class RenderSystem {
 	const std::array<std::string, effect_count> effect_paths = { // correspond to EFFECT_ASSET_ID
 		shader_path("coloured"),
 		shader_path("pebble"),
-		shader_path("salmon"),
+		// shader_path("salmon"),
 		shader_path("textured"),
 		shader_path("water"),
 		shader_path("minotaur"), 
@@ -60,6 +60,10 @@ class RenderSystem {
 public:
 	// Initialize the window
 	bool init(int width, int height, GLFWwindow* window);
+
+	bool reinit(int width, int height, GLFWwindow* window_arg, bool is_init = 0);
+
+	void reinitSetBuffer(int width, int height, GLFWwindow* window_arg);
 
 	template <class T>
 	void bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices);
@@ -76,6 +80,7 @@ public:
 	// The draw loop first renders to this texture, then it is used for the water
 	// shader
 	bool initScreenTexture();
+	bool reinitScreenTexture();
 
 	// generate help text(automatic explaination)
 	void initText();

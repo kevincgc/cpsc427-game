@@ -16,6 +16,9 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
+	if (motion.velocity.x < 0) {
+		transform.reflect();
+	}
 
 	assert(registry.view<RenderRequest>().contains(entity));
 	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
@@ -82,13 +85,12 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 	}
-	// else if (render_request.used_effect == EFFECT_ASSET_ID::SALMON)
 	else if (render_request.used_effect == EFFECT_ASSET_ID::MINOTAUR)
 	{
 
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_uv_loc = glGetAttribLocation(program, "in_uv");
-		
+
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
@@ -101,7 +103,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
-		float time_total = (float)(glfwGetTime() * 10.0f);
+		float time_total = (float)(glfwGetTime());
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
@@ -109,15 +111,36 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint flash_uloc = glGetUniformLocation(program, "flash");
 		glUniform1f(flash_uloc, flash);
 
+		// pass gesture to the shader
+		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
+		int player_gesture = 0;
+
+		Motion& player_motion = registry.get<Motion>(entity);
+		if (registry.view<DeathTimer>().contains(entity)) {
+			player_gesture = 9;
+		}
+		else if (registry.view<Attack>().contains(entity)) {
+			player_gesture = 3;
+		}
+		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
+			player_gesture = 0;
+		} 
+		else {
+			player_gesture = 1;
+		}
+	
+		glUniform1i(motion_uloc, player_gesture);
+		
+
 
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);
 		gl_has_errors();
 		assert(registry.view<RenderRequest>().contains(entity));
-		GLuint texture_id_salmon =
+		GLuint texture_id_minotaur =
 			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
 
-		glBindTexture(GL_TEXTURE_2D, texture_id_salmon);
+		glBindTexture(GL_TEXTURE_2D, texture_id_minotaur);
 		gl_has_errors();
 	}
 	else
@@ -172,8 +195,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	// transform map coords to position
 	vec2 position = {WorldSystem::map_coords_to_position(map_coords)};
 
-	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale/2.0, map_scale/2.0));
-	transform.scale({-map_scale, map_scale});
+	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale.x/2.0, map_scale.y/2.0));
+	transform.scale({-map_scale.x, map_scale.y});
 
 	const RenderRequest render_request = {
 		texture_asset,
@@ -445,7 +468,7 @@ void RenderSystem::draw()
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
 
-	std::vector<std::vector<MapTile>> map_tiles = game_state.map_tiles;
+	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
 			drawTile({j, i}, map_tiles[i][j], projection_2D);

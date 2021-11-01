@@ -15,16 +15,16 @@
 #include "world_system.hpp"
 #include <entt.hpp>
 extern entt::registry registry;
+
+// init row of sprite sheet to render
 const int SPRITE_SHEET_WIDTH = 844;
 const int SPRITE_SHEET_HEIGHT = 1868;
 
 const float ANIMATION_FRAME_W = 53.f / SPRITE_SHEET_WIDTH; // 0-1
-const float ANIMATION_FRAME_H =50.f / SPRITE_SHEET_HEIGHT; 
+const float ANIMATION_FRAME_H = 50.f / SPRITE_SHEET_HEIGHT; 
 const float OFFSET_X = 0.f;
-const float OFFSET_Y = 90.f / SPRITE_SHEET_HEIGHT;
-// const int ANIMATION_SPEED = 3;
-// const int NUM_ANIMATION_FRAMES = 3;
-GLint frame = 0;
+const float OFFSET_Y = 0.f;
+
 
 // World initialization
 bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
@@ -37,9 +37,18 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 
 
 	// Load OpenGL function pointers
-	const int is_fine = gl3w_init();
+	const int is_fine = glewInit();
 	assert(is_fine == 0);
+	registry.emplace<ScreenState>(screen_state_entity);
+	reinitSetBuffer(width, height, window_arg);
+  initText();
+	initializeGlTextures();
+	initializeGlEffects();
+	initializeGlGeometryBuffers();
+	return reinit(width, height, window_arg, true);
+}
 
+void RenderSystem::reinitSetBuffer(int width, int height, GLFWwindow* window_arg) {
 	// Create a frame buffer
 	frame_buffer = 0;
 	glGenFramebuffers(1, &frame_buffer);
@@ -64,14 +73,15 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	gl_has_errors();
+}
+
+
+bool RenderSystem::reinit(int width, int height, GLFWwindow* window_arg, bool is_init) {
+	if (!is_init) {
+		reinitSetBuffer(width, height, window_arg);
+	}
 
 	initScreenTexture();
-	initText();
-	createProjectionMatrix();
-    initializeGlTextures();
-	initializeGlEffects();
-	initializeGlGeometryBuffers();
-
 	return true;
 }
 
@@ -278,7 +288,6 @@ RenderSystem::~RenderSystem()
 	}
 	// delete allocated resources
 	glDeleteFramebuffers(1, &frame_buffer);
-	gl_has_errors();
 
 	// remove all entities created by the render system
 	while (registry.view<RenderRequest>().size() > 0)
@@ -288,8 +297,6 @@ RenderSystem::~RenderSystem()
 // Initialize the screen texture from a standard sprite
 bool RenderSystem::initScreenTexture()
 {
-	registry.emplace<ScreenState>(screen_state_entity);
-
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);
 

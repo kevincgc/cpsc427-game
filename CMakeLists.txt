@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 project(salmon)
-
 # Set c++11
 # https://stackoverflow.com/questions/10851247/how-to-activate-c-11-in-cmake
 if (POLICY CMP0025)
@@ -28,7 +27,7 @@ endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ext/project_path.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/ext/project_path.hpp")
 
 # You can switch to use the file GLOB for simplicity but at your own risk
-file(GLOB SOURCE_FILES src/*.cpp src/*.hpp)
+file(GLOB SOURCE_FILES src/*.cpp src/*.hpp src/*.c src/*.h)
 
 #set(SOURCE_FILES
 #	src/main.cpp
@@ -59,6 +58,7 @@ if (IS_OS_MAC)
 endif()
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+#add_executable(${name} WIN32 ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
 # Added this so policy CMP0065 doesn't scream
@@ -66,9 +66,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 0)
 
 # External header-only libraries in the ext/
 target_include_directories(${PROJECT_NAME} PUBLIC ext/stb_image/)
-target_include_directories(${PROJECT_NAME} PUBLIC ext/gl3w)
+#target_include_directories(${PROJECT_NAME} PUBLIC ext/gl3w)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/entt/)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/freetype/include/)
+target_include_directories(${PROJECT_NAME} PUBLIC ext/nuklear/)
+
 #include_directories('ext/entt')
 
 # Find OpenGL
@@ -88,7 +90,9 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     # Since we're on OSX or Linux, we can just use pkgconfig.
     find_package(PkgConfig REQUIRED)
 
+
     pkg_search_module(freetype REQUIRED freetype)
+    pkg_search_module(GLEW REQUIRED glew)
     pkg_search_module(GLFW REQUIRED glfw3)
     #pkg_search_module(ENTT REQUIRED entt)
     pkg_search_module(SDL2 REQUIRED sdl2)
@@ -106,41 +110,54 @@ if (IS_OS_LINUX OR IS_OS_MAC)
 elseif (IS_OS_WINDOWS)
 # https://stackoverflow.com/questions/17126860/cmake-link-precompiled-library-depending-on-os-and-architecture
     set(GLFW_FOUND TRUE)
+    set(GLEW_FOUND TRUE)
     set(SDL2_FOUND TRUE)
     #set(ENTT_FOUND TRUE)
     set(FREETYPE_FOUND TRUE)
 
     set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include/freetype")
+	
+    set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include")
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")
-    #set(ENTT_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/entt")
 
     if (${CMAKE_SIZEOF_VOID_P} MATCHES "8")
         set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.lib")
-        set(GLFW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x64.lib")
+        set(GLEW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x64.lib")
+        set(GLEW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32s-x64.lib")
+        set(GLFW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x64.lib")
+        set(GLFW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.lib")
+        set(GLFW_C "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3_mt-x64.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.lib")
 	    set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
-
-    set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.dll")
-	set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
-	set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
-	set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
-    
-    #set(ENTT "${CMAKE_CURRENT_SOURCE_DIR}/ext/entt/entt.hpp")
+        
+        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.dll")
+        set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x64.dll")
+	    set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
+	    set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
+	    set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
     else()
-        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.lib")
-        set(GLFW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x86.lib")
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win86/freetype-x86.lib")
+        set(GLEW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.lib")
+        set(GLEW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32s-x86.lib")
+        set(GLFW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x86.lib")
+        set(GLFW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.lib")
+        set(GLFW_C "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3_mt-x86.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.lib")
-
-
-	set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
-	set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
-	set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
-	set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.dll")
-    #set(ENTT "${CMAKE_CURRENT_SOURCE_DIR}/ext/entt/entt.hpp")
+	      set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
+        
+        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win86/freetype-x86.dll")
+        set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.dll")
+	      set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
+	      set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
+	      set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.dll")
     endif()
 
     # Copy and rename dlls
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${GLEW_DLL}"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/glew32.dll")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${GLFW_DLL}"
@@ -162,7 +179,7 @@ elseif (IS_OS_WINDOWS)
     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #    "${ENTT}"
     #    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/entt.hpp")
-    
+
 
     target_compile_options(${PROJECT_NAME} PUBLIC
         # increase warning level
@@ -194,15 +211,23 @@ endif()
     message (FATAL_ERROR "Can't find FREETYPE.")
 endif()
 
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${GLEW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
 #target_include_directories(${PROJECT_NAME} PUBLIC ${ENTT_INCLUDE_DIRS})
 
 #target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} ${ENTT} glm::glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_A} ${GLFW_B} ${GLFW_C} ${GLEW_A} ${GLEW_B} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
+
 
 # Needed to add this
 if(IS_OS_LINUX)
   target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
 endif()
+
+# YAML
+add_subdirectory(ext/yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
