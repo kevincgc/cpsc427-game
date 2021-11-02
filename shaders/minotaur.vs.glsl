@@ -32,7 +32,7 @@ const float ANIMATION_FRAME_H = 95.f / SHEET_HEIGHT;
 const float ANIMATION_FRAME_W = 96.f / SHEET_WIDTH;
 const float ANIMATION_FRAME_W_PADDING = 20.f / SHEET_WIDTH;
 
-const float FRAME_SPEED = 8.f;
+const float FRAME_SPEED = 13.f;
 
 
 

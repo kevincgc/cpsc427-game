@@ -92,37 +92,6 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 	}
 };
 
-// helper function to check collision with wall
-
-extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
-	vec2 corners[] = {
-		// upper right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, -scale_y / 2)),
-
-		// upper left
-		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
-
-		// lower left
-		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
-
-		// lower right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, scale_y / 2)),
-	};
-
-	bool collision = false;
-
-	for (const auto corner : corners) {
-		const MapTile tile = WorldSystem::get_map_tile(corner);
-
-		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
-			collision = true;
-			break;
-		}
-	}
-
-	return collision;
-}
-
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
 
@@ -257,7 +226,7 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	Mix_PlayMusic(background_music, -1);
+	// Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -804,7 +773,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
 				// If clicked a traversable node (i.e. not a wall)...
-				if (get_map_tile(target_map_pos) == FREE_SPACE) {
+				if (tile_is_walkable(get_map_tile(target_map_pos))) {
 
 					// Store starting and ending positions for ai position to look at
 					vec2 player_map_pos = position_to_map_coords(player_motion.position);

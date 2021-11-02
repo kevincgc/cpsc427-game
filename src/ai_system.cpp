@@ -6,7 +6,7 @@
 
 
 // Pathfinding Datastructure
-// Hold a vector of coordinates. 
+// Hold a vector of coordinates.
 // For example: If starting at [0,1]:
 //   [[0,1], [1,1], [2,1], [3,1]]
 // corresponds to traveling 3 tiles to the right
@@ -35,11 +35,11 @@ void AISystem::step()
 		if ( entity != player)
 		{
 
-			// =========== Swinging Attack =========== 
+			// =========== Swinging Attack ===========
 
 			// If enemy is close to player for swinging...
 			if (within_threshold(player, entity, swing_threshold) && player_swing && abs(entity_motion.position.y - motion.position.y) < vertical_threshold ){
-				
+
 				// If enemy is to the right of the player and the player is facing right
    				if (entity_motion.position.x > motion.position.x && motion.velocity.x >= 0) {
 					registry.destroy(entity);
@@ -49,6 +49,16 @@ void AISystem::step()
 				// If enemy is to the left of the player and the player is facing left
 				// Warning: Right now the render system renders the sprite as facing left if velocity.x < 0
 				else if (entity_motion.position.x < motion.position.x && motion.velocity.x < 0) {
+					registry.destroy(entity);
+					break;
+				}
+
+				else if (entity_motion.position.y < motion.position.y && motion.velocity.y < 0) {
+					registry.destroy(entity);
+					break;
+				}
+
+				else if (entity_motion.position.y > motion.position.y && motion.velocity.y > 0) {
 					registry.destroy(entity);
 					break;
 				}
@@ -64,9 +74,9 @@ void AISystem::step()
 			else {
 
 				// ========= Feature: Pathfinding (enemy maze navigation) =========
-			
-				// If enemy is travelling diagonally (ex from chasing a player), 
-				// randomly choose one or the other axis. This prevents the AI's 
+
+				// If enemy is travelling diagonally (ex from chasing a player),
+				// randomly choose one or the other axis. This prevents the AI's
 				// anticipated trajectory into a diagonal tile.
 				if (entity_motion.velocity.x != 0 && entity_motion.velocity.y != 0) {
 					bool go_y = rand() % 2;
@@ -97,9 +107,9 @@ void AISystem::step()
 
 					// Check to prevent wall corner collision. See function for more details
 					bool in_safe_zone = safe_zone_check(entity_motion, tile_world_coord);
-					
+
 					// If enemy is in the safe zone...
-					if (in_safe_zone) { 
+					if (in_safe_zone) {
 
 						// Debugging
 						if (ai_debug) {
@@ -186,12 +196,12 @@ void AISystem::step()
 				if		(target_node_coord.y > motion.position.y) {
 					motion.velocity.y =		player_vel.y;
 					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
-				} 
+				}
 				// Move up
-				else if (target_node_coord.y < motion.position.y) { 
+				else if (target_node_coord.y < motion.position.y) {
 					motion.velocity.y = -1* player_vel.y;
 					if (abs(target_node_coord.x - motion.position.x) < 5) { motion.velocity.x = 0; } // To prevent left/right jitter
-				} 
+				}
 			}
 
 			// The player has reached the target node...
@@ -200,10 +210,10 @@ void AISystem::step()
 
 				// ============ Stop movement so the player doesn't keep traveling forward ===========
 				// This is important to be able to turn the corner and/or prevent running into the wall
-				
-				// In render.cpp, if velocity.x < 0, the sprite will be transformed to face left. When 
+
+				// In render.cpp, if velocity.x < 0, the sprite will be transformed to face left. When
 				// the sprite is moving left, it'll face right when it reaches a node because it'll set
-				// set the motion.velocity.x = 0. Then if it moves left again, it'll turn left. This 
+				// set the motion.velocity.x = 0. Then if it moves left again, it'll turn left. This
 				// creates a jitter effect. The problem is resolved if the game still sees the sprite as
 				// moving left as shown below.
 
@@ -376,7 +386,7 @@ std::vector<vec2> AISystem::trace(std::vector<std::vector<vec2>> parent, vec2 st
 
 std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	// Important: map_tiles[0][1] refers to row 0, column 1
-	
+
 	std::vector<vec2> adj_nodes = {};
 
 	// Assuming map is square
@@ -386,25 +396,25 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	// If adjacent node is within bounds and map_tile == 0, add to adjacency list.
 	// Check right
 	if (root_node.x + 1 <= max_size) {
-		if (game_state.level.map_tiles[root_node.y][root_node.x + 1] == FREE_SPACE) {
+		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x + 1])) {
 			adj_nodes.push_back({ root_node.x + 1, root_node.y });
 		}
 	}
 	// Check down
 	if (root_node.y + 1 <= max_size) {
-		if (game_state.level.map_tiles[root_node.y + 1][root_node.x] == FREE_SPACE) {
+		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y + 1][root_node.x])) {
 			adj_nodes.push_back({ root_node.x,root_node.y + 1 });
 		}
 	}
 	// Check left
 	if (root_node.x - 1 >= 0) {
-		if (game_state.level.map_tiles[root_node.y][root_node.x - 1] == FREE_SPACE) {
+		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x - 1])) {
 			adj_nodes.push_back({ root_node.x - 1, root_node.y });
 		}
 	}
 	// Check up
 	if (root_node.y - 1 >= 0) {
-		if (game_state.level.map_tiles[root_node.y - 1][root_node.x] == FREE_SPACE) {
+		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y - 1][root_node.x])) {
 			adj_nodes.push_back({ root_node.x, root_node.y - 1 });
 		}
 	}
@@ -420,14 +430,14 @@ bool AISystem::within_threshold(entt::entity entity, entt::entity other, float t
 	float DIST_THRESHOLD = sqrt(pow(dist_threshold_x, 2) + pow(dist_threshold_y, 2)); // scaled distance threshold between enemy and player
 	Motion& entity_motion = registry.get<Motion>(entity);
 	Motion& other_motion = registry.get<Motion>(other);
-	
+
 	vec2 direction_vector = entity_motion.position - other_motion.position;
 	float distance = sqrt(dot(direction_vector, direction_vector));
 	return distance <= threshold;
 }
 
 bool AISystem::safe_zone_check(Motion &entity_motion, vec2 tile_world_coord) {
-	// To prevent getting caught in corners make sure the enemy's position 
+	// To prevent getting caught in corners make sure the enemy's position
 	// is within a 'safe zone' that prevents the extremities of the object
 	// from clipping the edges of a wall tile.
 	//  _____________

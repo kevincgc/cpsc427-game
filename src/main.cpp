@@ -23,11 +23,11 @@ vec2 map_scale = { 150.f, 150.f };
 extern entt::registry registry;
 
 extern "C" {
-	void initMainMenu(static GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in);
+	void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in);
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
-	void drawOptionsMenu(static GLFWwindow* win, int* out);
-	void drawPauseMenu(static GLFWwindow* win, int* out);
-	void drawGameOverMenu(static GLFWwindow* win, int* out);
+	void drawOptionsMenu( GLFWwindow* win, int* out);
+	void drawPauseMenu( GLFWwindow* win, int* out);
+	void drawGameOverMenu( GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
