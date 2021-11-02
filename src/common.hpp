@@ -10,7 +10,7 @@
 
 // glfw (OpenGL)
 #define NOMINMAX
-#include <gl3w.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <entt.hpp>
 
@@ -59,6 +59,19 @@ struct Mouse_spell {
 	void update_datastructs(std::map<std::string, bool>& gesture_statuses, std::queue<std::string> &gesture_queue, std::vector<vec2> &gesture_coords, std::string mouse_button, bool &flag_fast, float elapsed_ms);
 	void reset_spells(std::map < int, std::map <std::string, std::string>> &spellbook);
 };
+
+enum class ProgramState {
+	INIT,
+	MAIN_MENU,
+	OPTIONS,
+	RESET_GAME,
+	RUNNING,
+	PAUSED,
+	GAME_OVER,
+	EXIT
+};
+
+extern ProgramState state;
 
 // From main.cpp - now globally accessible
 extern int window_width_px;
