@@ -52,6 +52,16 @@ void AISystem::step()
 					registry.destroy(entity);
 					break;
 				}
+
+				else if (entity_motion.position.y < motion.position.y && motion.velocity.y < 0) {
+					registry.destroy(entity);
+					break;
+				}
+
+				else if (entity_motion.position.y > motion.position.y && motion.velocity.y > 0) {
+					registry.destroy(entity);
+					break;
+				}
 			}
 
 			// If enemy is close to player for chasing...

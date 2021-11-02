@@ -246,7 +246,7 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	Mix_PlayMusic(background_music, -1);
+	// Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -501,11 +501,11 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 void WorldSystem::restart_game() {
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
-
+	
 	// TODO set this up in a menu
 	// current options: "procedural1", "large1", and "testing1"
 	// procedural is random map generation, default value for now
-	game_state.level_id = "testing1";
+	game_state.level_id = "procedural1";
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();

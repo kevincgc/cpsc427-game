@@ -184,6 +184,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 			break;
 
 		case MapTile::FREE_SPACE:
+			texture_asset = TEXTURE_ASSET_ID::FREESPACE;
+			break;
 		default:
 			return; // don't render anything
 	}
