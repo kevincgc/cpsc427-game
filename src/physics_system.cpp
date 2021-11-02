@@ -66,7 +66,7 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 	for (const auto corner : corners) {
 		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
 		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-		if (!WorldSystem::tile_is_walkable(tile_x) != MapTile::FREE_SPACE || !WorldSystem::is_within_bounds(test_point_x)) {
+		if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
 			collision_x = true;
 		}
 

@@ -1,4 +1,4 @@
-// internal
+﻿// internal
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include <SDL.h>
@@ -122,13 +122,13 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		}
 		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
 			player_gesture = 0;
-		} 
+		}
 		else {
 			player_gesture = 1;
 		}
-	
+
 		glUniform1i(motion_uloc, player_gesture);
-		
+
 
 
 		// Enabling and binding texture to slot 0
@@ -184,6 +184,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 			break;
 
 		case MapTile::FREE_SPACE:
+		case MapTile::ENTRANCE:
+		case MapTile::EXIT:
 			texture_asset = TEXTURE_ASSET_ID::FREESPACE;
 			break;
 		default:

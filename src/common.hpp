@@ -86,7 +86,6 @@ extern vec2  enemy_vel;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
 extern bool  do_generate_path;
-extern bool  collision_with_wall(vec2 position, float scale_x, float scale_y);
 extern bool  player_swing;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
