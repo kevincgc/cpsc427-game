@@ -500,8 +500,8 @@ void RenderSystem::draw()
 		renderedText_2 = "";
 	}
 
-	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	vec2 text1_pos = { 1 / w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	vec2 text2_pos = { 1 / w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	if (tips.in_help_mode) {
 		printf("textpos1 x %f\n", text1_pos.x);
 		printf("textpos1 y %f\n", text1_pos.y);
