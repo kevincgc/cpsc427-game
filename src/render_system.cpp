@@ -278,8 +278,8 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	FT_GlyphSlot g = face->glyph;
 
 	// setting text's pixel size
-	pixel_size = 20;
-	FT_Set_Pixel_Sizes(face, 0, pixel_size);
+	pixel_size = 20.f;
+	FT_Set_Pixel_Sizes(face, pixel_size, pixel_size);
 
 
 	// get program shader
@@ -500,9 +500,16 @@ void RenderSystem::draw()
 		renderedText_2 = "";
 	}
 
-	drawText(renderedText_1, { 1/2* w+ 10 * pixel_size,60 }, { 2,-2.5 }, projection_2D);
-	drawText(renderedText_2, { 1 / 2 * w + 25* pixel_size, 60 +  2 * pixel_size }, { 2,-2.5 }, projection_2D);
-
+	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	vec2 text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	if (tips.in_help_mode) {
+		printf("textpos1 x %f\n", text1_pos.x);
+		printf("textpos1 y %f\n", text1_pos.y);
+		printf("textpos2 x %f\n", text2_pos.x);
+		printf("textpos2 y %f\n", text2_pos.y);
+	}
+	drawText(renderedText_1, text1_pos, { 2.f* global_scaling_vector.x, -2.5f* global_scaling_vector.y }, projection_2D);
+	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D);
 	
 	// Truely render to the screen
 	drawToScreen();
