@@ -113,7 +113,7 @@ private:
 	float screen_scale;  // Screen to pixel coordinates scale factor (for apple
 						 // retina display?)
 
-	int pixel_size;
+	float pixel_size;
 
 	// Screen texture handles
 	GLuint frame_buffer;
