@@ -10,9 +10,13 @@
 
 // glfw (OpenGL)
 #define NOMINMAX
-#include <gl3w.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <entt.hpp>
+
+// freetype
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 // The glm library provides vector and matrix operations as in GLSL
 #include <glm/vec2.hpp>				// vec2
@@ -28,9 +32,10 @@ using namespace glm;
 inline std::string data_path() { return std::string(PROJECT_SOURCE_DIR) + "data"; };
 inline std::string shader_path(const std::string& name) {return std::string(PROJECT_SOURCE_DIR) + "/shaders/" + name;};
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
+inline std::string fonts_path(const std::string& name) {return data_path() + "/fonts/" + std::string(name);}
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
-inline std::string maps_path(const std::string& name) {return data_path() + "/maps/" + std::string(name);};
+inline std::string levels_path(const std::string& name) {return data_path() + "/levels/" + std::string(name);};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
@@ -44,6 +49,7 @@ struct Transform {
 	void scale(vec2 scale);
 	void rotate(float radians);
 	void translate(vec2 offset);
+	void reflect();
 };
 
 bool gl_has_errors();
@@ -58,3 +64,34 @@ struct Mouse_spell {
 	void update_datastructs(std::map<std::string, bool>& gesture_statuses, std::queue<std::string> &gesture_queue, std::vector<vec2> &gesture_coords, std::string mouse_button, bool &flag_fast, float elapsed_ms);
 	void reset_spells(std::map < int, std::map <std::string, std::string>> &spellbook);
 };
+
+enum class ProgramState {
+	INIT,
+	MAIN_MENU,
+	OPTIONS,
+	RESET_GAME,
+	RUNNING,
+	PAUSED,
+	GAME_OVER,
+	EXIT
+};
+
+extern ProgramState state;
+
+// From main.cpp - now globally accessible
+extern int window_width_px;
+extern int window_height_px;
+extern float global_scaling_factor;
+extern vec2 global_scaling_vector;
+extern vec2 map_scale;
+
+// From world_system.cpp - now globally accessible (especially for ai_system.cpp)
+extern vec2  player_vel;
+extern vec2  enemy_vel;
+extern vec2  starting_map_pos;
+extern vec2  ending_map_pos;
+extern bool  do_generate_path;
+extern bool  player_swing;
+
+// From ai_system.cpp - set to false when world_system.cpp detects death
+extern bool do_pathfinding_movement;
