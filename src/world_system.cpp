@@ -3,6 +3,7 @@
 #include "world_init.hpp"
 #include "ai_system.hpp"
 
+
 // stlib
 #include <cassert>
 #include <sstream>
@@ -10,7 +11,6 @@
 #include <fstream>
 #include <string>
 
-#include "physics_system.hpp"
 
 // myLibs
 #include <iostream>
@@ -35,6 +35,7 @@ vec2 default_player_vel = { 300.f, 300.f };
 
 // My Settings
 auto t = Clock::now();
+
 bool flag_right = false;
 bool flag_left = false;
 bool flag_fast = false;
@@ -128,11 +129,13 @@ Mouse_spell mouse_spell;
 //Debugging
 vec2 debug_pos = { 0,0 };
 
+
 // Create the world
 WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+	
 }
 
 WorldSystem::~WorldSystem() {
@@ -237,6 +240,8 @@ GLFWwindow* WorldSystem::create_window() {
 	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
 	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
+
+	
 
 	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
@@ -720,6 +725,17 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					do_pathfinding_movement = false;
 					motion.velocity.y = -1 * player_vel.y;
 				}
+        
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		      if (key == GLFW_KEY_H)
+		        {
+			        tips.in_help_mode = 1;
+		        }
+		      else
+		        {
+			        tips.in_help_mode = 0;
+		        }
+	       }
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;

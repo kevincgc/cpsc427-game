@@ -14,6 +14,10 @@
 #include <GLFW/glfw3.h>
 #include <entt.hpp>
 
+// freetype
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 // The glm library provides vector and matrix operations as in GLSL
 #include <glm/vec2.hpp>				// vec2
 #include <glm/ext/vector_int2.hpp>  // ivec2
@@ -28,6 +32,7 @@ using namespace glm;
 inline std::string data_path() { return std::string(PROJECT_SOURCE_DIR) + "data"; };
 inline std::string shader_path(const std::string& name) {return std::string(PROJECT_SOURCE_DIR) + "/shaders/" + name;};
 inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
+inline std::string fonts_path(const std::string& name) {return data_path() + "/fonts/" + std::string(name);}
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
 inline std::string levels_path(const std::string& name) {return data_path() + "/levels/" + std::string(name);};

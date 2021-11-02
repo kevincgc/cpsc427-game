@@ -10,6 +10,7 @@
 
 Debug debugging;
 GameState game_state;
+Help tips;
 float death_timer_counter_ms = 3000;
 
 

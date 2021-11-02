@@ -76,6 +76,12 @@ struct ScreenState
 	float darken_screen_factor = -1;
 };
 
+// Data structure for togglin help mode
+struct Help {
+	bool in_help_mode = 0;
+};
+extern Help tips;
+
 // A struct to refer to debugging graphics in the ECS
 struct DebugComponent
 {
@@ -176,7 +182,6 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
-
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
