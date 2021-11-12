@@ -89,8 +89,8 @@ void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, f
         char *relPath = "/data/fonts/kenvector_future_thin.ttf";
         size_t size = sizeof(char) * (strlen(PROJECT_SOURCE_DIR) + strlen(relPath) + 1);
         char *path = (char *) malloc(size);
-        strcpy_s(path, size, PROJECT_SOURCE_DIR);
-        strcat_s(path, size, relPath);
+        strlcpy(path, size, PROJECT_SOURCE_DIR);
+        strlcat(path, size, relPath);
         struct nk_font *future = nk_font_atlas_add_from_file(atlas, path, 26 * scale_x_in, 0);
         free(path);
         nk_glfw3_font_stash_end(&glfw);
