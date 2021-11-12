@@ -4,6 +4,7 @@
 
 #include "common.hpp"
 #include "components.hpp"
+#include "world_system.hpp"
 
 #include <entt.hpp>
 

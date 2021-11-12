@@ -20,7 +20,7 @@ extern entt::registry registry;
 const int SPRITE_SHEET_WIDTH = 844;
 const int SPRITE_SHEET_HEIGHT = 1868;
 
-const float ANIMATION_FRAME_W = 53.f / SPRITE_SHEET_WIDTH; // 0-1
+const float ANIMATION_FRAME_W = 56.f / SPRITE_SHEET_WIDTH; // 0-1
 const float ANIMATION_FRAME_H = 50.f / SPRITE_SHEET_HEIGHT; 
 const float OFFSET_X = 0.f;
 const float OFFSET_Y = 0.f;
@@ -33,12 +33,15 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // vsync
+	
+
 
 	// Load OpenGL function pointers
 	const int is_fine = glewInit();
 	assert(is_fine == 0);
 	registry.emplace<ScreenState>(screen_state_entity);
 	reinitSetBuffer(width, height, window_arg);
+  initText();
 	initializeGlTextures();
 	initializeGlEffects();
 	initializeGlGeometryBuffers();
@@ -71,6 +74,7 @@ void RenderSystem::reinitSetBuffer(int width, int height, GLFWwindow* window_arg
 	glBindVertexArray(vao);
 	gl_has_errors();
 }
+
 
 bool RenderSystem::reinit(int width, int height, GLFWwindow* window_arg, bool is_init) {
 	if (!is_init) {
@@ -121,6 +125,7 @@ void RenderSystem::initializeGlEffects()
 	}
 }
 
+
 // One could merge the following two functions as a template function...
 template <class T>
 void RenderSystem::bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices)
@@ -153,6 +158,9 @@ void RenderSystem::initializeGlMeshes()
 			meshes[(int)geom_index].vertex_indices);
 	}
 }
+
+
+
 
 void RenderSystem::initializeGlGeometryBuffers()
 {
@@ -262,6 +270,8 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 }
 
+
+
 RenderSystem::~RenderSystem()
 {
 	// Don't need to free gl resources since they last for as long as the program,
@@ -330,6 +340,25 @@ bool gl_compile_shader(GLuint shader)
 	}
 
 	return true;
+}
+
+/* reference:
+	https ://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
+void RenderSystem::initText()
+{
+
+	// initialize library, and pass it the Renderer part
+	if (FT_Init_FreeType(&ft)) {
+		fprintf(stderr, "Could not init freetype library\n");
+		assert(false);
+	}
+
+	if (FT_New_Face(ft, fonts_path("RobotoCondensed-Bold.ttf").c_str(), 0, &face)) {
+		fprintf(stderr, "Could not open font\n");
+		assert(false);
+	}
+
+
 }
 
 bool loadEffectFromFile(
