@@ -4,6 +4,7 @@
 #include "ai_system.hpp"
 #include <GLFW/glfw3.h>
 
+
 // stlib
 #include <cassert>
 #include <sstream>
@@ -11,7 +12,6 @@
 #include <fstream>
 #include <string>
 
-#include "physics_system.hpp"
 
 // myLibs
 #include <iostream>
@@ -36,6 +36,7 @@ vec2 default_player_vel = { 300.f, 300.f };
 
 // My Settings
 auto t = Clock::now();
+
 bool flag_right = false;
 bool flag_left = false;
 bool flag_fast = false;
@@ -92,48 +93,19 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 	}
 };
 
-// helper function to check collision with wall
-
-extern bool collision_with_wall(vec2 position, float scale_x, float scale_y) {
-	vec2 corners[] = {
-		// upper right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, -scale_y / 2)),
-
-		// upper left
-		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, -scale_y / 2)),
-
-		// lower left
-		WorldSystem::position_to_map_coords(position + vec2(-scale_x / 2, scale_y / 2)),
-
-		// lower right
-		WorldSystem::position_to_map_coords(position + vec2(scale_x / 2, scale_y / 2)),
-	};
-
-	bool collision = false;
-
-	for (const auto corner : corners) {
-		const MapTile tile = WorldSystem::get_map_tile(corner);
-
-		if (tile != MapTile::FREE_SPACE || corner.x < 0 || corner.y < 0) {
-			collision = true;
-			break;
-		}
-	}
-
-	return collision;
-}
-
 // Access mouse_spell helper functions
 Mouse_spell mouse_spell;
 
 //Debugging
 vec2 debug_pos = { 0,0 };
 
+
 // Create the world
 WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+	
 }
 
 WorldSystem::~WorldSystem() {
@@ -239,6 +211,8 @@ GLFWwindow* WorldSystem::create_window() {
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
 	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
 
+	
+
 	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 			audio_path("music.wav").c_str(),
@@ -253,7 +227,7 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	Mix_PlayMusic(background_music, -1);
+	// Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -358,6 +332,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// player has found the exit!
 		Mix_PlayChannel(-1, tada_sound, 0);
 		restart_game();
+		do_pathfinding_movement = false;
 	}
 
 	return true;
@@ -721,6 +696,17 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					do_pathfinding_movement = false;
 					motion.velocity.y = -1 * player_vel.y;
 				}
+        
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		      if (key == GLFW_KEY_H)
+		        {
+			        tips.in_help_mode = 1;
+		        }
+		      else
+		        {
+			        tips.in_help_mode = 0;
+		        }
+	       }
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
@@ -789,7 +775,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				vec2 target_map_pos = position_to_map_coords(target_world_pos);
 
 				// If clicked a traversable node (i.e. not a wall)...
-				if (get_map_tile(target_map_pos) == FREE_SPACE) {
+				if (tile_is_walkable(get_map_tile(target_map_pos))) {
 
 					// Store starting and ending positions for ai position to look at
 					vec2 player_map_pos = position_to_map_coords(player_motion.position);

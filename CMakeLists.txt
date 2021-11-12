@@ -40,7 +40,7 @@ file(GLOB SOURCE_FILES src/*.cpp src/*.hpp src/*.c src/*.h)
 #	src/mini_ecs.cpp
 # 	src/pebbles.cpp
 
-#    ext/project_path.hpp
+#   ext/project_path.hpp
 #	src/common.hpp
 #	src/fish.hpp
 #	src/salmon.hpp
@@ -68,7 +68,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 0)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/stb_image/)
 #target_include_directories(${PROJECT_NAME} PUBLIC ext/gl3w)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/entt/)
+target_include_directories(${PROJECT_NAME} PUBLIC ext/freetype/include/)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/nuklear/)
+
 #include_directories('ext/entt')
 
 # Find OpenGL
@@ -89,12 +91,17 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     find_package(PkgConfig REQUIRED)
 
     # pkg_search_module(GLEW REQUIRED glew)
+
+    # pkg_search_module(freetype REQUIRED freetype)
+    pkg_search_module(FREETYPE freetype2)
+    pkg_search_module(GLEW REQUIRED glew)
     pkg_search_module(GLFW REQUIRED glfw3)
     #pkg_search_module(ENTT REQUIRED entt)
     pkg_search_module(SDL2 REQUIRED sdl2)
     pkg_search_module(SDL2MIXER REQUIRED SDL2_mixer)
 
     find_package(GLEW REQUIRED)
+    find_package(FREETYPE REQUIRED)
     include_directories(${GLEW_INCLUDE_DIRS})
     include_directories(${GLFW_INCLUDE_DIRS})
 
@@ -102,6 +109,7 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     if (IS_OS_MAC)
        find_library(COCOA_LIBRARY Cocoa)
        find_library(CF_LIBRARY CoreFoundation)
+       
        target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${COCOA_LIBRARY} ${CF_LIBRARY})
       #  target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
     endif()
@@ -113,12 +121,17 @@ elseif (IS_OS_WINDOWS)
     set(GLFW_FOUND TRUE)
     set(GLEW_FOUND TRUE)
     set(SDL2_FOUND TRUE)
+    #set(ENTT_FOUND TRUE)
+    set(FREETYPE_FOUND TRUE)
+
+    set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include/freetype")
 
     set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include")
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")
 
     if (${CMAKE_SIZEOF_VOID_P} MATCHES "8")
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.lib")
         set(GLEW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x64.lib")
         set(GLEW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32s-x64.lib")
         set(GLFW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x64.lib")
@@ -127,23 +140,26 @@ elseif (IS_OS_WINDOWS)
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.lib")
 	    set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
 
+        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win64/freetype.dll")
         set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x64.dll")
 	    set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
 	    set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
 	    set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
     else()
+        set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.lib")
         set(GLEW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.lib")
         set(GLEW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32s-x86.lib")
         set(GLFW_A "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x86.lib")
         set(GLFW_B "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.lib")
         set(GLFW_C "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3_mt-x86.lib")
         set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.lib")
-	    set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
+	      set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.lib")
 
+        set(FREETYPE_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/win32/freetype.dll")
         set(GLEW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/glew32-x86.dll")
-	    set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
-	    set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
-	    set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.dll")
+	      set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x86.dll")
+	      set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x86.dll")
+	      set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x86.dll")
     endif()
 
     # Copy and rename dlls
@@ -163,6 +179,11 @@ elseif (IS_OS_WINDOWS)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDLMIXER_DLL}"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${FREETYPE_DLL}"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/freetype.dll")
+
     #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #    "${ENTT}"
@@ -195,13 +216,19 @@ if (NOT GLFW_FOUND OR NOT SDL2_FOUND)
       message(FATAL_ERROR "Can't find SDL." )
    endif()
 endif()
+ if (NOT FREETYPE_FOUND)
+    message (FATAL_ERROR "Can't find FREETYPE.")
+endif()
 
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLEW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
 #target_include_directories(${PROJECT_NAME} PUBLIC ${ENTT_INCLUDE_DIRS})
 
 #target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} ${ENTT} glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_A} ${GLFW_B} ${GLFW_C} ${GLEW_A} ${GLEW_B} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
 
 

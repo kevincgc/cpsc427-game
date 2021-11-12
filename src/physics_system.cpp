@@ -1,7 +1,8 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
-#include<iostream>
+#include <iostream>
+
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -66,7 +67,7 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 	for (const auto corner : corners) {
 		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
 		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-		if (!WorldSystem::tile_is_walkable(tile_x) != MapTile::FREE_SPACE || !WorldSystem::is_within_bounds(test_point_x)) {
+		if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
 			collision_x = true;
 		}
 
@@ -137,14 +138,24 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 {
 	// Move entities based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
-	for(entt::entity entity: registry.view<Motion>())
-	{
-		Motion& motion = registry.get<Motion>(entity);
-		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		setMotionPosition(motion, nextpos);
-	}
+	
+
+		for (entt::entity entity : registry.view<Motion>())
+		{
+			Motion& motion = registry.get<Motion>(entity);
+			float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+			vec2 nextpos;
+			if (!tips.in_help_mode) {
+				 nextpos = motion.position + motion.velocity * step_seconds;
+			}
+			else {
+				nextpos = motion.position;
+			}
+			setMotionPosition(motion, nextpos);
+		}
+	
+
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);

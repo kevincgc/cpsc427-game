@@ -1,7 +1,9 @@
-// internal
+﻿// internal
 #include "render_system.hpp"
 #include "world_system.hpp"
-#include <SDL.h>
+#include <iostream>
+
+
 
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
@@ -122,13 +124,13 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		}
 		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
 			player_gesture = 0;
-		} 
+		}
 		else {
 			player_gesture = 1;
 		}
-	
+
 		glUniform1i(motion_uloc, player_gesture);
-		
+
 
 
 		// Enabling and binding texture to slot 0
@@ -184,6 +186,10 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 			break;
 
 		case MapTile::FREE_SPACE:
+		case MapTile::ENTRANCE:
+		case MapTile::EXIT:
+			texture_asset = TEXTURE_ASSET_ID::FREESPACE;
+			break;
 		default:
 			return; // don't render anything
 	}
@@ -264,6 +270,124 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	gl_has_errors();
 }
 
+
+/* tutorial reference :
+/ https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
+void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const mat3& projection)
+{
+	// prepare for transformation
+	Transform transform;
+
+	// glyph's slot
+	FT_GlyphSlot g = face->glyph;
+
+	// setting text's pixel size
+	pixel_size = 20.f;
+	FT_Set_Pixel_Sizes(face, pixel_size, pixel_size);
+
+
+	// get program shader
+	GLuint program;
+	assert(loadEffectFromFile(
+		shader_path("text") + ".vs.glsl", shader_path("text") + ".fs.glsl", program));
+
+	//single texture object to render all the glyphs
+	GLuint tex;
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	gl_has_errors();
+
+	// no aligment restriction
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	//setting vertex buffer for text
+	GLuint text_vbo;
+	glGenBuffers(1, &text_vbo);
+	GLint attribute_coord = glGetAttribLocation(program, "vertex");
+	
+	// Setting shaders
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint uniform_color = glGetUniformLocation(program, "textColor");
+	glUniform3f(uniform_color, 0.6 , 0.5 , 0.5);
+	
+	glEnableVertexAttribArray(attribute_coord);
+	glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
+	glVertexAttribPointer(attribute_coord, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+	gl_has_errors();
+	assert(attribute_coord >= 0);
+
+
+
+	//prevent certain artifacts when a character is not rendered exactly on pixel boundaries
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gl_has_errors();
+
+	for (const char* p = text; *p; p++)
+	{
+		if (FT_Load_Char(face, *p, FT_LOAD_RENDER)) {continue;}
+
+		glTexImage2D(
+				GL_TEXTURE_2D,
+				0,
+				GL_RED,
+				g->bitmap.width,
+				g->bitmap.rows,
+				0,
+				GL_RED,
+				GL_UNSIGNED_BYTE,
+				g->bitmap.buffer
+		);
+
+		
+		float x2 = position.x + g->bitmap_left * scale.x;
+		float y2 = -position.y - g->bitmap_top * scale.y;
+		float w = g->bitmap.width * scale.x;
+		float h = g->bitmap.rows * scale.y;
+
+		GLfloat vertices[4][4] = {
+				{x2,     -y2    , 0, 0},
+				{x2 + w, -y2    , 1, 0},
+				{x2,     -y2 - h, 0, 1},
+				{x2 + w, -y2 - h, 1, 1},
+		};
+
+		// transform vertices location
+		GLuint transform_loc = glGetUniformLocation(program, "transform");
+		glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+		gl_has_errors();
+		GLuint projection_loc = glGetUniformLocation(program, "projection");
+		glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+		gl_has_errors();
+
+		// draw characters on screen;
+		glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_DYNAMIC_DRAW);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		gl_has_errors();
+
+		// Advance the cursor to the start of the next character
+		position.x += (g->advance.x >> 6) * scale.x;
+		position.y += (g->advance.y >> 6) * scale.y;
+		gl_has_errors();
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
 // draw the intermediate texture to the screen, with some distortion to simulate
 // water
 void RenderSystem::drawToScreen()
@@ -320,6 +444,7 @@ void RenderSystem::drawToScreen()
 		nullptr); // one triangle = 3 vertices; nullptr indicates that there is
 				  // no offset from the bound index buffer
 	gl_has_errors();
+
 }
 
 // Render our game world
@@ -364,6 +489,27 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+	
+	// render help text
+	char* renderedText_1;
+	char* renderedText_2;
+	if (tips.in_help_mode)
+	{
+		renderedText_1 = "Movement keys: arrows/W(up)/A(left)/S(down)/D(right)";
+		renderedText_2 = "Click to find path.";
+	}
+	else
+	{
+		renderedText_1 = "";
+		renderedText_2 = "";
+	}
+
+	vec2 text1_pos = { 1 / 2*w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	vec2 text2_pos = { 1 / 2*w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+
+	drawText(renderedText_1, text1_pos, { 2.f* global_scaling_vector.x, -2.5f* global_scaling_vector.y }, projection_2D);
+	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D);
+	
 	// Truely render to the screen
 	drawToScreen();
 
@@ -389,4 +535,23 @@ mat3 RenderSystem::createProjectionMatrix()
 	float tx = -(right + left) / (right - left);
 	float ty = -(top + bottom) / (top - bottom);
 	return {{sx, 0.f, 0.f}, {0.f, sy, 0.f}, {tx, ty, 1.f}};
+}
+
+
+mat3 RenderSystem::createProjectionMatrixforText()
+{
+	float left = 0.f;
+	float top = 0.f;
+
+	int w, h;
+	glfwGetFramebufferSize(window, &w, &h);
+	gl_has_errors();
+	float right = (float)w / screen_scale;
+	float bottom = (float)h / screen_scale;
+
+	float sx = 2.f / (right - left);
+	float sy = 2.f / (top - bottom);
+	float tx = -(right + left) / (right - left);
+	float ty = -(top + bottom) / (top - bottom);
+	return { {-sx, 0.f, 0.f}, {0.f, -sy, 0.f}, {tx, ty, 1.f} };
 }
