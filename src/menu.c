@@ -92,10 +92,10 @@ void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, f
         #if defined(WIN32) || defined(_WIN32) || defined(WIN32) || defined(NT)
         strcpy_s(path, size, PROJECT_SOURCE_DIR);
         strcat_s(path, size, relPath);
-#elif __APPLE__
+        #elif __APPLE__
         strcpy(path, PROJECT_SOURCE_DIR);
         strcat(path, relPath);
-#endif
+        #endif
         
         struct nk_font *future = nk_font_atlas_add_from_file(atlas, path, 26 * scale_x_in, 0);
         free(path);

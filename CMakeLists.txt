@@ -102,7 +102,7 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     if (IS_OS_MAC)
        find_library(COCOA_LIBRARY Cocoa)
        find_library(CF_LIBRARY CoreFoundation)
-       target_link_libraries(${PROJECT_NAME} PUBLIC ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${COCOA_LIBRARY} ${CF_LIBRARY})
+       target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${COCOA_LIBRARY} ${CF_LIBRARY})
       #  target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
     endif()
 
