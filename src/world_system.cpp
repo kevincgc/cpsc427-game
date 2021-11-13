@@ -696,13 +696,13 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			if (action != GLFW_REPEAT) {
 				motion.velocity = { 0, 0 };
 
-				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end()    || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = true;
 					motion.velocity.y = -1 * player_vel.y;
 				}
         
-				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = true;
 					motion.velocity.x = -1 * player_vel.x;
@@ -714,21 +714,22 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.x = player_vel.x;
 				}
 
-				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = true;
 					motion.velocity.y = player_vel.y;
 				}
 
+				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
 			}
 
-			if (action == GLFW_RELEASE && 
-				(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
-				 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
-				 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
-				 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
-				player_is_manually_moving = false;
-			}
+			//if (action == GLFW_RELEASE && 
+			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
+			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
+			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
+			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
+			//	player_is_manually_moving = false;
+			//}
 
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
