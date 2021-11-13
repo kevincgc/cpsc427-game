@@ -139,23 +139,42 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	// Move entities based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 
-	
+	for (entt::entity entity : registry.view<Motion>())
+	{
+		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		vec2 nextpos;
+		Motion& motion = registry.get<Motion>(entity);
 
-		for (entt::entity entity : registry.view<Motion>())
-		{
-			Motion& motion = registry.get<Motion>(entity);
-			float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-			vec2 nextpos;
-			if (!tips.in_help_mode) {
-				 nextpos = motion.position + motion.velocity * step_seconds;
+		if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
+		else { nextpos = motion.position; }
+
+		if (entity != 0) {
+			if (player_is_manually_moving || do_pathfinding_movement) {
+				setMotionPosition(motion, nextpos);
 			}
-			else {
-				nextpos = motion.position;
-			}
+		}
+		else {
 			setMotionPosition(motion, nextpos);
 		}
-	
+		//Motion& motion = registry.get<Motion>(entity);
+		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
+		//
+		//vec2 nextpos;
+		//if   (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
+		//else					  { nextpos = motion.position; }
 
+		//setMotionPosition(motion, nextpos);
+
+
+	}
+	
+	// Move enemy
+	// If player is moving, move enemies too
+	//if (player_is_manually_moving || do_pathfinding_movement) {
+	//	for (int i = 1; i <= registry.size<Motion>; i++) {
+	//		Motion& enemy_motion = registry.get<Motion>.begin()[i];
+	//	}
+	//}
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
