@@ -148,7 +148,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
 		else { nextpos = motion.position; }
 
-		if (entity != 0) {
+		if (!registry.view<Player>().contains(entity)) {
 			if (player_is_manually_moving || do_pathfinding_movement) {
 				setMotionPosition(motion, nextpos);
 			}
