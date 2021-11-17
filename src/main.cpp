@@ -28,6 +28,7 @@ extern "C" {
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
 	void drawGameOverMenu( GLFWwindow* win, int* out);
+	void drawCutscene1(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
@@ -147,6 +148,21 @@ int main()
 			}
 			break;
 		}
+
+		case ProgramState::CUTSCENE1:
+		{
+			int selection = 0;
+			drawCutscene1(window, &selection);
+			switch (selection) {
+			case 1:
+				renderer.reinit(window_width_px, window_height_px, window);
+				state = ProgramState::RUNNING;
+				break;
+			}
+		}
+		break;
+
+
 		default:
 			return 0;
 		}

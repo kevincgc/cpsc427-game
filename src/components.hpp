@@ -29,6 +29,7 @@ struct Motion {
 	vec2 scale = { 10, 10 };
 	float mass = 50.0f;
 	float coeff_rest = 0.8f;
+	bool can_collide = true;
 };
 
 // Stucture to store collision information
@@ -129,6 +130,13 @@ struct Item
 	int id = 0;
 };
 
+// Cutscene Elements
+enum Cutscene {
+	BACKGROUND = 1,
+	MINOTAUR = 2,
+	DRONE = 3
+};
+
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
 {
@@ -182,6 +190,9 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
+	CUTSCENE_MINOTAUR,
+	CUTSCENE_DRONE,
+	CUTSCENE_BACKGROUND,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

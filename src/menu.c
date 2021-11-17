@@ -29,6 +29,9 @@ int height;
 float scale_x;
 float scale_y;
 
+// Andrew's Variables
+float cutscene_alpha = 255;
+
 char **levels;
 int levels_size;
  char *selected_level = NULL;
@@ -256,4 +259,69 @@ void drawGameOverMenu( GLFWwindow* win, int* out)
     nk_end(ctx);
     nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
     glfwSwapBuffers(win);
+}
+
+
+
+void drawCutscene1(GLFWwindow* win, int* out)
+{
+	nk_glfw3_new_frame(&glfw);
+
+	// Cutscene Window Dimensions
+	int x = 0;
+	int y = height * 3/4 * scale_y;
+	int w = width;
+	int h = height * 1/4 * scale_y;
+
+	// GUI
+	if (nk_begin(ctx, "Cutscene Menu", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	{
+		//struct nk_command_buffer*canvas = nk_window_get_canvas(ctx); // The whole window is now the canvas
+		//struct nk_rect space; // allocate the space we'll be drawing in
+		//nk_widget(&space, ctx);
+
+		//nk_fill_rect(canvas, nk_rect(0, h * 0 / 6 - 5, w, h * 1 / 6), 0, nk_rgb (0, 0, 0));
+		//nk_fill_rect(canvas, nk_rect(0, h * 1 / 6	 , w, h * 4 / 6), 0, nk_rgba(0, 0, 0, cutscene_alpha));
+		//nk_fill_rect(canvas, nk_rect(0, h * 5 / 6 + 5, w, h * 1 / 6), 0, nk_rgb (0, 0, 0));
+
+		// Test
+		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		nk_label(ctx, "Hello there", NK_TEXT_CENTERED);
+		if (nk_button_label(ctx, "RESUME GAME")) {
+			fprintf(stdout, "Starting Game\n");
+			*out = 1;
+		}
+		//// Top border
+		//nk_layout_row_dynamic(ctx, height/6, 1);
+		//struct nk_command_buffer*canvas = nk_window_get_canvas(ctx); // The whole window is now the canvas
+		//struct nk_rect space; // allocate the space we'll be drawing in
+		//nk_widget(&space, ctx);
+		//nk_fill_rect(canvas, space, 0, nk_rgb(0, 0, 0));
+
+		//// Center window
+		//nk_layout_row_dynamic(ctx, height*4/6, 1);
+		//struct nk_command_buffer*canvas2 = nk_window_get_canvas(ctx);
+		//struct nk_rect space2;
+		//nk_widget(&space2, ctx);
+		//nk_fill_rect(canvas2, space2, 0, nk_rgba(0,0,0,cutscene_alpha));
+
+		//// Bottom border
+		//nk_layout_row_dynamic(ctx, height/6, 1);
+		//struct nk_command_buffer*canvas3 = nk_window_get_canvas(ctx);
+		//struct nk_rect space3;
+		//nk_widget(&space3, ctx);
+		//nk_fill_rect(canvas3, space3, 0, nk_rgb(0, 0, 0));
+
+
+		//nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		//if (nk_button_label(ctx, "RESUME GAME")) {
+		//	fprintf(stdout, "Starting Game\n");
+		//	*out = 1;
+		//}
+
+
+	}
+	nk_end(ctx);
+	nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+	glfwSwapBuffers(win);
 }

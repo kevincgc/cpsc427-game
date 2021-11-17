@@ -73,7 +73,8 @@ enum class ProgramState {
 	RUNNING,
 	PAUSED,
 	GAME_OVER,
-	EXIT
+	EXIT,
+	CUTSCENE1
 };
 
 extern ProgramState state;

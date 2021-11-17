@@ -15,15 +15,17 @@ vec2 get_bounding_box(const Motion& motion)
 // if the center point of either object is inside the other's bounding-box-circle.
 bool collides(const Motion& motion1, const Motion& motion2)
 {
-	vec2 dp = motion1.position - motion2.position;
-	float dist_squared = dot(dp,dp);
-	const vec2 other_bounding_box = get_bounding_box(motion1) / 2.f;
-	const float other_r_squared = dot(other_bounding_box, other_bounding_box);
-	const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
-	const float my_r_squared = dot(my_bounding_box, my_bounding_box);
-	const float r_squared = max(other_r_squared, my_r_squared);
-	if (dist_squared < r_squared || dist_squared == 0)
-		return true;
+	if (motion1.can_collide && motion2.can_collide) {
+		vec2 dp = motion1.position - motion2.position;
+		float dist_squared = dot(dp, dp);
+		const vec2 other_bounding_box = get_bounding_box(motion1) / 2.f;
+		const float other_r_squared = dot(other_bounding_box, other_bounding_box);
+		const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
+		const float my_r_squared = dot(my_bounding_box, my_bounding_box);
+		const float r_squared = max(other_r_squared, my_r_squared);
+		if (dist_squared < r_squared || dist_squared == 0)
+			return true;
+	}
 	return false;
 }
 

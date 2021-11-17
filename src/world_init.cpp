@@ -65,6 +65,45 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	return e;
 }
 
+entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene element)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion = Motion();
+	motion.angle = 0.f;
+	motion.velocity = {0,0 };
+	motion.position = position;
+	motion.scale = mesh.original_size * 0.f * global_scaling_vector;
+	motion.mass = 0;
+	motion.coeff_rest = 0;
+	motion.can_collide = false;
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+
+
+	TEXTURE_ASSET_ID texture_asset_id;
+	switch (element)
+	{
+	case BACKGROUND:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_BACKGROUND;
+		break;
+	case MINOTAUR:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_MINOTAUR;
+		break;
+	case DRONE:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_DRONE;
+		break;
+	default:
+		break;
+	}
+	registry.emplace<RenderRequest>(e,
+		texture_asset_id,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE);
+
+	return e;
+}
+
 // New Entities
 
 entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)

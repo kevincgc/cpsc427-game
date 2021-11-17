@@ -44,6 +44,11 @@ bool active_spell = false;
 float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
+
+entt::entity background_entity;
+entt::entity cutscene_minotaur_entity;
+entt::entity cutscene_drone_entity;
+
 // For pathfinding feature
 bool do_generate_path = false;
 vec2 path_target_map_pos;
@@ -307,24 +312,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
-	// Temporary for crossplay playability: Handle enemy respawn
-	// Problems: spawns in walls, spawns on player
-	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
-
-	//	entt::entity entity;
-	//	int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
-	//	vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
-	//	position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
-	//	spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
-
-	//	entity = createSpike(renderer, position);
-
-	//	// TODO this should be controlled by AI, not an initial velocity
-	//	Motion& motion = registry.get<Motion>(entity);
-	//	motion.mass = 200;
-	//	motion.coeff_rest = 0.9f;
-	//	motion.velocity = vec2(-100.f, 0.f);
-	//}
 	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
@@ -489,6 +476,9 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
+
+
+
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
@@ -604,8 +594,15 @@ void WorldSystem::restart_game() {
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
+	// *************************************************************************************************************************************************
+	// Create cutscene entities
+		cutscene_drone_entity = createCutscene(renderer, { 0,0 }, DRONE);
+		cutscene_minotaur_entity = createCutscene(renderer, { 0,0 }, MINOTAUR);
+		background_entity = createCutscene(renderer, { 0,0 }, BACKGROUND);
 
 
+
+	// ********************************************************************************************************************************************
 }
 
 // Compute collisions between entities
@@ -637,12 +634,6 @@ void WorldSystem::handle_collisions() {
 
 					// Stop pathfinding movement
 					do_pathfinding_movement = false;
-
-					// Below is the acceleration/flag-based movement implementation
-					//move_right = false;
-					//move_left = false;
-					//move_up = false;
-					//move_down = false;
 				}
 			}
 		}
@@ -657,6 +648,10 @@ bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
 
+
+
+
+
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
 	static std::map<int, bool> pressed_keys = std::map<int, bool>();
@@ -669,8 +664,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	} // not GLFW_REPEAT
 
 	if (state == ProgramState::RUNNING) {
-		entt::entity player = registry.view<Player>().begin()[0];
-		Motion& motion = registry.get<Motion>(player);
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -727,6 +722,37 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				state = ProgramState::PAUSED;
 			}
+
+
+			// ************************************************* Cutscenes ************************************************* 
+
+			Motion& background_motion = registry.get<Motion>(background_entity);
+			Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
+			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+			if (action == GLFW_PRESS && key == GLFW_KEY_F) {
+				background_motion.position = motion.position;
+				background_motion.scale = { 10000,10000 };
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y - window_height_px / 8 };
+				cutscene_minotaur_motion.scale = { 500,500 };
+				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
+				cutscene_drone_motion.scale = { 400,400 };
+				
+			}
+			if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
+				state = ProgramState::CUTSCENE1;
+				background_motion.scale = { 0,0 };
+				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_drone_motion.scale = { 0,0 };
+			}
+
+
+
+
+
+
+
+
+			// **************************************************************************************************
 		}
 	}
 }
