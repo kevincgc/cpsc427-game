@@ -53,6 +53,9 @@ vec2 ending_map_pos;
 // For attack
 bool player_swing = false;
 
+// For enemy moving when player moves
+bool player_is_manually_moving = false;
+
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
 std::vector <vec2> gesture_coords_right;
@@ -661,6 +664,7 @@ bool WorldSystem::is_over() const {
 void WorldSystem::on_key(int key, int, int action, int mod) {
 	static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
+	// Menu Interaction
 	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
 		pressed_keys.insert({ key, true });
 	}
@@ -674,13 +678,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
+			// Swing Attack
 			if (key == GLFW_KEY_SPACE) {
-				// minotaur attack mode on spack key
 				if (action == GLFW_PRESS && !registry.view<Attack>().contains(player))
 				{
 					registry.emplace<Attack>(player);
 					player_swing = true;
-
 				}
 
 				if (action == GLFW_RELEASE) {
@@ -689,43 +692,54 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				}
 			}
 
+			// Movement
 			if (action != GLFW_REPEAT) {
 				motion.velocity = { 0, 0 };
 
-				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end()    || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
 					motion.velocity.y = -1 * player_vel.y;
 				}
         
-        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-		      if (key == GLFW_KEY_H)
-		        {
-			        tips.in_help_mode = 1;
-		        }
-		      else
-		        {
-			        tips.in_help_mode = 0;
-		        }
-	       }
-
-				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
 					motion.velocity.x = -1 * player_vel.x;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
 					motion.velocity.x = player_vel.x;
 				}
 
-				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
 					motion.velocity.y = player_vel.y;
 				}
 
+				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
 			}
+
+			//if (action == GLFW_RELEASE && 
+			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
+			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
+			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
+			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
+			//	player_is_manually_moving = false;
+			//}
+
+			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				state = ProgramState::PAUSED;
+			}
+
+			// Help Mode
+			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+				if (key == GLFW_KEY_H) { tips.in_help_mode = 1; }
+				else { tips.in_help_mode = 0; }
 			}
 		}
 	}
