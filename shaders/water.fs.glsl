@@ -13,7 +13,8 @@ vec2 distort(vec2 uv)
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A1: HANDLE THE WATER WAVE DISTORTION HERE (you may want to try sin/cos)
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+	// float distorted = uv[0] + 0.045 * (sin(6 * (uv[0]+ time/100) ));
+	// uv[0] = mix (uv[0], distorted, min(uv[0], 1- uv[0]));
 	return uv;
 }
 
@@ -28,6 +29,7 @@ vec4 color_shift(vec4 in_color)
 
 vec4 fade_color(vec4 in_color) 
 {
+	in_color[3] = 0.1;
 	return in_color;
 }
 

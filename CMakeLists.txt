@@ -90,8 +90,10 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     # Since we're on OSX or Linux, we can just use pkgconfig.
     find_package(PkgConfig REQUIRED)
 
+    # pkg_search_module(GLEW REQUIRED glew)
 
-    pkg_search_module(freetype REQUIRED freetype)
+    # pkg_search_module(freetype REQUIRED freetype)
+    pkg_search_module(FREETYPE freetype2)
     pkg_search_module(GLEW REQUIRED glew)
     pkg_search_module(GLFW REQUIRED glfw3)
     #pkg_search_module(ENTT REQUIRED entt)
@@ -99,13 +101,17 @@ if (IS_OS_LINUX OR IS_OS_MAC)
     pkg_search_module(SDL2MIXER REQUIRED SDL2_mixer)
 
     find_package(GLEW REQUIRED)
+    find_package(FREETYPE REQUIRED)
     include_directories(${GLEW_INCLUDE_DIRS})
+    include_directories(${GLFW_INCLUDE_DIRS})
 
     # Link Frameworks on OSX
     if (IS_OS_MAC)
        find_library(COCOA_LIBRARY Cocoa)
        find_library(CF_LIBRARY CoreFoundation)
-       target_link_libraries(${PROJECT_NAME} PUBLIC ${COCOA_LIBRARY} ${CF_LIBRARY})
+       
+       target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES} ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${COCOA_LIBRARY} ${CF_LIBRARY})
+      #  target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
     endif()
 
     # Increase warning level
