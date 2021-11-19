@@ -175,7 +175,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	gl_has_errors();
 }
 
-void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection)
+void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const mat3 &projection, vec2 screen)
 {
 	// define which texture to draw
 	TEXTURE_ASSET_ID texture_asset;
@@ -201,6 +201,11 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 
 	transform.translate(position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale.x/2.0, map_scale.y/2.0));
 	transform.scale({-map_scale.x, map_scale.y});
+
+	position = position - vec2(WorldSystem::camera.x, WorldSystem::camera.y) + vec2(map_scale.x / 2.0, map_scale.y / 2.0);
+	if (position.x < -map_scale.x || position.x > screen.x + map_scale.x || position.y < -map_scale.y || position.y > screen.y + map_scale.y) {
+		return; // ignore, out of screen
+	}
 
 	const RenderRequest render_request = {
 		texture_asset,
@@ -275,6 +280,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 / https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
 void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const mat3& projection)
 {
+	if (strlen(text) <= 0) return; // skip, nothing drawn
+
 	// prepare for transformation
 	Transform transform;
 
@@ -305,14 +312,14 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	GLuint text_vbo;
 	glGenBuffers(1, &text_vbo);
 	GLint attribute_coord = glGetAttribLocation(program, "vertex");
-	
+
 	// Setting shaders
 	glUseProgram(program);
 	gl_has_errors();
 
 	GLuint uniform_color = glGetUniformLocation(program, "textColor");
 	glUniform3f(uniform_color, 0.6 , 0.5 , 0.5);
-	
+
 	glEnableVertexAttribArray(attribute_coord);
 	glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
 	glVertexAttribPointer(attribute_coord, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
@@ -345,7 +352,7 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 				g->bitmap.buffer
 		);
 
-		
+
 		float x2 = position.x + g->bitmap_left * scale.x;
 		float y2 = -position.y - g->bitmap_top * scale.y;
 		float w = g->bitmap.width * scale.x;
@@ -475,7 +482,7 @@ void RenderSystem::draw()
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
-			drawTile({j, i}, map_tiles[i][j], projection_2D);
+			drawTile({j, i}, map_tiles[i][j], projection_2D, vec2(w, h));
 		}
 	}
 
@@ -489,7 +496,7 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
-	
+
 	// render help text
 	char* renderedText_1;
 	char* renderedText_2;
@@ -509,7 +516,7 @@ void RenderSystem::draw()
 
 	drawText(renderedText_1, text1_pos, { 2.f* global_scaling_vector.x, -2.5f* global_scaling_vector.y }, projection_2D);
 	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D);
-	
+
 	// Truely render to the screen
 	drawToScreen();
 
