@@ -103,7 +103,8 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
-		float time_total = (float)(glfwGetTime());
+		float time_total = (float)(glfwGetTime()) - game_start_time;
+
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
@@ -420,9 +421,9 @@ void RenderSystem::drawToScreen()
 	gl_has_errors();
 	const GLuint water_program = effects[(GLuint)EFFECT_ASSET_ID::WATER];
 	// Set clock
+	float time_total = (float)glfwGetTime() - game_start_time;
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
-	GLuint dead_timer_uloc = glGetUniformLocation(water_program, "darken_screen_factor");
-	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
+	glUniform1f(time_uloc, time_total);
 	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
 	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
 	gl_has_errors();

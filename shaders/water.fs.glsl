@@ -1,43 +1,37 @@
 #version 330
 
 uniform sampler2D screen_texture;
+uniform sampler2D pre_screen;
 uniform float time;
-uniform float darken_screen_factor;
+
 
 in vec2 texcoord;
 
 layout(location = 0) out vec4 color;
 
-vec2 distort(vec2 uv) 
-{
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: HANDLE THE WATER WAVE DISTORTION HERE (you may want to try sin/cos)
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// float distorted = uv[0] + 0.045 * (sin(6 * (uv[0]+ time/100) ));
-	// uv[0] = mix (uv[0], distorted, min(uv[0], 1- uv[0]));
-	return uv;
-}
 
-vec4 color_shift(vec4 in_color) 
-{
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: HANDLE THE COLOR SHIFTING HERE (you may want to make it blue-ish)
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	return in_color;
-}
-
-vec4 fade_color(vec4 in_color) 
-{
-	in_color[3] = 0.1;
-	return in_color;
-}
-
+//  https://www.shadertoy.com/view/Ms3SRf
 void main()
 {
-	vec2 coord = distort(texcoord);
+	float w = 0.5;
+	float g = 1.0;
+    vec4 gamma = vec4 (g, g, g, 1.0);
+    
+    vec4 color0 = pow(texture(screen_texture, texcoord), gamma);
+    // // vec4 color1 = texture(screen_texture, texcoord);
+    vec4 color1 = vec4(0.949, 0.949, 0.9529, 1.0);
+    float duration = 10;
+    
 
-    vec4 in_color = texture(screen_texture, coord);
-    color = color_shift(in_color);
-    color = fade_color(color);
+	// float t = mod(time, duration) /  duration;
+	float t = time / duration;
+		
+	float correction = mix(w, -w, t);
+		
+	float choose = smoothstep(t  - w, t + w, texcoord.x + correction); // clamped ramp
+		
+	color = mix(color0, color1, choose); 
+	
+    
 }
+
