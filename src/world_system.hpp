@@ -82,8 +82,8 @@ private:
 
 	// music references
 	Mix_Music* background_music;
-	Mix_Chunk* salmon_dead_sound;
-	Mix_Chunk* salmon_eat_sound;
+	Mix_Chunk* player_death_sound;
+	Mix_Chunk* player_item_sound;
 	Mix_Chunk* tada_sound;
 
 	// entity spawning

@@ -8,6 +8,7 @@
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
 {
+	static bool reflected = false;
 	Motion &motion = registry.get<Motion>(entity);
 	// Transformation code, see Rendering and Transformation in the template
 	// specification for more info Incrementally updates transformation matrix,
@@ -16,12 +17,18 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	if (motion.velocity.x < 0) {
-		transform.reflect();
-	}
 
 	assert(registry.view<RenderRequest>().contains(entity));
-	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	if (motion.velocity.x < 0) {
+		render_request.is_reflected = true;
+	} else if (motion.velocity.x > 0) {
+		render_request.is_reflected = false;
+	} // if zero keep last
+
+	if (render_request.is_reflected) transform.reflect();
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);

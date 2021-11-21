@@ -72,7 +72,8 @@ enum class ProgramState {
 	RESET_GAME,
 	RUNNING,
 	PAUSED,
-	GAME_OVER,
+	GAME_OVER_WIN,
+	GAME_OVER_DEAD,
 	EXIT
 };
 
