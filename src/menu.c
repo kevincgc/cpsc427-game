@@ -31,6 +31,7 @@ float scale_y;
 
 // Andrew's Variables
 float cutscene_alpha = 255;
+char* cutscene_chosen_text;
 
 char **levels;
 int levels_size;
@@ -262,127 +263,180 @@ void drawGameOverMenu( GLFWwindow* win, int* out)
 }
 
 
+// ************* CUTSCENES *************
+// out 0 = resume game
+// out 1-9 = cutscene_1
+// out 10-19 - cutscene_2
+// out 100-199 = cutscene_death
 
-// Nuklear example image loading
-//static struct nk_image icon_load(const char *filename)
-//{
-//	int x, y, n;
-//	GLuint tex;
-//	unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
-//	if (!data) {
-//		printf("can't find image");
-//		//die("[SDL]: failed to load image: %s", filename);
-//	}
-//
-//	glGenTextures(1, &tex);
-//	glBindTexture(GL_TEXTURE_2D, tex);
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-//	glGenerateMipmap(GL_TEXTURE_2D);
-//	stbi_image_free(data);
-//	return nk_image_id((int)tex);
-//}
-//struct nk_image image;
-
-int max_cutscene_1_subscenes = 2;
-void drawCutscene1(GLFWwindow* win, int* out)
+void drawCutscene(GLFWwindow* win, int* out)
 {
 	nk_glfw3_new_frame(&glfw);
 
+
+	// Set max panels so you can only click the next button a limited number of times
+	int max_cutscene_selection;
+	int min_cutscene_selection;
+
 	// Cutscene Window Dimensions
-	int x = width/3;
-	int y = height * 3/4 * scale_y - 50;
-	int w = width  * 2/3 * scale_x - 50;
-	int h = height * 1/4 * scale_y;
+	float cut_x = width / 3;
+	float cut_y = height * 3 / 4 * scale_y - 50;
+	float cut_w = width  * 2 / 3 * scale_x - 50;
+	float cut_h = height * 1 / 4 * scale_y;
 
-	// GUI
-	if (nk_begin(ctx, "Cutscene Menu", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	// Dialogue
+	if (nk_begin(ctx, "Cutscene", nk_rect(cut_x, cut_y, cut_w, cut_h), NK_WINDOW_NO_SCROLLBAR))
 	{
-		//struct nk_command_buffer*canvas = nk_window_get_canvas(ctx); // The whole window is now the canvas
-		//struct nk_rect space; // allocate the space we'll be drawing in
-		//nk_widget(&space, ctx);
-
-		//nk_fill_rect(canvas, nk_rect(0, h * 0 / 6 - 5, w, h * 1 / 6), 0, nk_rgb (0, 0, 0));
-		//nk_fill_rect(canvas, nk_rect(0, h * 1 / 6	 , w, h * 4 / 6), 0, nk_rgba(0, 0, 0, cutscene_alpha));
-		//nk_fill_rect(canvas, nk_rect(0, h * 5 / 6 + 5, w, h * 1 / 6), 0, nk_rgb (0, 0, 0));
-
-		//Trying to use Nuklear to load image
-		//image = icon_load("C:/Users/SKu T-Type/Desktop/cutscene_minotaur.png");
-
-		// Test
-	
-
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
-		if (*out == 1) {
-			nk_label(ctx, "Minotaur: Hello there", NK_TEXT_ALIGN_LEFT);
 
+		// First Spawn
+		if (*out == 1) {
+			min_cutscene_selection = 1;
+			max_cutscene_selection = 3;
+			nk_label(ctx, "I have endured enough suffering.", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 2) {
-			nk_label(ctx, "Drone: Hi!", NK_TEXT_ALIGN_LEFT);
+			min_cutscene_selection = 1;
+			max_cutscene_selection = 3;
+			nk_label(ctx, "This is an impressive maze, Daedalus.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "But it is no match for my wit.", NK_TEXT_ALIGN_LEFT);
 		}
-		//nk_image(ctx, image);
+		else if (*out == 3) {
+			min_cutscene_selection = 1;
+			max_cutscene_selection = 3;
+			nk_label(ctx, "I will show you just how quickly I can make it out.", NK_TEXT_ALIGN_LEFT);
+		}
 
-		//nk_layout_row_static(ctx, 200 * scale_x, 10*scale_y, 1);
-		//if (nk_button_label(ctx, "RESUME GAME")) {
-		//	fprintf(stdout, "Starting Game\n");
-		//	*out = 1;
-		//}
+		// Reached exit
+		if (*out == 10) {
+			// Reached exit - speaker: drone
+			min_cutscene_selection = 10;
+			max_cutscene_selection = 12;
+			nk_label(ctx, "Now now Son of Minos", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Do you think Poseidon would appoint any old articer", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "To be your warden?", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 11) {
+			min_cutscene_selection = 10;
+			max_cutscene_selection = 12;
+			nk_label(ctx, "In your feable attempt to escape this maze", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I have already constructed yet another", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 12) {
+			min_cutscene_selection = 10;
+			max_cutscene_selection = 12;
+			nk_label(ctx, "And this one will not be so simple.", NK_TEXT_ALIGN_LEFT);
+		}
+
+		// Death
+		else if (*out == 101) { 
+			// First death - speaker: minotaur
+			min_cutscene_selection = 101;
+			max_cutscene_selection = 101;
+			nk_label(ctx, "Yet I live?", NK_TEXT_ALIGN_LEFT); 
+			nk_label(ctx, "How can this be?", NK_TEXT_ALIGN_LEFT); 
+		}
+		else if (*out == 102) {
+			// Second death - speaker: drone
+			min_cutscene_selection = 102;
+			max_cutscene_selection = 102;
+			nk_label(ctx, "Oh Son of Minos, did you think it would be so easy?", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Poseidon damned you to eternal suffering", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And so damned you shall be.", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 103) {
+			// Third death - speaker: minotaur
+			min_cutscene_selection = 103;
+			max_cutscene_selection = 103;
+			nk_label(ctx, "Ah Daedalus", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "mere centuries of this void has driven you mad", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "yet my resolve strengthens with every trial.", NK_TEXT_ALIGN_LEFT);
+		}
+
+		else if (104 <= *out) {
+			// For now we will set anything above 104 as one of five randomly selected 'voicelines' of the minotaur
+			min_cutscene_selection = *out;
+			max_cutscene_selection = *out;
+
+			
+			if (!cutscene_chosen_text) {
+				int r = 104 + rand() % 5; // returns 105 + [0..4]
+				switch (r) {
+				case 104:
+					cutscene_chosen_text = "A minor flesh wound";
+					break;
+				case 105:
+					cutscene_chosen_text = "";
+					break;
+				case 106:
+					cutscene_chosen_text = "3";
+					break;
+				case 107:
+					cutscene_chosen_text = "4";
+					break;
+				case 108:
+					cutscene_chosen_text = "5";
+					break;
+				}
+			}
+			
+			nk_label(ctx, cutscene_chosen_text, NK_TEXT_ALIGN_LEFT);
+		}
+
 
 	}
 	nk_end(ctx);
 
 
 	// PREV
-	x = width * 8 / 14 * scale_x;
-	y = height * 13 / 14 * scale_y - 50;
-	w = width * 2 / 14 * scale_x - 50;
-	h = height * 1 / 14 * scale_y;
-	if (nk_begin(ctx, "Prev Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	float prev_x = width * 8 / 14 * scale_x;
+	float prev_y = height * 13 / 14 * scale_y - 50;
+	float prev_w = width * 2 / 14 * scale_x - 50;
+	float prev_h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Prev Button/Window", nk_rect(prev_x, prev_y, prev_w, prev_h), NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
 		if (nk_button_label(ctx, "Prev")) {
-			if (*out > 1) {
+			if (*out > min_cutscene_selection) {
 				*out -= 1; //state
 			}
 		}
-
 	}
 	nk_end(ctx);
 
 	// NEXT
-	x = width * 12 / 14 * scale_x;
-	y = height * 13 / 14 * scale_y - 50;
-	w = width * 2 / 14 * scale_x - 50;
-	h = height * 1 / 14 * scale_y;
-	if (nk_begin(ctx, "Next Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	float next_x = width * 12 / 14 * scale_x;
+	float next_y = height * 13 / 14 * scale_y - 50;
+	float next_w = width * 2 / 14 * scale_x - 50;
+	float next_h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Next Button/Window", nk_rect(next_x, next_y, next_w, next_h), NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
 		if (nk_button_label(ctx, "Next")) {
-			if (*out + 1 > max_cutscene_1_subscenes) {
+			if (*out + 1 > max_cutscene_selection) {
 				*out = 0; //state
 			}
 			else {
 				*out += 1;
 			}
+			cutscene_chosen_text = NULL;
 		}
 
 	}
 	nk_end(ctx);
 
 	// SKIP
-	x = width  * 10 / 14 * scale_x;
-	y = height * 13 / 14 * scale_y -50;
-	w = width  * 2 / 14 * scale_x - 50;
-	h = height * 1 / 14 * scale_y;
-	if (nk_begin(ctx, "Skip Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	float skip_x = width  * 10 / 14 * scale_x;
+	float skip_y = height * 13 / 14 * scale_y -50;
+	float skip_w = width  * 2 / 14 * scale_x - 50;
+	float skip_h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Skip Button/Window", nk_rect(skip_x, skip_y, skip_w, skip_h), NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
 		if (nk_button_label(ctx, "Skip")) {
 			fprintf(stdout, "Starting Game\n");
 			*out = 0; //state
+			cutscene_chosen_text = NULL;
 		}
 
 	}

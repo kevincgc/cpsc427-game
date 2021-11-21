@@ -33,6 +33,7 @@ vec2 WorldSystem::camera = { 0, 0 };
 vec2 player_vel = { 300.f, 300.f };
 vec2 enemy_vel = { 100.f, 100.f };
 vec2 default_player_vel = { 300.f, 300.f };
+int death_count = 0;
 
 // My Settings
 auto t = Clock::now();
@@ -57,8 +58,12 @@ vec2 ending_map_pos;
 
 // For cutscene feature
 bool do_cutscene_1 = true;
-float cutscene_1_timer = 0;
 bool cutscene_1_frame_2 = false;
+bool cutscene_1_frame_1 = false;
+bool cutscene_1_frame_0 = true;
+int cutscene_selection = 1;
+int cutscene_speaker = 1; // 1 = minotaur || 2 = drone
+
 
 // For attack
 bool player_swing = false;
@@ -131,6 +136,8 @@ WorldSystem::~WorldSystem() {
 		Mix_FreeChunk(salmon_eat_sound);
 	if (tada_sound != nullptr)
 		Mix_FreeChunk(tada_sound);
+	if (horse_snort_sound != nullptr)
+		Mix_FreeChunk(horse_snort_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -223,6 +230,7 @@ GLFWwindow* WorldSystem::create_window() {
 	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
 	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
 	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
+	horse_snort_sound = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
 
 	
 
@@ -297,6 +305,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
 			state = ProgramState::GAME_OVER;
+			cutscene_1_frame_0 = true;
+			if (death_count == 2) {
+				cutscene_speaker = 2;
+			}
+			else {
+				cutscene_speaker = 1;
+			}
+			cutscene_selection = 100 + death_count;
 			return true;
 		}
 	}
@@ -333,36 +349,59 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		Mix_PlayChannel(-1, tada_sound, 0);
 		restart_game();
 		do_pathfinding_movement = false;
+
+		cutscene_1_frame_0 = true;
+		cutscene_selection = 10;
+		cutscene_speaker = 2;
 	}
 
+	// ************ Cutscenes ************
+
+	// Opening cutscene
 	// This is pretty much a hack to get around some issues with drawing images 
 	// Because of bufferswap in nuklear, we have to make sure two successive
-	// frames have the minotaur drawn, hence the flag 
+	// frames have the minotaur drawn, hence the flags
 	// Timer for first cutscene
-	if (cutscene_1_timer != -1.f) {
-		cutscene_1_timer += elapsed_ms_since_last_update;
-		if (cutscene_1_timer > 2000) {
-			cutscene_1_timer = -1.f;
-			cutscene_1_frame_2 = true;
+	if (cutscene_1_frame_0) {
+		cutscene_1_frame_0 = false;
+		cutscene_1_frame_1 = true;
+	}
+	else if (cutscene_1_frame_1) {
+		cutscene_1_frame_2 = true;
+		cutscene_1_frame_1 = false;
 
-			entt::entity player = registry.view<Player>().begin()[0];
-			Motion& motion = registry.get<Motion>(player);
-			cutscene_minotaur_entity = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
-			cutscene_drone_entity = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
-			Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
-			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+		entt::entity player = registry.view<Player>().begin()[0];
+		Motion& motion = registry.get<Motion>(player);
+		cutscene_minotaur_entity = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
+		cutscene_drone_entity = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
+		Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
 
+		if (cutscene_speaker == 1) {
 			cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
 			cutscene_minotaur_motion.scale = { 900,800 };
-			cutscene_selection = 1;
-			//state = ProgramState::CUTSCENE1;
+			cutscene_drone_motion.scale = { 0,0 };
 		}
+		else if (cutscene_speaker == 2) {
+			cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+			cutscene_drone_motion.scale = { 900,800 };
+			cutscene_minotaur_motion.scale = { 0,0 };
+		}
+
 		
 	}
 	else if (cutscene_1_frame_2) {
 		cutscene_1_frame_2 = false;
+		Mix_PlayChannel(-1, horse_snort_sound, 0);
 		state = ProgramState::CUTSCENE1;
 	}
+
+
+
+	// ************************************************
+
+
+
 	return true;
 }
 
@@ -666,6 +705,9 @@ void WorldSystem::handle_collisions() {
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
+					// Increment death_count
+					death_count++;
+					std::cout << "Death count is: " << death_count << std::endl;
 
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
@@ -673,7 +715,6 @@ void WorldSystem::handle_collisions() {
 					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
 					player_is_manually_moving = false;
-					
 
 					// Stop pathfinding movement
 					do_pathfinding_movement = false;

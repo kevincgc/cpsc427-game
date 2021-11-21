@@ -20,8 +20,6 @@ vec2 global_scaling_vector = { 1.f, 1.f };
 // map scale used to transform map coordinates to pixels
 vec2 map_scale = { 150.f, 150.f };
 
-int cutscene_selection = 1;
-
 extern entt::registry registry;
 
 extern "C" {
@@ -30,7 +28,9 @@ extern "C" {
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
 	void drawGameOverMenu( GLFWwindow* win, int* out);
-	void drawCutscene1(GLFWwindow* win, int* out);
+
+	void drawCutscene_respawn(GLFWwindow* win, int* out);
+	void drawCutscene(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
@@ -167,7 +167,7 @@ int main()
 			//cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
 			//cutscene_minotaur_motion.scale = { 800,800 };
 
-			drawCutscene1(window, &cutscene_selection);
+			drawCutscene(window, &cutscene_selection);
 
 
 			switch (cutscene_selection) {
@@ -185,7 +185,7 @@ int main()
 				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
 				cutscene_drone_motion.scale	   = { 400,400 };
 				//cutscene_drone_motion.scale = { 0,0 };
-				drawCutscene1(window, &cutscene_selection);
+				drawCutscene(window, &cutscene_selection);
 				break;
 			}
 		}
