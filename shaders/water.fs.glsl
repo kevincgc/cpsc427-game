@@ -43,7 +43,7 @@ float fbm(vec2 n) {
     }
     return total;
 }
-
+// fire shader attribute to https://www.shadertoy.com/view/4ttGWM
 vec4 fire( ) {
 	vec2 fragCoord = texcoord * iResolution;
     const vec3 c1 = vec3(0.5, 0.0, 0.1);
