@@ -46,6 +46,10 @@ int main()
 	bool has_completed_init = false;
 	auto t = Clock::now();
 
+	// Cutscene
+	int cut_scene_selection = 1;
+	bool render_once = true;
+
 	while (!world.is_over()) {
 		glfwPollEvents();
 		auto now = Clock::now();
@@ -149,14 +153,33 @@ int main()
 			break;
 		}
 
+
 		case ProgramState::CUTSCENE1:
 		{
-			int selection = 0;
-			drawCutscene1(window, &selection);
-			switch (selection) {
-			case 1:
+			entt::entity player				 = registry.view<Player>().begin()[0];
+			Motion& motion					 = registry.get<Motion>(player);
+			Motion& background_motion		 = registry.get<Motion>(background_entity);
+			Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
+			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+
+			cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+			cutscene_minotaur_motion.scale = { 800,800 };
+
+			/*renderer.draw();*/
+
+			drawCutscene1(window, &cut_scene_selection);
+
+			switch (cut_scene_selection) {
+			case 0:
 				renderer.reinit(window_width_px, window_height_px, window);
 				state = ProgramState::RUNNING;
+				break;
+			case 2:
+				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
+				cutscene_drone_motion.scale	   = { 400,400 };
+				//cutscene_drone_motion.scale = { 0,0 };
+				drawCutscene1(window, &cut_scene_selection);
 				break;
 			}
 		}

@@ -263,14 +263,39 @@ void drawGameOverMenu( GLFWwindow* win, int* out)
 
 
 
+// Nuklear example image loading
+//static struct nk_image icon_load(const char *filename)
+//{
+//	int x, y, n;
+//	GLuint tex;
+//	unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
+//	if (!data) {
+//		printf("can't find image");
+//		//die("[SDL]: failed to load image: %s", filename);
+//	}
+//
+//	glGenTextures(1, &tex);
+//	glBindTexture(GL_TEXTURE_2D, tex);
+//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+//	glGenerateMipmap(GL_TEXTURE_2D);
+//	stbi_image_free(data);
+//	return nk_image_id((int)tex);
+//}
+//struct nk_image image;
+
+int max_cutscene_1_subscenes = 2;
 void drawCutscene1(GLFWwindow* win, int* out)
 {
 	nk_glfw3_new_frame(&glfw);
 
 	// Cutscene Window Dimensions
-	int x = 0;
-	int y = height * 3/4 * scale_y;
-	int w = width;
+	int x = width/3;
+	int y = height * 3/4 * scale_y - 50;
+	int w = width  * 2/3 * scale_x - 50;
 	int h = height * 1/4 * scale_y;
 
 	// GUI
@@ -284,41 +309,81 @@ void drawCutscene1(GLFWwindow* win, int* out)
 		//nk_fill_rect(canvas, nk_rect(0, h * 1 / 6	 , w, h * 4 / 6), 0, nk_rgba(0, 0, 0, cutscene_alpha));
 		//nk_fill_rect(canvas, nk_rect(0, h * 5 / 6 + 5, w, h * 1 / 6), 0, nk_rgb (0, 0, 0));
 
+		//Trying to use Nuklear to load image
+		//image = icon_load("C:/Users/SKu T-Type/Desktop/cutscene_minotaur.png");
+
 		// Test
+	
+
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
-		nk_label(ctx, "Hello there", NK_TEXT_CENTERED);
-		if (nk_button_label(ctx, "RESUME GAME")) {
-			fprintf(stdout, "Starting Game\n");
-			*out = 1;
+		if (*out == 1) {
+			nk_label(ctx, "Minotaur: Hello there", NK_TEXT_ALIGN_LEFT);
+
 		}
-		//// Top border
-		//nk_layout_row_dynamic(ctx, height/6, 1);
-		//struct nk_command_buffer*canvas = nk_window_get_canvas(ctx); // The whole window is now the canvas
-		//struct nk_rect space; // allocate the space we'll be drawing in
-		//nk_widget(&space, ctx);
-		//nk_fill_rect(canvas, space, 0, nk_rgb(0, 0, 0));
+		else if (*out == 2) {
+			nk_label(ctx, "Drone: Hi!", NK_TEXT_ALIGN_LEFT);
+		}
+		//nk_image(ctx, image);
 
-		//// Center window
-		//nk_layout_row_dynamic(ctx, height*4/6, 1);
-		//struct nk_command_buffer*canvas2 = nk_window_get_canvas(ctx);
-		//struct nk_rect space2;
-		//nk_widget(&space2, ctx);
-		//nk_fill_rect(canvas2, space2, 0, nk_rgba(0,0,0,cutscene_alpha));
-
-		//// Bottom border
-		//nk_layout_row_dynamic(ctx, height/6, 1);
-		//struct nk_command_buffer*canvas3 = nk_window_get_canvas(ctx);
-		//struct nk_rect space3;
-		//nk_widget(&space3, ctx);
-		//nk_fill_rect(canvas3, space3, 0, nk_rgb(0, 0, 0));
-
-
-		//nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		//nk_layout_row_static(ctx, 200 * scale_x, 10*scale_y, 1);
 		//if (nk_button_label(ctx, "RESUME GAME")) {
 		//	fprintf(stdout, "Starting Game\n");
 		//	*out = 1;
 		//}
 
+	}
+	nk_end(ctx);
+
+
+	// PREV
+	x = width * 8 / 14 * scale_x;
+	y = height * 13 / 14 * scale_y - 50;
+	w = width * 2 / 14 * scale_x - 50;
+	h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Prev Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	{
+		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		if (nk_button_label(ctx, "Prev")) {
+			if (*out > 1) {
+				*out -= 1; //state
+			}
+		}
+
+	}
+	nk_end(ctx);
+
+	// NEXT
+	x = width * 12 / 14 * scale_x;
+	y = height * 13 / 14 * scale_y - 50;
+	w = width * 2 / 14 * scale_x - 50;
+	h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Next Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	{
+		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		if (nk_button_label(ctx, "Next")) {
+			if (*out + 1 > max_cutscene_1_subscenes) {
+				*out = 0; //state
+			}
+			else {
+				*out += 1;
+			}
+		}
+
+	}
+	nk_end(ctx);
+
+	// SKIP
+	x = width  * 10 / 14 * scale_x;
+	y = height * 13 / 14 * scale_y -50;
+	w = width  * 2 / 14 * scale_x - 50;
+	h = height * 1 / 14 * scale_y;
+	if (nk_begin(ctx, "Skip Button/Window", nk_rect(x, y, w, h), NK_WINDOW_NO_SCROLLBAR))
+	{
+		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		if (nk_button_label(ctx, "Skip")) {
+			fprintf(stdout, "Starting Game\n");
+			*out = 0; //state
+		}
 
 	}
 	nk_end(ctx);

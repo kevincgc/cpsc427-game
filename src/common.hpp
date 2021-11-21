@@ -94,5 +94,9 @@ extern vec2  ending_map_pos;
 extern bool  do_generate_path;
 extern bool  player_swing;
 
+extern entt::entity background_entity;
+extern entt::entity cutscene_minotaur_entity;
+extern entt::entity cutscene_drone_entity;
+
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;

@@ -726,21 +726,20 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// ************************************************* Cutscenes ************************************************* 
 
-			Motion& background_motion = registry.get<Motion>(background_entity);
-			Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
+			Motion& background_motion		 = registry.get<Motion>(background_entity);
+			Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
 			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
 			if (action == GLFW_PRESS && key == GLFW_KEY_F) {
-				background_motion.position = motion.position;
-				background_motion.scale = { 10000,10000 };
-				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y - window_height_px / 8 };
-				cutscene_minotaur_motion.scale = { 500,500 };
-				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
-				cutscene_drone_motion.scale = { 400,400 };
-				
+				//background_motion.position = motion.position;
+				//background_motion.scale = { 10000,10000 };
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale = { 800,800 };
+				//cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
+				//cutscene_drone_motion.scale = { 400,400 };
 			}
 			if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
 				state = ProgramState::CUTSCENE1;
-				background_motion.scale = { 0,0 };
+				//background_motion.scale = { 0,0 };
 				cutscene_minotaur_motion.scale = { 0,0 };
 				cutscene_drone_motion.scale = { 0,0 };
 			}
