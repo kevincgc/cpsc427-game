@@ -93,6 +93,7 @@ extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
 extern bool  do_generate_path;
 extern bool  player_swing;
+extern bool  player_is_manually_moving;
 
 extern entt::entity background_entity;
 extern entt::entity cutscene_minotaur_entity;
