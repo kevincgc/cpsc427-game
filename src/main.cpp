@@ -22,6 +22,7 @@ vec2 map_scale = { 150.f, 150.f };
 
 extern entt::registry registry;
 float game_start_time;
+bool initial_game;
 
 
 extern "C" {
@@ -73,6 +74,7 @@ int main()
 				renderer.init(window_width_px, window_height_px, window);
 				world.init(&renderer);
 				has_completed_init = true;
+				initial_game = true;
 				game_start_time = (float)(glfwGetTime());
 				state = ProgramState::RUNNING;
 			}
@@ -101,6 +103,7 @@ int main()
 		case ProgramState::RESET_GAME:
 			renderer.reinit(window_width_px, window_height_px, window);
 			world.restart_game();
+			initial_game = true;
 			game_start_time = (float)(glfwGetTime());
 			state = ProgramState::RUNNING;
 			break;

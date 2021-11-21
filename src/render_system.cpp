@@ -424,6 +424,8 @@ void RenderSystem::drawToScreen()
 	float time_total = (float)glfwGetTime() - game_start_time;
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
 	glUniform1f(time_uloc, time_total);
+	GLuint init_game_uloc = glGetUniformLocation(water_program, "initial_game");
+	glUniform1f(init_game_uloc, initial_game);
 	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
 	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
 	gl_has_errors();

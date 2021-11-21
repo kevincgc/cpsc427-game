@@ -98,3 +98,4 @@ extern bool  player_is_manually_moving;
 extern bool do_pathfinding_movement;
 
 extern float game_start_time;
+extern bool initial_game;
