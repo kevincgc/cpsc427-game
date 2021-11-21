@@ -22,5 +22,5 @@ entt::entity createItem(RenderSystem* renderer, vec2 position);
 
 entt::entity createTrap(RenderSystem* renderer, vec2 position);
 
-entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene element);
+entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element);
 

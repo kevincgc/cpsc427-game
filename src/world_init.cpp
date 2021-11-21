@@ -65,10 +65,11 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	return e;
 }
 
-entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene element)
+entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
+	Cutscene cutscene = Cutscene();
 	motion.angle = 0.f;
 	motion.velocity = {0,0 };
 	motion.position = position;
@@ -79,6 +80,7 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene elem
 	const entt::entity e = registry.create();
 	registry.emplace<Motion>(e, motion);
 	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<Cutscene>(e, cutscene);
 
 
 	TEXTURE_ASSET_ID texture_asset_id;

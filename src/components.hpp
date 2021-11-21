@@ -131,10 +131,13 @@ struct Item
 };
 
 // Cutscene Elements
-enum Cutscene {
+enum Cutscene_enum {
 	BACKGROUND = 1,
 	MINOTAUR = 2,
 	DRONE = 3
+};
+struct Cutscene {
+
 };
 
 // Mesh datastructure for storing vertex and index buffers

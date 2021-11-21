@@ -85,6 +85,7 @@ extern int window_height_px;
 extern float global_scaling_factor;
 extern vec2 global_scaling_vector;
 extern vec2 map_scale;
+extern int cutscene_selection;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
 extern vec2  player_vel;
@@ -95,7 +96,6 @@ extern bool  do_generate_path;
 extern bool  player_swing;
 extern bool  player_is_manually_moving;
 
-extern entt::entity background_entity;
 extern entt::entity cutscene_minotaur_entity;
 extern entt::entity cutscene_drone_entity;
 

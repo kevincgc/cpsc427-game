@@ -20,6 +20,8 @@ vec2 global_scaling_vector = { 1.f, 1.f };
 // map scale used to transform map coordinates to pixels
 vec2 map_scale = { 150.f, 150.f };
 
+int cutscene_selection = 1;
+
 extern entt::registry registry;
 
 extern "C" {
@@ -47,7 +49,7 @@ int main()
 	auto t = Clock::now();
 
 	// Cutscene
-	int cut_scene_selection = 1;
+
 	bool render_once = true;
 
 	while (!world.is_over()) {
@@ -105,6 +107,7 @@ int main()
 			world.restart_game();
 			state = ProgramState::RUNNING;
 			break;
+
 		case ProgramState::RUNNING:
 		{
 			world.step(elapsed_ms);
@@ -158,28 +161,31 @@ int main()
 		{
 			entt::entity player				 = registry.view<Player>().begin()[0];
 			Motion& motion					 = registry.get<Motion>(player);
-			Motion& background_motion		 = registry.get<Motion>(background_entity);
 			Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
 			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
 
-			cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-			cutscene_minotaur_motion.scale = { 800,800 };
+			//cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+			//cutscene_minotaur_motion.scale = { 800,800 };
 
-			/*renderer.draw();*/
+			drawCutscene1(window, &cutscene_selection);
 
-			drawCutscene1(window, &cut_scene_selection);
 
-			switch (cut_scene_selection) {
+			switch (cutscene_selection) {
 			case 0:
+				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_drone_motion.scale = { 0,0 };
 				renderer.reinit(window_width_px, window_height_px, window);
 				state = ProgramState::RUNNING;
+
+				cutscene_minotaur_motion.scale = { 0,0 };
+
 				break;
 			case 2:
 				cutscene_minotaur_motion.scale = { 0,0 };
 				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
 				cutscene_drone_motion.scale	   = { 400,400 };
 				//cutscene_drone_motion.scale = { 0,0 };
-				drawCutscene1(window, &cut_scene_selection);
+				drawCutscene1(window, &cutscene_selection);
 				break;
 			}
 		}

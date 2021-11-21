@@ -45,7 +45,7 @@ float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 
-entt::entity background_entity;
+entt::entity cutscene_background_entity;
 entt::entity cutscene_minotaur_entity;
 entt::entity cutscene_drone_entity;
 
@@ -54,6 +54,11 @@ bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos;
+
+// For cutscene feature
+bool do_cutscene_1 = true;
+float cutscene_1_timer = 0;
+bool cutscene_1_frame_2 = false;
 
 // For attack
 bool player_swing = false;
@@ -235,7 +240,7 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	// Mix_PlayMusic(background_music, -1);
+	 Mix_PlayMusic(background_music, -1);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -248,6 +253,8 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	restart_game();
 }
 
+
+// ************************************************************************************* step ***********************************************************
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Get the screen dimensions
@@ -264,13 +271,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Removing out of screen entities
+	// Removing out of screen entities (that are not cutscene entities)
 	auto motions = registry.view<Motion>();
 
+
 	for (auto entity : motions) {
-		Motion& motion = motions.get<Motion>(entity);
-		if (motion.position.x + abs(motion.scale.x) < 0.f) {
-			registry.destroy(entity);
+		if (!registry.view<Cutscene>().contains(entity)) {
+			Motion& motion = motions.get<Motion>(entity);
+			if (motion.position.x + abs(motion.scale.x) < 0.f) {
+				registry.destroy(entity);
+			}
 		}
 	}
 
@@ -325,6 +335,34 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		do_pathfinding_movement = false;
 	}
 
+	// This is pretty much a hack to get around some issues with drawing images 
+	// Because of bufferswap in nuklear, we have to make sure two successive
+	// frames have the minotaur drawn, hence the flag 
+	// Timer for first cutscene
+	if (cutscene_1_timer != -1.f) {
+		cutscene_1_timer += elapsed_ms_since_last_update;
+		if (cutscene_1_timer > 2000) {
+			cutscene_1_timer = -1.f;
+			cutscene_1_frame_2 = true;
+
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& motion = registry.get<Motion>(player);
+			cutscene_minotaur_entity = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
+			cutscene_drone_entity = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
+			Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
+			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+
+			cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+			cutscene_minotaur_motion.scale = { 900,800 };
+			cutscene_selection = 1;
+			//state = ProgramState::CUTSCENE1;
+		}
+		
+	}
+	else if (cutscene_1_frame_2) {
+		cutscene_1_frame_2 = false;
+		state = ProgramState::CUTSCENE1;
+	}
 	return true;
 }
 
@@ -599,11 +637,9 @@ void WorldSystem::restart_game() {
 
 	// *************************************************************************************************************************************************
 	// Create cutscene entities
-		cutscene_drone_entity = createCutscene(renderer, { 0,0 }, DRONE);
+		cutscene_background_entity = createCutscene(renderer, { 0,0 }, BACKGROUND);
+		cutscene_drone_entity    = createCutscene(renderer, { 0,0 }, DRONE);
 		cutscene_minotaur_entity = createCutscene(renderer, { 0,0 }, MINOTAUR);
-		background_entity = createCutscene(renderer, { 0,0 }, BACKGROUND);
-
-
 
 	// ********************************************************************************************************************************************
 }
@@ -634,6 +670,10 @@ void WorldSystem::handle_collisions() {
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
 					m.velocity.y = 0;
+					// Set movement flags to false so enemies won't move upon reset
+					do_pathfinding_movement = false;
+					player_is_manually_moving = false;
+					
 
 					// Stop pathfinding movement
 					do_pathfinding_movement = false;
@@ -718,14 +758,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
 			}
 
-			//if (action == GLFW_RELEASE && 
-			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
-			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
-			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
-			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
-			//	player_is_manually_moving = false;
-			//}
-
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				state = ProgramState::PAUSED;
@@ -734,20 +766,29 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// ************************************************* Cutscenes ************************************************* 
 
-			Motion& background_motion		 = registry.get<Motion>(background_entity);
-			Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
-			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+
 			if (action == GLFW_PRESS && key == GLFW_KEY_F) {
-				//background_motion.position = motion.position;
-				//background_motion.scale = { 10000,10000 };
+				cutscene_minotaur_entity		 = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
+				cutscene_drone_entity			 = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
+				Motion& cutscene_drone_motion    = registry.get<Motion>(cutscene_drone_entity);
+				Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+
+
+
 				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale = { 800,800 };
+				cutscene_minotaur_motion.scale = { 900,800 };
+
 				//cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
 				//cutscene_drone_motion.scale = { 400,400 };
 			}
 			if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
+				cutscene_minotaur_entity		 = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
+				cutscene_drone_entity			 = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
+				Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
+				Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+
 				state = ProgramState::CUTSCENE1;
-				//background_motion.scale = { 0,0 };
+				cutscene_selection = 1;
 				cutscene_minotaur_motion.scale = { 0,0 };
 				cutscene_drone_motion.scale = { 0,0 };
 			}
