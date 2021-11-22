@@ -291,7 +291,9 @@ void drawCutscene(GLFWwindow* win, int* out)
 	nk_end(ctx);
 
 	// Dialogue
-	//if (nk_begin(ctx, "Cutscene", nk_rect(cut_x+10, cut_y+10, cut_w-10, cut_h-10), NK_WINDOW_NO_SCROLLBAR))
+
+	// IMPORTANT: Every dialogue card needs to have three nk_labels for spacing purposes.
+
 	if (nk_begin(ctx, "Cutscene", nk_rect(cut_x+10, cut_y+10, cut_w-10, cut_h-10), NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
@@ -309,6 +311,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			max_cutscene_selection = 3;
 			nk_label(ctx, "This is an impressive maze, Daedalus, but my hooves grow weary of the", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "endless wandering. My father is due what he is owed.",		   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 3) {
 			min_cutscene_selection = 1;
@@ -327,17 +330,21 @@ void drawCutscene(GLFWwindow* win, int* out)
 			max_cutscene_selection = 12;
 			nk_label(ctx, "Daedalus: Oh Son of Minos, suely you held me to greater esteem.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "Your revenge upon your father will have to wait...", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 11) {
 			min_cutscene_selection = 10;
 			max_cutscene_selection = 12;
 			nk_label(ctx, "For I am the greatest artificer there was! During your feeble attempt", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "to escape my labyrinth, I have constructed yet another.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 12) {
 			min_cutscene_selection = 10;
 			max_cutscene_selection = 12;
 			nk_label(ctx, "And this one will not be so simple.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		// Variation Two: Second exit
 		// Variation Three: Final End
@@ -346,11 +353,15 @@ void drawCutscene(GLFWwindow* win, int* out)
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
 			nk_label(ctx, "Daedalus: What?! I haven't finished my next labyrinth!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 16) {
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
 			nk_label(ctx, "Enjoy your empty victory, Son of Minos, for it will be short lived.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// ********** Death Dialogue **********
@@ -359,6 +370,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
 			nk_label(ctx, "Minotaur: Yet I live?",	  NK_TEXT_ALIGN_LEFT); 
 			nk_label(ctx, "How can this be?", NK_TEXT_ALIGN_LEFT); 
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 102) {
 			// Second death - speaker: drone
@@ -372,6 +384,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
 			nk_label(ctx, "Minotaur: I wonder what your son Icarus would think,", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "were he alive to see you in such state, Daedalus.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 104) {
 			// Fourth death - speaker: drone
@@ -397,43 +410,20 @@ void drawCutscene(GLFWwindow* win, int* out)
 				}
 			}
 			nk_label(ctx, cutscene_chosen_text, NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
-	}
-	nk_end(ctx);
 
-	// Button Dimensions
-	float button_y = height * 89/100;
-	float button_w = width  * 2 / 15;
-	float button_h = height * 1 / 15;
-	float prev_x = width  * 8 / 15;
-	float next_x = width * 12 / 15;
-	float skip_x = width * 10 / 15;
-
-	// PREV
-	if (nk_begin(ctx, "Prev Button/Window", nk_rect(prev_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
-	{
-		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
+		// Row for Buttons
+		// Make sure dialogue has three nk_labels so row doesn't float upwards.
+		nk_layout_row_dynamic(ctx, 45 * scale_x, 3);
 		if (nk_button_label(ctx, "Prev")) {
 			if (*out > min_cutscene_selection) { *out -= 1; }
 		}
-	}
-	nk_end(ctx);
-
-	// SKIP
-	if (nk_begin(ctx, "Skip Button/Window", nk_rect(skip_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
-	{
-		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
 		if (nk_button_label(ctx, "Skip")) {
 			*out = 0;
 			cutscene_chosen_text = NULL;
 		}
-	}
-	nk_end(ctx);
-
-	// NEXT
-	if (nk_begin(ctx, "Next Button/Window", nk_rect(next_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
-	{
-		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
 		if (nk_button_label(ctx, "Next")) {
 			if (*out + 1 > max_cutscene_selection) { *out = 0; }
 			else { *out += 1; }
@@ -442,17 +432,11 @@ void drawCutscene(GLFWwindow* win, int* out)
 	}
 	nk_end(ctx);
 
-
 	// Because NK_WINDOW_NO_INPUT does not work, this is a hack
 	// to make sure the buttons and dialogue stays on top if
 	// someone clicks on the dialogue window
 	if (nk_window_is_active(ctx, "Cutscene_outer")) { 
 		nk_window_set_focus(ctx, "Cutscene");
-		nk_window_set_focus(ctx, "Prev Button/Window");
-		nk_window_set_focus(ctx, "Skip Button/Window");
-		nk_window_set_focus(ctx, "Next Button/Window");
-	}
-	if (nk_window_is_active(ctx, "Cutscene")) {
 		nk_window_set_focus(ctx, "Prev Button/Window");
 		nk_window_set_focus(ctx, "Skip Button/Window");
 		nk_window_set_focus(ctx, "Next Button/Window");
