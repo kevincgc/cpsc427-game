@@ -24,13 +24,15 @@ extern entt::registry registry;
 float game_start_time;
 bool initial_game;
 
-
 extern "C" {
 	void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in);
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
 	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win);
+
+	void drawCutscene_respawn(GLFWwindow* win, int* out);
+	void drawCutscene(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
@@ -107,6 +109,7 @@ int main()
 			game_start_time = (float)(glfwGetTime());
 			state = ProgramState::RUNNING;
 			break;
+
 		case ProgramState::RUNNING:
 		{
 			world.step(elapsed_ms);
@@ -155,6 +158,48 @@ int main()
 			}
 			break;
 		}
+
+
+		case ProgramState::CUTSCENE1:
+		{
+			entt::entity player						 = registry.view<Player>().begin()[0];
+			Motion& motion							 = registry.get<Motion>(player);
+			Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+			Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+			Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+			Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
+			Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+			Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+
+			drawCutscene(window, &cutscene_selection);
+
+			switch (cutscene_selection) {
+			case 0:
+				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_drone_motion.scale = { 0,0 };
+				renderer.reinit(window_width_px, window_height_px, window);
+				state = ProgramState::RUNNING;
+
+				cutscene_minotaur_motion.scale		   = { 0,0 };
+				cutscene_drone_motion.scale			   = { 0,0 };
+				cutscene_drone_laughing_motion.scale   = { 0,0 };
+				cutscene_drone_sad_motion.scale		   = { 0,0 };
+				cutscene_minotaur_rtx_off_motion.scale = { 0,0 };
+				cutscene_drone_rtx_off_motion.scale	   = { 0,0 };
+
+				break;
+			case 2:
+				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
+				cutscene_drone_motion.scale	   = { 400,400 };
+				//cutscene_drone_motion.scale = { 0,0 };
+				drawCutscene(window, &cutscene_selection);
+				break;
+			}
+		}
+		break;
+
+
 		default:
 			return 0;
 		}
