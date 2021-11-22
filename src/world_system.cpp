@@ -325,21 +325,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-
-			// Set the flag to start a cutscene
 			cutscene_1_frame_0 = true;
-
-			// Determine which cutscene speaker to display
-			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
-			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
-			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
-
-			// Set the cutscene to draw
+			if (death_count == 2) {
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING;
+			}
+			else if (death_count == 4) {
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+			}
+			else {
+				cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+			}
 			cutscene_selection = 100 + death_count;
-
-			// Set the game state to game over
-			state = ProgramState::GAME_OVER_DEAD;
-
+			 state = ProgramState::GAME_OVER_DEAD;
 			return true;
 		}
 	}
