@@ -96,6 +96,7 @@ bool player_swing = false;
 
 // For enemy moving when player moves
 bool player_is_manually_moving = false;
+static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -875,6 +876,7 @@ void WorldSystem::restart_game() {
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
 	player_is_manually_moving = false;
+	pressed_keys.clear();
 }
 
 // Compute collisions between entities
@@ -969,7 +971,7 @@ void WorldSystem::use_speed_boost(Item& item){
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
-	static std::map<int, bool> pressed_keys = std::map<int, bool>();
+
 
 	// Menu Interaction
 	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
