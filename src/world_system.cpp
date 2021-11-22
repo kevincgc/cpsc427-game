@@ -666,6 +666,8 @@ void WorldSystem::handle_collisions() {
 			// Checking Player - Prey collisions
 			if (registry.view<Prey>().contains(entity_other)) {
 				Prey& prey = registry.get<Prey>(entity_other);
+				ChickAI& ai = chick_ai.at(prey.id);
+				ai.clear();
 				chick_ai.erase(chick_ai.begin() + prey.id);
 				registry.destroy(entity_other);
 			}
