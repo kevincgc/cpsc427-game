@@ -333,7 +333,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			max_cutscene_selection = 12;
 			nk_label(ctx, "Your revenge upon your father will have to wait, for", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "during your feable attempt to escape my labyrinth", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "I have constructed yet another",					   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I have constructed yet another.",					   NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 12) {
 			min_cutscene_selection = 10;
