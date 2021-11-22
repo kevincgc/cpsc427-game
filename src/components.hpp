@@ -49,6 +49,14 @@ enum MapTile {
 	EXIT
 };
 
+enum ItemType {
+	NONE = 0,
+	WALL_BREAKER,
+	EXTRA_LIFE,
+	TELEPORT,
+	SPEED_BOOST,
+};
+
 // Level State
 struct LoadedLevel
 {
@@ -79,7 +87,10 @@ struct ScreenState
 
 // Data structure for togglin help mode
 struct Help {
-	bool in_help_mode = 0;
+	bool basic_help = 0;
+	bool picked_up_item = 0;
+	bool item_info = 0;
+	bool used_item = 0;
 };
 extern Help tips;
 
@@ -88,11 +99,28 @@ struct DebugComponent
 {
 	// Note, an empty struct has size 1
 };
+struct AnimationTimer
+{
+	float counter_ms = 1000;
+};
 
-// A timer that will be associated to dying salmon
+// A timer that will be associated to dying minotaur
 struct DeathTimer
 {
 	float counter_ms = 1000;
+};
+
+struct WallBreakerTimer
+{
+	float counter_ms = 20000;
+};
+
+struct TextTimer {
+	float counter_ms = 3000;
+};
+
+struct SpeedBoostTimer {
+	float counter_ms = 10000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
@@ -129,7 +157,8 @@ struct EndGame {
 // New Components for project
 struct Item
 {
-	int id = 0;
+	std::string name;
+	float duration_ms;
 };
 
 // Cutscene Elements
@@ -199,6 +228,10 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
+	WALL_BREAKER,
+	EXTRA_LIFE,
+	TELEPORT,
+	SPEED_BOOST,
 	CUTSCENE_MINOTAUR,
 	CUTSCENE_DRONE,
 	CUTSCENE_DRONE_SAD,

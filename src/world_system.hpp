@@ -19,6 +19,10 @@
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
+extern std::vector<Item> inventory;
+extern Item current_item;
+extern std::map<std::string, ItemType> item_to_enum;
+extern ItemType most_recent_used_item;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -55,6 +59,10 @@ public:
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
+	void use_wall_breaker(Item& item);
+	void add_extra_life(Item& item);
+	void use_teleport(Item& item);
+	void use_speed_boost(Item& item);
 
 	// restart level
 	void restart_game();
