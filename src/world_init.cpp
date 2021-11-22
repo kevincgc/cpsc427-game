@@ -138,6 +138,52 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 
 }
 
+entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion = Motion();
+	motion.position = pos;
+	motion.angle = 0.f;
+	motion.velocity = { 0.f, 0.f };
+	motion.scale = mesh.original_size * 40.f * global_scaling_vector;
+	
+	Item item = Item();
+	item.name = item_type;
+	TEXTURE_ASSET_ID texture_type;
+	ItemType item_enum = item_to_enum[item_type];
+	switch (item_enum) {
+		case ItemType::WALL_BREAKER:
+			texture_type = TEXTURE_ASSET_ID::WALL_BREAKER;
+			item.duration_ms = 20000;
+			break;
+		case ItemType::EXTRA_LIFE:
+			texture_type = TEXTURE_ASSET_ID::EXTRA_LIFE;
+			break;
+		case ItemType::TELEPORT:
+			texture_type = TEXTURE_ASSET_ID::TELEPORT;
+			break;
+		case ItemType::SPEED_BOOST:
+			texture_type = TEXTURE_ASSET_ID::SPEED_BOOST;
+			item.duration_ms = 10000;
+			break;
+		default:
+			// unsupported item
+			assert(false);
+			break;
+	}
+	// vary depending on which item
+	const entt::entity e = registry.create();
+	registry.emplace<Item>(e, item);
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		texture_type, // TEXTURE_COUNT indicates that no texture is needed
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE);
+
+	return e;
+}
+
 entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
@@ -159,25 +205,6 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 	return e;
 }
 
-entt::entity createItem(RenderSystem* renderer, vec2 pos)
-{
-	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
-	Motion motion = Motion();
-	motion.position = pos;
-	motion.angle = 0.f;
-	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 150.f;
-	motion.scale.x *= -1;
-
-	const entt::entity e = registry.create();
-	registry.emplace<Mesh*>(e, &mesh);
-	registry.emplace<RenderRequest>(e,
-		TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
-		EFFECT_ASSET_ID::ITEM,
-		GEOMETRY_BUFFER_ID::ITEM);
-
-	return e;
-}
 
 entt::entity createTraps(RenderSystem* renderer, vec2 pos)
 {

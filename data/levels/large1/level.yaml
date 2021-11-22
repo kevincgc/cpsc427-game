@@ -3,3 +3,8 @@ type: premade
 enemies:
     spikes: 2
     drones: 3
+items:
+    speed boost: [2,3]
+    wall breaker: [3,4]
+    extra life: 0
+    teleporter: 3
