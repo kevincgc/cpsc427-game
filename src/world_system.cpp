@@ -475,33 +475,35 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
 		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
 
-		// Determine which image to show
+		// Determine which image to show and scale it up
+		float scale_x = 900.f * global_scaling_vector.x;
+		float scale_y = 800.f * global_scaling_vector.y;
 		if (rtx_on) {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
 				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale = { 900,800 };
+				cutscene_minotaur_motion.scale = { scale_x, scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
 				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_motion.scale = { 900,800 };
+				cutscene_drone_motion.scale = { scale_x,scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
 				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_sad_motion.scale = { 900,800 };
+				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
 				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_laughing_motion.scale = { 900,800 };
+				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
 			}
 		}
 		else {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
 				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_rtx_off_motion.scale = { 900,800 };
+				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
 			}
 			else {
 				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_rtx_off_motion.scale = { 900,800 };
+				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
 			}
 		}
 	}

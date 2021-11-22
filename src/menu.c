@@ -269,7 +269,7 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win)
 // ************* CUTSCENES *************
 // out 0 = resume game
 // out 1-9 = cutscene_1 (game start)
-// out 10-19 - cutscene_2 (reaached the exit)
+// out 10-19 = cutscene_2 (reached the exit)
 // out 100-199 = cutscene_death
 
 void drawCutscene(GLFWwindow* win, int* out)
@@ -280,19 +280,18 @@ void drawCutscene(GLFWwindow* win, int* out)
 	int max_cutscene_selection;
 	int min_cutscene_selection;
 
-	// Cutscene Window Dimensions
-	float cut_x = width / 3;
-	float cut_y = height * 3 / 4 * scale_y - 50;
-	float cut_w = width  * 2 / 3 * scale_x - 50;
-	float cut_h = height * 1 / 4 * scale_y + 10;
+	// Cutscene Window Dimensions	
+	float cut_x = width  * 33 / 100;
+	float cut_y = height * 69 / 100;
+	float cut_w = width  * 65 / 100;
+	float cut_h = height * 28 / 100;
 
 	// Make an outer window that's just the background so the dialogue window won't be right at the edge
-	if (nk_begin(ctx, "Cutscene_outer", nk_rect(cut_x, cut_y, cut_w, cut_h), NK_WINDOW_NO_SCROLLBAR)) {
-
-	}
+	if (nk_begin(ctx, "Cutscene_outer", nk_rect(cut_x, cut_y, cut_w, cut_h), NK_WINDOW_NO_SCROLLBAR)) {}
 	nk_end(ctx);
 
 	// Dialogue
+	//if (nk_begin(ctx, "Cutscene", nk_rect(cut_x+10, cut_y+10, cut_w-10, cut_h-10), NK_WINDOW_NO_SCROLLBAR))
 	if (nk_begin(ctx, "Cutscene", nk_rect(cut_x+10, cut_y+10, cut_w-10, cut_h-10), NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
@@ -338,7 +337,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 		else if (*out == 12) {
 			min_cutscene_selection = 10;
 			max_cutscene_selection = 12;
-			nk_label(ctx, "And this one will not be so simple.",			   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And this one will not be so simple.", NK_TEXT_ALIGN_LEFT);
 		}
 		// Variation Two: Second exit
 		// Variation Three: Final End
@@ -402,45 +401,28 @@ void drawCutscene(GLFWwindow* win, int* out)
 	}
 	nk_end(ctx);
 
+	// Button Dimensions
+	float button_y = height * 89/100;
+	float button_w = width  * 2 / 15;
+	float button_h = height * 1 / 15;
+	float prev_x = width  * 8 / 15;
+	float next_x = width * 12 / 15;
+	float skip_x = width * 10 / 15;
+
 	// PREV
-	float prev_x = width  * 8 / 14  * scale_x;
-	float prev_y = height * 13 / 14 * scale_y - 40;
-	float prev_w = width  * 2 / 14  * scale_x - 50;
-	float prev_h = height * 1 / 14  * scale_y;
-	if (nk_begin(ctx, "Prev Button/Window", nk_rect(prev_x, prev_y, prev_w, prev_h), NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(ctx, "Prev Button/Window", nk_rect(prev_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
 	{
-		
-		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
 		if (nk_button_label(ctx, "Prev")) {
 			if (*out > min_cutscene_selection) { *out -= 1; }
 		}
 	}
 	nk_end(ctx);
 
-	// NEXT
-	float next_x = width  * 12 / 14 * scale_x;
-	float next_y = height * 13 / 14 * scale_y - 40;
-	float next_w = width  * 2 / 14  * scale_x - 50;
-	float next_h = height * 1 / 14  * scale_y;
-	if (nk_begin(ctx, "Next Button/Window", nk_rect(next_x, next_y, next_w, next_h), NK_WINDOW_NO_SCROLLBAR))
-	{
-		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
-		if (nk_button_label(ctx, "Next")) {
-			if (*out + 1 > max_cutscene_selection) { *out =  0; }
-			else								   { *out += 1; }
-			cutscene_chosen_text = NULL;
-		}
-	}
-	nk_end(ctx);
-
 	// SKIP
-	float skip_x = width  * 10 / 14 * scale_x;
-	float skip_y = height * 13 / 14 * scale_y - 40;
-	float skip_w = width  * 2 / 14  * scale_x - 50;
-	float skip_h = height * 1 / 14  * scale_y;
-	if (nk_begin(ctx, "Skip Button/Window", nk_rect(skip_x, skip_y, skip_w, skip_h), NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(ctx, "Skip Button/Window", nk_rect(skip_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
 	{
-		nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
 		if (nk_button_label(ctx, "Skip")) {
 			*out = 0;
 			cutscene_chosen_text = NULL;
@@ -448,8 +430,22 @@ void drawCutscene(GLFWwindow* win, int* out)
 	}
 	nk_end(ctx);
 
+	// NEXT
+	if (nk_begin(ctx, "Next Button/Window", nk_rect(next_x, button_y, button_w, button_h), NK_WINDOW_NO_SCROLLBAR))
+	{
+		nk_layout_row_dynamic(ctx, 45 * scale_x, 1);
+		if (nk_button_label(ctx, "Next")) {
+			if (*out + 1 > max_cutscene_selection) { *out = 0; }
+			else { *out += 1; }
+			cutscene_chosen_text = NULL;
+		}
+	}
+	nk_end(ctx);
+
+
 	// Because NK_WINDOW_NO_INPUT does not work, this is a hack
-	// to make sure the buttons and dialogue stays on top
+	// to make sure the buttons and dialogue stays on top if
+	// someone clicks on the dialogue window
 	if (nk_window_is_active(ctx, "Cutscene_outer")) { 
 		nk_window_set_focus(ctx, "Cutscene");
 		nk_window_set_focus(ctx, "Prev Button/Window");
