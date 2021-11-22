@@ -205,6 +205,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				if (other_is_item || ent_is_item) {
 					// Add item to inventory, prompt text from tips
 					// remove item from world
+					game_state.sound_requests.push_back({SoundEffects::PLAYER_ITEM});
 					if (ent_is_item) {
 						current_item = items_registry.get<Item>(entity);
 						std::cout << "Picked up a " << current_item.name << "!" << std::endl;

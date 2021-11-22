@@ -23,4 +23,4 @@ This commit is our submission for M2.
 
 * Power up sound: https://www.fesliyanstudios.com/royalty-free-sound-effects-download/spells-and-power-ups-217
 
-* Finish sound effect from <a href="https://pixabay.com/music/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=6185">Pixabay</a>
+* Other sound effects from <a href="https://pixabay.com/music/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=6185">Pixabay</a>

@@ -259,6 +259,8 @@ GLFWwindow* WorldSystem::create_window() {
 		"drone_were_it_only_so_easy.wav",
 		"drone_stupid_boy.wav",
 		"item_break_wall.wav",
+		"item_teleport.wav",
+		"item_speed_boost.wav",
 	};
 
 	for (int i = 0; i < sound_effect_count; i++) {
@@ -964,12 +966,16 @@ void WorldSystem::use_teleport(Item& item){
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
 	player_motion.position = position;
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_TELEPORT});
 }
 
 void WorldSystem::use_speed_boost(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used speed boost item!" << std::endl;
 	registry.emplace_or_replace<SpeedBoostTimer>(player);
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
 }
 
 // On key callback
@@ -1174,6 +1180,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
 						// do attack or stab animation, maybe turn red?
 						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
+						game_state.sound_requests.push_back({SoundEffects::ITEM_BREAK_WALL});
 						registry.erase<WallBreakerTimer>(player);
 					}
 				}
