@@ -30,7 +30,7 @@ extern "C" {
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
-	void drawGameOverMenu( GLFWwindow* win, int* out);
+	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
@@ -137,10 +137,11 @@ int main()
 			}
 			break;
 		}
-		case ProgramState::GAME_OVER:
+		case ProgramState::GAME_OVER_DEAD:
+		case ProgramState::GAME_OVER_WIN:
 		{
 			int selection = 0;
-			drawGameOverMenu(window, &selection);
+			drawGameOverMenu(window, &selection, state == ProgramState::GAME_OVER_WIN);
 			switch (selection) {
 			case 1:
 				state = ProgramState::RESET_GAME;
