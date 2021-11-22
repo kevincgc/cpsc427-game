@@ -21,6 +21,11 @@ struct Friendly
 
 };
 
+struct Prey
+{
+	int id;
+};
+
 // All data relevant to the shape and motion of entities
 struct Motion {
 	vec2 position = { 0, 0 };
@@ -182,6 +187,7 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
+	CHICK,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

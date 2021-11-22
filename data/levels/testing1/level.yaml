@@ -3,3 +3,6 @@ type: premade
 enemies:
     spikes: 1
     drones: [1, 2]
+
+prey: 
+    chick: 3

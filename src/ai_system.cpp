@@ -11,6 +11,7 @@
 //   [[0,1], [1,1], [2,1], [3,1]]
 // corresponds to traveling 3 tiles to the right
 std::vector<vec2> path;
+std::vector<ChickAI> chick_ai;
 
 // Variables
 extern bool  do_pathfinding_movement	 = false;
@@ -28,6 +29,8 @@ void AISystem::step()
 	// For each entity
 	for (entt::entity entity : registry.view<Motion>())
 	{
+		if (registry.view<Prey>().contains(entity))
+			continue;
 		Motion& entity_motion = registry.get<Motion>(entity);
 		vec2 entity_velocity = entity_motion.velocity;
 

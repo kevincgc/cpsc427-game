@@ -7,3 +7,6 @@ procedural_options:
 enemies:
     spikes: 2
     drones: 3
+
+prey: 
+    chick: 3

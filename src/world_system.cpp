@@ -578,6 +578,21 @@ void WorldSystem::restart_game() {
 			});
 	}
 
+	chick_ai.clear();
+	// create prey for this level
+	const YAML::Node prey = level_config["prey"];
+	if (prey) {
+		process_entity_node(prey, [this](std::string prey_type, vec2 position) {
+			if (prey_type == "chick") {
+				createChick(renderer, position);
+			}
+			else {
+				assert(false);
+				return;
+			}
+			});
+	}
+
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {

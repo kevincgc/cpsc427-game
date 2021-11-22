@@ -21,7 +21,7 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	const float other_r_squared = dot(other_bounding_box, other_bounding_box);
 	const vec2 my_bounding_box = get_bounding_box(motion2) / 2.f;
 	const float my_r_squared = dot(my_bounding_box, my_bounding_box);
-	const float r_squared = max(other_r_squared, my_r_squared);
+	const float r_squared = std::max(other_r_squared, my_r_squared);
 	if (dist_squared < r_squared || dist_squared == 0)
 		return true;
 	return false;
@@ -34,7 +34,7 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	vec2 relative_vel = motion_other.velocity - player_motion.velocity;
 	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
 		return;
-	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
+	float coeff_restitution = std::min(player_motion.coeff_rest, motion_other.coeff_rest);
 
 	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
 	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);

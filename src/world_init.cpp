@@ -65,6 +65,32 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	return e;
 }
 
+entt::entity createChick(RenderSystem* renderer, vec2 position)
+{
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion = Motion();
+	motion.angle = 0.f;
+	motion.velocity = { 0, 0 };
+	motion.position = position;
+	motion.scale = mesh.original_size * 25.f * global_scaling_vector;
+	motion.mass = 50;
+	motion.coeff_rest = 0.9f;
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<RenderRequest>(e,
+		TEXTURE_ASSET_ID::CHICK,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE);
+	Prey prey = Prey();
+	prey.id = chick_ai.size();
+	registry.emplace<Prey>(e, prey);
+	ChickAI ai = ChickAI(e);
+	chick_ai.push_back(ai);
+
+	return e;
+}
+
 // New Entities
 
 entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
