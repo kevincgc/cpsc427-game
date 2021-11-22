@@ -86,6 +86,9 @@ private:
 	Mix_Chunk* salmon_eat_sound;
 	Mix_Chunk* tada_sound;
 	Mix_Chunk* horse_snort_sound;
+	Mix_Chunk* drone_were_it_only_so_easy_sound;
+	Mix_Chunk* drone_stupid_boy_sound;
+
 
 	// entity spawning
 	std::vector<vec2> spawnable_tiles;

@@ -98,6 +98,10 @@ extern bool  player_is_manually_moving;
 
 extern entt::entity cutscene_minotaur_entity;
 extern entt::entity cutscene_drone_entity;
+extern entt::entity cutscene_drone_sad_entity;
+extern entt::entity cutscene_drone_laughing_entity;
+extern entt::entity cutscene_minotaur_rtx_off_entity;
+extern entt::entity cutscene_drone_rtx_off_entity;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;

@@ -46,9 +46,6 @@ float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 
-entt::entity cutscene_background_entity;
-entt::entity cutscene_minotaur_entity;
-entt::entity cutscene_drone_entity;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -57,13 +54,31 @@ vec2 starting_map_pos;
 vec2 ending_map_pos;
 
 // For cutscene feature
+bool rtx_on = true;
 bool do_cutscene_1 = true;
 bool cutscene_1_frame_2 = false;
 bool cutscene_1_frame_1 = false;
 bool cutscene_1_frame_0 = true;
-int cutscene_selection = 1;
-int cutscene_speaker = 1; // 1 = minotaur || 2 = drone
+int cutscene_selection = 1; // 1 = game start (see menu.c for more info)
+int cutscene_speaker = 1;
+int num_times_exit_reached = 0;
 
+
+entt::entity cutscene_minotaur_entity;
+entt::entity cutscene_drone_entity;
+entt::entity cutscene_drone_sad_entity;
+entt::entity cutscene_drone_laughing_entity;
+entt::entity cutscene_minotaur_rtx_off_entity;
+entt::entity cutscene_drone_rtx_off_entity;
+
+enum cutscene_speaker {
+	SPEAKER_MINOTAUR		 = 1,
+	SPEAKER_DRONE			 = 2,
+	SPEAKER_DRONE_SAD		 = 3,
+	SPEAKER_DRONE_LAUGHING   = 4,
+	SPEAKER_MINOTAUR_RTX_OFF = 5,
+	SPEAKER_DRONE_RTX_OFF    = 6
+};
 
 // For attack
 bool player_swing = false;
@@ -138,6 +153,10 @@ WorldSystem::~WorldSystem() {
 		Mix_FreeChunk(tada_sound);
 	if (horse_snort_sound != nullptr)
 		Mix_FreeChunk(horse_snort_sound);
+	if (drone_were_it_only_so_easy_sound != nullptr)
+		Mix_FreeChunk(drone_were_it_only_so_easy_sound);
+	if (drone_stupid_boy_sound != nullptr)
+		Mix_FreeChunk(drone_stupid_boy_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -226,11 +245,13 @@ GLFWwindow* WorldSystem::create_window() {
 		return nullptr;
 	}
 
-	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
-	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
-	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
-	horse_snort_sound = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
+	background_music				 = Mix_LoadMUS(audio_path("music.wav").c_str());
+	salmon_dead_sound				 = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
+	salmon_eat_sound				 = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
+	tada_sound						 = Mix_LoadWAV(audio_path("tada.wav").c_str());
+	horse_snort_sound				 = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
+	drone_were_it_only_so_easy_sound = Mix_LoadWAV(audio_path("drone_were_it_only_so_easy.wav").c_str());
+	drone_stupid_boy_sound			 = Mix_LoadWAV(audio_path("drone_stupid_boy.wav").c_str());
 
 	
 
@@ -307,10 +328,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			state = ProgramState::GAME_OVER;
 			cutscene_1_frame_0 = true;
 			if (death_count == 2) {
-				cutscene_speaker = 2;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING;
+			}
+			else if (death_count == 4) {
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
 			}
 			else {
-				cutscene_speaker = 1;
+				cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
 			}
 			cutscene_selection = 100 + death_count;
 			return true;
@@ -345,62 +369,113 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 	if (tile == MapTile::EXIT) {
+
 		// player has found the exit!
 		Mix_PlayChannel(-1, tada_sound, 0);
-		restart_game();
 		do_pathfinding_movement = false;
 
+		// For cutscenes
+		num_times_exit_reached++;
 		cutscene_1_frame_0 = true;
-		cutscene_selection = 10;
-		cutscene_speaker = 2;
+
+		if (num_times_exit_reached == 1) {
+			cutscene_selection = 10;
+			cutscene_speaker   = cutscene_speaker::SPEAKER_DRONE;
+		}
+		else if (num_times_exit_reached > 1) {
+			cutscene_selection = 15;
+			cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+		}
+		restart_game();
+
 	}
 
-	// ************ Cutscenes ************
-
-	// Opening cutscene
+	// ************************************ Cutscenes ************************************************
 	// This is pretty much a hack to get around some issues with drawing images 
 	// Because of bufferswap in nuklear, we have to make sure two successive
-	// frames have the minotaur drawn, hence the flags
-	// Timer for first cutscene
+	// frames have the speaker drawn, hence the flags. (Three successive frames
+	// are required on load to give the maze walls time to draw/be colored in,
+	// hence three flags frame_0, frame_1, and frame_2)
+
+	// Gate 1
 	if (cutscene_1_frame_0) {
+		// Set the switches
 		cutscene_1_frame_0 = false;
 		cutscene_1_frame_1 = true;
 	}
+
+	// Gate 2
 	else if (cutscene_1_frame_1) {
+		// Set the switches
 		cutscene_1_frame_2 = true;
 		cutscene_1_frame_1 = false;
 
-		entt::entity player = registry.view<Player>().begin()[0];
-		Motion& motion = registry.get<Motion>(player);
-		cutscene_minotaur_entity = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
-		cutscene_drone_entity = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
-		Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
-		Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+		// ***** Set up the variables ***** 
+		entt::entity player						= registry.view<Player>().begin()[0];
+		Motion& motion							= registry.get<Motion>(player);
 
-		if (cutscene_speaker == 1) {
-			cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-			cutscene_minotaur_motion.scale = { 900,800 };
-			cutscene_drone_motion.scale = { 0,0 };
-		}
-		else if (cutscene_speaker == 2) {
-			cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-			cutscene_drone_motion.scale = { 900,800 };
-			cutscene_minotaur_motion.scale = { 0,0 };
-		}
+		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
 
-		
+		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2]; 
+		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5]; 
+		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4]; 
+		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3]; 
+		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1]; 
+		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0]; 
+
+		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+		Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+		Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
+		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+
+		// Determine which image to show
+		if (rtx_on) {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale = { 900,800 };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
+				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_motion.scale = { 900,800 };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
+				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_sad_motion.scale = { 900,800 };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
+				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_laughing_motion.scale = { 900,800 };
+			}
+		}
+		else {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_rtx_off_motion.scale = { 900,800 };
+			}
+			else {
+				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_rtx_off_motion.scale = { 900,800 };
+			}
+		}
 	}
+
+	// Gate 3
 	else if (cutscene_1_frame_2) {
+		// Reset switch
 		cutscene_1_frame_2 = false;
-		Mix_PlayChannel(-1, horse_snort_sound, 0);
+
+		// Play audio files
+		if		(cutscene_selection == 102) { Mix_PlayChannel(-1, drone_were_it_only_so_easy_sound, 0); }
+		else if (cutscene_selection == 10)  { Mix_PlayChannel(-1, drone_stupid_boy_sound, 0); }
+		else								{ Mix_PlayChannel(-1, horse_snort_sound, 0); }
+		
+		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
 	}
 
-
-
-	// ************************************************
-
-
+	// ************************************************************************************************
 
 	return true;
 }
@@ -673,14 +748,14 @@ void WorldSystem::restart_game() {
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-
-	// *************************************************************************************************************************************************
+	
 	// Create cutscene entities
-		cutscene_background_entity = createCutscene(renderer, { 0,0 }, BACKGROUND);
-		cutscene_drone_entity    = createCutscene(renderer, { 0,0 }, DRONE);
-		cutscene_minotaur_entity = createCutscene(renderer, { 0,0 }, MINOTAUR);
-
-	// ********************************************************************************************************************************************
+	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
+	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
+	cutscene_drone_laughing_entity   = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_LAUGHING);
+	cutscene_minotaur_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR);
+	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
+	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 }
 
 // Compute collisions between entities
@@ -731,9 +806,6 @@ void WorldSystem::handle_collisions() {
 bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
-
-
-
 
 
 // On key callback
@@ -804,48 +876,23 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				state = ProgramState::PAUSED;
 			}
 
-
-			// ************************************************* Cutscenes ************************************************* 
-
-
-			if (action == GLFW_PRESS && key == GLFW_KEY_F) {
-				cutscene_minotaur_entity		 = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
-				cutscene_drone_entity			 = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
-				Motion& cutscene_drone_motion    = registry.get<Motion>(cutscene_drone_entity);
-				Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
-
-
-
-				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale = { 900,800 };
-
-				//cutscene_drone_motion.position = { motion.position.x + window_width_px / 4, motion.position.y - window_height_px / 8 };
-				//cutscene_drone_motion.scale = { 400,400 };
-			}
-			if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
-				cutscene_minotaur_entity		 = registry.view<Cutscene>().begin()[0]; //Minotaur is emplaced before drone
-				cutscene_drone_entity			 = registry.view<Cutscene>().begin()[1]; //Minotaur is emplaced after minotaur
-				Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
-				Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
-
-				state = ProgramState::CUTSCENE1;
-				cutscene_selection = 1;
-				cutscene_minotaur_motion.scale = { 0,0 };
-				cutscene_drone_motion.scale = { 0,0 };
-			}
-
-
-
-
-
-
-
-
-			// **************************************************************************************************
 			// Help Mode
 			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 				if (key == GLFW_KEY_H) { tips.in_help_mode = 1; }
 				else { tips.in_help_mode = 0; }
+			}
+
+			// Toggle cutscene rtx
+			if (action == GLFW_RELEASE) {
+				if (key == GLFW_KEY_R) { 
+					rtx_on = !rtx_on;
+					char* status;
+
+					if (rtx_on) { status = "on"; }
+					else { status = "off"; }
+
+					std::cout << "RTX has been turned " << status << std::endl;
+				}
 			}
 		}
 	}

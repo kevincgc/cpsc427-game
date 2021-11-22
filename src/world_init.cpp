@@ -86,14 +86,23 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 	TEXTURE_ASSET_ID texture_asset_id;
 	switch (element)
 	{
-	case BACKGROUND:
-		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_BACKGROUND;
-		break;
 	case MINOTAUR:
 		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_MINOTAUR;
 		break;
 	case DRONE:
 		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_DRONE;
+		break;
+	case DRONE_SAD:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_DRONE_SAD;
+		break;
+	case DRONE_LAUGHING:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_DRONE_LAUGHING;
+		break;
+	case MINOTAUR_RTX_OFF:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_MINOTAUR_RTX_OFF;
+		break;
+	case DRONE_RTX_OFF:
+		texture_asset_id = TEXTURE_ASSET_ID::CUTSCENE_DRONE_RTX_OFF;
 		break;
 	default:
 		break;

@@ -159,16 +159,16 @@ int main()
 
 		case ProgramState::CUTSCENE1:
 		{
-			entt::entity player				 = registry.view<Player>().begin()[0];
-			Motion& motion					 = registry.get<Motion>(player);
-			Motion& cutscene_drone_motion	 = registry.get<Motion>(cutscene_drone_entity);
-			Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
-
-			//cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-			//cutscene_minotaur_motion.scale = { 800,800 };
+			entt::entity player						 = registry.view<Player>().begin()[0];
+			Motion& motion							 = registry.get<Motion>(player);
+			Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+			Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+			Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+			Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
+			Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+			Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
 
 			drawCutscene(window, &cutscene_selection);
-
 
 			switch (cutscene_selection) {
 			case 0:
@@ -177,7 +177,12 @@ int main()
 				renderer.reinit(window_width_px, window_height_px, window);
 				state = ProgramState::RUNNING;
 
-				cutscene_minotaur_motion.scale = { 0,0 };
+				cutscene_minotaur_motion.scale		   = { 0,0 };
+				cutscene_drone_motion.scale			   = { 0,0 };
+				cutscene_drone_laughing_motion.scale   = { 0,0 };
+				cutscene_drone_sad_motion.scale		   = { 0,0 };
+				cutscene_minotaur_rtx_off_motion.scale = { 0,0 };
+				cutscene_drone_rtx_off_motion.scale	   = { 0,0 };
 
 				break;
 			case 2:
