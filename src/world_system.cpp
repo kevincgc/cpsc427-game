@@ -157,18 +157,10 @@ WorldSystem::~WorldSystem() {
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (player_death_sound != nullptr)
-		Mix_FreeChunk(player_death_sound);
-	if (player_item_sound != nullptr)
-		Mix_FreeChunk(player_item_sound);
-	if (tada_sound != nullptr)
-		Mix_FreeChunk(tada_sound);
-	if (horse_snort_sound != nullptr)
-		Mix_FreeChunk(horse_snort_sound);
-	if (drone_were_it_only_so_easy_sound != nullptr)
-		Mix_FreeChunk(drone_were_it_only_so_easy_sound);
-	if (drone_stupid_boy_sound != nullptr)
-		Mix_FreeChunk(drone_stupid_boy_sound);
+
+	for (int i = 0; i < sound_effect_count; i++) {
+		if (sound_effects[i] != nullptr) Mix_FreeChunk(sound_effects[i]);
+	}
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -259,19 +251,25 @@ GLFWwindow* WorldSystem::create_window() {
 
 
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	player_death_sound = Mix_LoadWAV(audio_path("player_death.wav").c_str());
-	player_item_sound = Mix_LoadWAV(audio_path("player_item.wav").c_str());
-	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
-	horse_snort_sound				 = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
-	drone_were_it_only_so_easy_sound = Mix_LoadWAV(audio_path("drone_were_it_only_so_easy.wav").c_str());
-	drone_stupid_boy_sound			 = Mix_LoadWAV(audio_path("drone_stupid_boy.wav").c_str());
+	std::array<std::string, sound_effect_count> sound_effect_paths = {
+		"player_death.wav",
+		"player_item.wav",
+		"tada.wav",
+		"horse_snort.wav",
+		"drone_were_it_only_so_easy.wav",
+		"drone_stupid_boy.wav",
+		"item_break_wall.wav",
+		"item_teleport.wav",
+		"item_speed_boost.wav",
+	};
 
-	if (background_music == nullptr || player_death_sound == nullptr || player_item_sound == nullptr) {
-		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
-			audio_path("music.wav").c_str(),
-			audio_path("player_death.wav").c_str(),
-			audio_path("player_item.wav").c_str());
-		return nullptr;
+	for (int i = 0; i < sound_effect_count; i++) {
+		sound_effects[i] = Mix_LoadWAV(audio_path(sound_effect_paths[i]).c_str());
+		if (sound_effects[i] == nullptr) {
+			fprintf(stderr, "Not found: ");
+			fprintf(stderr, sound_effect_paths[i].c_str());
+			assert(false);
+		}
 	}
 
 	return window;
@@ -297,6 +295,13 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 
 // ************************************************************************************* step ***********************************************************
 // Update our game world
+void WorldSystem::play_sounds() {
+	for (auto sound_request : game_state.sound_requests) {
+		Mix_PlayChannel(-1, sound_effects[(int) sound_request.sound], 0);
+	}
+	game_state.sound_requests.clear();
+}
+
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Get the screen dimensions
 	int screen_width, screen_height;
@@ -459,7 +464,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
-			Mix_PlayChannel(-1, tada_sound, 0);
+			game_state.sound_requests.push_back({SoundEffects::TADA});
 			initial_game = false;
 			do_pathfinding_movement = false;
 
@@ -584,9 +589,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		cutscene_1_frame_2 = false;
 
 		// Play audio files
-		if		(cutscene_selection == 102) { Mix_PlayChannel(-1, drone_were_it_only_so_easy_sound, 0); }
-		else if (cutscene_selection == 10)  { Mix_PlayChannel(-1, drone_stupid_boy_sound, 0); }
-		else								{ Mix_PlayChannel(-1, horse_snort_sound, 0); }
+		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
+		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
+		else								{ game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
 
 		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
@@ -897,7 +902,7 @@ void WorldSystem::handle_collisions() {
 					// Scream, reset timer, and make the salmon sink
 					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
-					Mix_PlayChannel(-1, player_death_sound, 0);
+					game_state.sound_requests.push_back({SoundEffects::PLAYER_DEAD});
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
@@ -961,12 +966,16 @@ void WorldSystem::use_teleport(Item& item){
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
 	player_motion.position = position;
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_TELEPORT});
 }
 
 void WorldSystem::use_speed_boost(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used speed boost item!" << std::endl;
 	registry.emplace_or_replace<SpeedBoostTimer>(player);
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
 }
 
 // On key callback
@@ -1171,6 +1180,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
 						// do attack or stab animation, maybe turn red?
 						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
+						game_state.sound_requests.push_back({SoundEffects::ITEM_BREAK_WALL});
 						registry.erase<WallBreakerTimer>(player);
 					}
 				}

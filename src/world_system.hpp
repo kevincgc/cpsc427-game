@@ -46,6 +46,7 @@ public:
 
 	// Steps the game ahead by ms milliseconds
 	bool step(float elapsed_ms);
+	void play_sounds();
 
 	// Check for collisions
 	void handle_collisions();
@@ -90,13 +91,7 @@ private:
 
 	// music references
 	Mix_Music* background_music;
-	Mix_Chunk* player_death_sound;
-	Mix_Chunk* player_item_sound;
-	Mix_Chunk* tada_sound;
-	Mix_Chunk* horse_snort_sound;
-	Mix_Chunk* drone_were_it_only_so_easy_sound;
-	Mix_Chunk* drone_stupid_boy_sound;
-
+	std::array<Mix_Chunk *, sound_effect_count> sound_effects;
 
 	// entity spawning
 	std::vector<vec2> spawnable_tiles;
