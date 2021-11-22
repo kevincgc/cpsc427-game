@@ -351,45 +351,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
-	Motion& player_motion = registry.get<Motion>(player_minotaur);
-	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-
-	// TODO: delete if not using attack motion
-	// If wall breaker has been used, and a breakable wall is in range while attacking, destroy the wall (convert to free space)
-	//if (registry.view<WallBreakerTimer>().contains(player_minotaur) && player_swing) {
-	//	float swing_threshold = 100.f * global_scaling_vector.x; // Wall has to  be close enough to register as a hit
-	//	float vertical_threshold = 60.f * global_scaling_vector.y;  // Wall can't be too far above or below player to register as a hit
-	//	//&& within_threshold(player, entity, swing_threshold) && abs(entity_motion.position.y - motion.position.y) < vertical_threshold) 
-	//	vec2 swing_position;
-	//	if (player_motion.velocity.x >= 0) {
-	//		swing_position = {player_motion.position.x + swing_threshold, player_motion.position.y}
-	//	}
-	//	const vec2 test_point_x = WorldSystem::position_to_map_coords({ nextpos.x + corner.x, motion.position.y + corner.y });
-	//	const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-	//	// If enemy is to the right of the player and the player is facing right
-	//	if (entity_motion.position.x > motion.position.x && motion.velocity.x >= 0) {
-	//		registry.destroy(entity);
-	//		break;
-	//	}
-
-	//	// If enemy is to the left of the player and the player is facing left
-	//	// Warning: Right now the render system renders the sprite as facing left if velocity.x < 0
-	//	else if (entity_motion.position.x < motion.position.x && motion.velocity.x < 0) {
-	//		registry.destroy(entity);
-	//		break;
-	//	}
-
-	//	else if (entity_motion.position.y < motion.position.y && motion.velocity.y < 0) {
-	//		registry.destroy(entity);
-	//		break;
-	//	}
-
-	//	else if (entity_motion.position.y > motion.position.y && motion.velocity.y > 0) {
-	//		registry.destroy(entity);
-	//		break;
-	//	}
-	//}
-
 	// Temporary for crossplay playability: Handle enemy respawn
 	// Problems: spawns in walls, spawns on player
 	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
@@ -408,6 +369,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	motion.coeff_rest = 0.9f;
 	//	motion.velocity = vec2(-100.f, 0.f);
 	//}
+
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 	// check if player has won
 	if (tile == MapTile::EXIT) {
 		// player has found the exit!
@@ -739,12 +703,10 @@ void WorldSystem::use_wall_breaker(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
 	registry.emplace_or_replace<WallBreakerTimer>(player);
-	tips.basic_help = 0;
-	tips.picked_up_item = 0;
-	tips.item_info = 0;
+
+	// TODO: flashing animation, and possibly taunt animation
 	//Colour& c = registry.get<Colour>(player);
 	//c.colour = vec3(0.f, 0.8f, 0.4f);
-	// consider starting a flashing or changing colour until timer is over
 }
 
 void WorldSystem::add_extra_life(Item& item){
@@ -875,17 +837,19 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 						assert(false);
 						break;
 				}
+				tips.basic_help = 0;
+				tips.picked_up_item = 0;
+				tips.item_info = 0;
 				registry.emplace_or_replace<TextTimer>(player);
 				current_item = Item();
 			}
 
-			// Tell user about the item they are holding
+			// Tell user about the item they are holding (toggle with T if they are holding an item)
 			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
 				tips.basic_help = 0;
 				tips.picked_up_item = 0;
 				tips.item_info = !tips.item_info;
 			} 
-
 
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {

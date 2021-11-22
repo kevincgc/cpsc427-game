@@ -563,6 +563,7 @@ void RenderSystem::draw()
 		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f }; 
 	}
 	else if (most_recent_used_item == ItemType::SPEED_BOOST && text_timer_on) {
+		// used speed boost
 		renderedText_1 = "You used the speed boost!";
 		renderedText_2 = "Speed is doubled for 10 seconds! Go, go, go!";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
@@ -571,6 +572,7 @@ void RenderSystem::draw()
 		text_colour = { 0.f, 1.f, 1.f };
 	}
 	else if (most_recent_used_item == ItemType::EXTRA_LIFE && text_timer_on) {
+		// used extra life
 		renderedText_1 = "You gained an extra life!";
 		renderedText_2 = "";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
