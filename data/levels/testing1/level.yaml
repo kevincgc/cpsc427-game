@@ -5,4 +5,4 @@ enemies:
     drones: [1, 2]
 
 prey: 
-    chick: 1
+    chick: 5

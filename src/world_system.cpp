@@ -665,10 +665,20 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - Prey collisions
 			if (registry.view<Prey>().contains(entity_other)) {
+				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
+					Prey& p = registry.get<Prey>(*it);
+					printf("%i\n", p.id);
+				}
+				printf("==========================\n");
 				Prey& prey = registry.get<Prey>(entity_other);
-				ChickAI& ai = chick_ai.at(prey.id);
-				ai.clear();
-				chick_ai.erase(chick_ai.begin() + prey.id);
+				auto ai_it = chick_ai.begin();
+				for (auto it = chick_ai.begin(); it != chick_ai.end(); it++) {
+					if ((*it).get_id() == prey.id) {
+						ai_it = it;
+					}
+				}
+				(*ai_it).clear();
+				chick_ai.erase(ai_it);
 				registry.destroy(entity_other);
 			}
 		}

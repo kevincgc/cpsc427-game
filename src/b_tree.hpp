@@ -666,9 +666,10 @@ private:
 	BTRepeat* root;
 	entt::entity e;
 	bool is_init;
+	int id;
 
 public:
-	ChickAI(const entt::entity e) : e(e), is_init(false) {
+	ChickAI(const entt::entity e, int id) : e(e), is_init(false), id(id) {
 	}
 
 	void step() {
@@ -695,6 +696,10 @@ public:
 		//delete escape;
 		delete roam;
 		delete move_random;
+	}
+
+	int get_id() {
+		return id;
 	}
 };
 

@@ -85,7 +85,7 @@ entt::entity createChick(RenderSystem* renderer, vec2 position)
 	Prey prey = Prey();
 	prey.id = chick_ai.size();
 	registry.emplace<Prey>(e, prey);
-	ChickAI ai = ChickAI(e);
+	ChickAI ai = ChickAI(e, prey.id);
 	chick_ai.push_back(ai);
 
 	return e;
