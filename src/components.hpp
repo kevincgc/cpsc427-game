@@ -85,8 +85,9 @@ struct ScreenState
 
 // Data structure for togglin help mode
 struct Help {
-	bool in_help_mode = 0;
+	bool basic_help = 0;
 	bool picked_up_item = 0;
+	bool item_info = 0;
 };
 extern Help tips;
 

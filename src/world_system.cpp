@@ -54,6 +54,7 @@ std::map<std::string, ItemType> item_to_enum = {
 	{"time slow", ItemType::TIME_SLOW},
 };
 bool wall_breaker_active = false;
+bool used_teleport = false;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -720,16 +721,17 @@ void WorldSystem::use_wall_breaker(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
 	registry.emplace<WallBreakerTimer>(player);
+	tips.basic_help = 0;
+	tips.picked_up_item = 0;
+	tips.item_info = 0;
 	//Colour& c = registry.get<Colour>(player);
 	//c.colour = vec3(0.f, 0.8f, 0.4f);
 	// consider starting a flashing or changing colour until timer is over
-	current_item = Item();
 }
 
 void WorldSystem::add_extra_life(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used extra life item!" << std::endl;
-	current_item = Item();
 
 }
 
@@ -751,14 +753,13 @@ void WorldSystem::use_teleport(Item& item){
 	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
+	used_teleport = true;
 	player_motion.position = position;
-	current_item = Item();
 }
 
 void WorldSystem::use_time_slow(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used time slow item!" << std::endl;
-	current_item = Item();
 }
 
 // On key callback
@@ -852,7 +853,16 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 						assert(false);
 						break;
 				}
+				current_item = Item();
 			}
+
+			// Tell user about the item they are holding
+			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
+				tips.basic_help = 0;
+				tips.picked_up_item = 0;
+				tips.item_info = !tips.item_info;
+			} 
+
 
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
@@ -861,8 +871,9 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// Help Mode
 			if (action == GLFW_PRESS) {
+				// toggle H for help mode
 				if (key == GLFW_KEY_H) {
-					tips.in_help_mode = !tips.in_help_mode;
+					tips.basic_help = !tips.basic_help;
 				}
 			}
 		}

@@ -23,6 +23,7 @@ extern std::vector<Item> inventory;
 extern Item current_item;
 extern std::map<std::string, ItemType> item_to_enum;
 extern bool wall_breaker_active;
+extern bool used_teleport;
 
 
 // Container for all our entities and game logic. Individual rendering / update is

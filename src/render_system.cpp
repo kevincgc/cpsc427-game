@@ -3,8 +3,6 @@
 #include "world_system.hpp"
 #include <iostream>
 
-
-
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
 {
@@ -508,18 +506,52 @@ void RenderSystem::draw()
 	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
 	bool wall_breaker_active = registry.view<WallBreakerTimer>().contains(player);
 
-	if (tips.in_help_mode && !wall_breaker_active)
+	if (tips.basic_help)
 	{
 		renderedText_1 = "Click and point to a square to move to it.";
 		renderedText_2 = "Press spacebar to attack enemies and \"I\" to use an item!";
 		text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
-	else if (false && tips.picked_up_item) {
-		// collected item, press different button to explain what item you current hold does (will read current_item's type and render appropriate text)
-		renderedText_1 = "You picked up a " + current_item.name;
-		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
-
+	else if (tips.picked_up_item && !current_item.name.empty()) {
+		// collected item, press T to explain what item you current hold does (will read current_item's type and render appropriate text)
+		renderedText_1 = "You picked up the " + current_item.name + ". Note that you may only hold ONE item at a time!";
+		renderedText_2 = "Press \"I\" to use it and press \"T\" for a description of the item's usage.";
+		text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		//text_colour = { 0.f, 1.f, 0.f };
+	}
+	else if (tips.item_info) {
+		switch (item_to_enum[current_item.name]) {
+		case ItemType::WALL_BREAKER:
+			renderedText_1 = "Wall breaker: The user gains the ability to break one inner wall of their choosing.";
+			renderedText_2 = "The item effect will wear off after 20 seconds if unused.";
+			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::EXTRA_LIFE:
+			renderedText_1 = "Extra life: The player gains one extra life.";
+			renderedText_2 = "";
+			text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::TELEPORT:
+			renderedText_1 = "Teleporter: The user will be teleported to a random location in the maze.";
+			renderedText_2 = "Hope you don't land on an enemy! Good luck.";
+			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::TIME_SLOW:
+			renderedText_1 = "Time slow: Enemies will move at half their normal speed for 15 seconds.";
+			renderedText_2 = "Vroom Vroom!";
+			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (35.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		default:
+			// unsupported item
+			assert(false);
+			break;
+		}
 	}
 	else if (wall_breaker_active) {
 		// used wall_breaker item
@@ -529,8 +561,12 @@ void RenderSystem::draw()
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 		text_colour = { 0.f, 0.f, 1.f };
 	}
-	else if (false) {
+	else if (used_teleport) {
 		// used teleporter
+		renderedText_1 = "You used the teleporter!";
+		renderedText_2 = "You were teleported to a random spot in the maze.";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
 	else
 	{

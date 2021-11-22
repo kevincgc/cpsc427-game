@@ -145,7 +145,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		Motion& motion = registry.get<Motion>(entity);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		//if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
+		//if (!tips.basic_help) { nextpos = motion.position + motion.velocity * step_seconds; }
 		//else { nextpos = motion.position; }
 
 		if (!registry.view<Player>().contains(entity)) {
@@ -160,7 +160,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
 		//
 		//vec2 nextpos;
-		//if   (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
+		//if   (!tips.basic_help) { nextpos = motion.position + motion.velocity * step_seconds; }
 		//else					  { nextpos = motion.position; }
 
 		//setMotionPosition(motion, nextpos);
@@ -226,7 +226,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						registry.destroy(other);
 					}
 					tips.picked_up_item = 1;
-					tips.in_help_mode = 0;
+					tips.basic_help = 0;
 					return;
 				}
 				impulseCollisionResolution(motion, motion_other);
