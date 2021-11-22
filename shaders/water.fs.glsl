@@ -4,6 +4,7 @@ uniform sampler2D screen_texture;
 uniform sampler2D pre_screen;
 uniform float time;
 uniform bool initial_game;
+uniform bool endGame;
 
 
 in vec2 texcoord;
@@ -114,7 +115,7 @@ void main()
     float blast = 100.0;
     float t = spd * time + 2.2;
     vec4 col;
-	if (t < dur -1 && !initial_game) {
+	if (!initial_game && endGame) {
 		col = explode(p, mod(t, dur), blast);
 		col = mix(col, explode(p, mod(t - 0.05, dur), blast), 0.3);
 		col = mix(col, explode(p, mod(t - 0.10, dur), blast), 0.2);

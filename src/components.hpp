@@ -122,7 +122,9 @@ struct Attack
 {
 	// if the entity is in attack mode
 };
-
+struct EndGame {
+	float counter_ms = 3000;
+};
 // New Components for project
 struct Item
 {
