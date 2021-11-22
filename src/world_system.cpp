@@ -325,7 +325,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			state = ProgramState::GAME_OVER;
 			cutscene_1_frame_0 = true;
 			if (death_count == 2) {
 				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING;
@@ -337,7 +336,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
 			}
 			cutscene_selection = 100 + death_count;
-			// state = ProgramState::GAME_OVER_DEAD;
+			 state = ProgramState::GAME_OVER_DEAD;
 			return true;
 		}
 	}
@@ -374,8 +373,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// player has found the exit!
 		state = ProgramState::GAME_OVER_WIN;
 		Mix_PlayChannel(-1, tada_sound, 0);
-		game_start_time = (float)(glfwGetTime()); // record game start time
-		initial_game = false;
+		//game_start_time = (float)(glfwGetTime()); // record game start time
+		//initial_game = false;
 		do_pathfinding_movement = false;
 
 		// For cutscenes
