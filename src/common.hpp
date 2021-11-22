@@ -105,6 +105,3 @@ extern entt::entity cutscene_drone_rtx_off_entity;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;
-
-extern float game_start_time;
-extern bool initial_game;
