@@ -9,7 +9,6 @@
 #include "common.hpp"
 #include "components.hpp"
 #include "world_system.hpp"
-#include "a_star.hpp"
 
 enum class Direction {
 	UP,
@@ -279,6 +278,10 @@ public:
 		last_pos = { -1,-1 };
 	}
 
+	void update_dir(Direction dir) {
+		d = dir;
+	}
+
 	bool is_approx_eq(float f1, float f2) {
 		return abs(f1 - f2) < 75;
 	}
@@ -286,7 +289,7 @@ public:
 	BTState process(entt::entity e) override {
 		current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
 		Motion& motion = registry.get<Motion>(e);
-		if (current_tile == target_tile && state != ProgramState::PAUSED) {
+		if (current_tile == target_tile) {
 			float x = motion.position.x - floor(motion.position.x / map_scale.x) * map_scale.x;
 			float y = motion.position.y - floor(motion.position.y / map_scale.y) * map_scale.y;
 			if (is_approx_eq(x, map_scale.x/2) && is_approx_eq(y, map_scale.y / 2)) {
@@ -294,7 +297,7 @@ public:
 				return BTState::Success;
 			}
 		}
-		if (motion.position == last_pos && !(state == ProgramState::PAUSED)) {
+		if (motion.position == last_pos && state != ProgramState::PAUSED) {
 			return BTState::Failure;
 		}
 		last_pos = motion.position;
@@ -314,6 +317,188 @@ public:
 		case Direction::RIGHT:
 			motion.velocity = { 200, 0 };
 			break;
+		}
+		return BTState::Running;
+	}
+};
+
+class AStarSearch {
+	class Node {
+	public:
+		vec2 coord;
+		Node* parent;
+		float g; // dist from start
+		float h; // dist to target
+		Node(vec2 c, Node* p = nullptr) : coord(c), parent(p), g(0), h(0) { }
+		float get_f() { return g + h; }
+	};
+	std::vector<vec2> path;
+	vec2 start;
+	vec2 target;
+	std::vector<vec2> direction = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 } };
+
+	// Manhattan distance
+	int get_cost(vec2 target, vec2 current) {
+		return abs(target.x - current.x) + abs(target.y - current.y);
+	}
+
+	bool is_valid_tile(vec2 coord) {
+		return WorldSystem::is_within_bounds(coord) && WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(coord));
+	}
+
+	Node* find_node(std::vector<Node*>& nodes, vec2 coord) {
+		for (auto node : nodes) {
+			if (node->coord == coord) {
+				return node;
+			}
+		}
+		return nullptr;
+	}
+
+	void search()
+	{
+		Node* current_node = nullptr;
+		std::vector<Node*> open, close;
+		open.push_back(new Node(start));
+
+		while (!open.empty()) {
+			current_node = open[0];
+			int current_index = 0;
+			for (int i = 0; i < open.size(); i++) {
+				Node* node = open[i];
+				if (node->get_f() <= current_node->get_f()) {
+					current_node = node;
+					current_index = i;
+				}
+			}
+			if (current_node->coord == target)
+				break;
+			close.push_back(current_node);
+			open.erase(open.begin() + current_index);
+
+			for (int i = 0; i < 4; ++i) {
+				vec2 new_coord(current_node->coord + direction[i]);
+				if (!is_valid_tile(new_coord) || find_node(close, new_coord)) {
+					continue;
+				}
+
+				uint totalCost = current_node->g + 10;
+
+				Node* new_node = find_node(open, new_coord);
+				if (new_node == nullptr) {
+					new_node = new Node(new_coord, current_node);
+					new_node->g = totalCost;
+					new_node->h = get_cost(new_node->coord, target);
+					open.push_back(new_node);
+				}
+				else if (totalCost < new_node->g) {
+					new_node->parent = current_node;
+					new_node->g = totalCost;
+				}
+			}
+		}
+
+		while (current_node != nullptr) {
+			path.push_back({ current_node->coord.x, current_node->coord.y });
+			current_node = current_node->parent;
+		}
+		for (auto& coordinate : path) {
+			printf("%f, %f\n", coordinate.x, coordinate.y);
+		}
+
+		for (int i = 0; i < open.size(); i++) {
+			delete open[i];
+		}
+		for (int i = 0; i < close.size(); i++) {
+			delete close[i];
+		}
+
+	}
+
+	void init(vec2 t, vec2 s) {
+		path.clear();
+		target = t;
+		start = s;
+	}
+
+public:
+	std::vector<vec2> get_path(vec2 t, vec2 s) {
+		init(t, s);
+		search();
+		return path;
+	}
+};
+
+class MoveToRandomTile : public BTNode {
+	vec2 target_tile;
+	std::vector<vec2> path;
+	MoveOneTile* child;
+
+	bool is_valid_tile(vec2 coord) {
+		return WorldSystem::is_within_bounds(coord) && WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(coord));
+	}
+
+public:
+	MoveToRandomTile(): child(nullptr) {
+	}
+
+	void init(entt::entity e) override {
+		vec2 current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
+		bool is_valid = false;
+		while (!is_valid) {
+			vec2 new_coord = { rand() % game_state.level.map_tiles.size(), rand() % game_state.level.map_tiles.size()};
+			if (is_valid_tile(new_coord)) {
+				target_tile = new_coord;
+				is_valid = true;
+			}
+		}
+		AStarSearch search;
+		path = search.get_path(target_tile, current_tile);
+	}
+
+	BTState process(entt::entity e) override {
+		vec2 current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
+		Motion& motion = registry.get<Motion>(e);
+		BTState child_state = child ? child->process(e) : BTState::Success;
+		if (child_state == BTState::Success && current_tile != target_tile && path.size() != 0) {
+			vec2 next_tile = path.back();
+			if (next_tile == current_tile) {
+				path.pop_back();
+				next_tile = path.back();
+			}
+			path.pop_back();
+			vec2 diff = next_tile - current_tile;
+			if (!child) {
+				child = new MoveOneTile(Direction::UP);
+			}
+			if (diff == vec2{ 1, 0 }) {
+				child->update_dir(Direction::RIGHT);
+				child->init(e);
+			}
+			else if (diff == vec2{ -1, 0 }) {
+				child->update_dir(Direction::LEFT);
+				child->init(e);
+			}
+			else if (diff == vec2{ 0, 1 }) {
+				child->update_dir(Direction::DOWN);
+				child->init(e);
+			}
+			else if (diff == vec2{ 0, -1 }) {
+				child->update_dir(Direction::UP);
+				child->init(e);
+			}
+		}
+		if (current_tile == target_tile && child_state == BTState::Success) {
+			delete child;
+			child = nullptr;
+			return BTState::Success;
+		}
+		if (child_state == BTState::Failure || (child_state == BTState::Success && current_tile != target_tile && path.size() == 0)) {
+			if (state != ProgramState::PAUSED) {
+				delete child;
+				child = nullptr;
+				return BTState::Failure;
+			}
 		}
 		return BTState::Running;
 	}
@@ -460,6 +645,7 @@ private:
 	MoveOneTile move_down{ Direction::DOWN };
 	MoveOneTile move_left{ Direction::LEFT };
 	MoveOneTile move_right{ Direction::RIGHT };
+	MoveToRandomTile* move_random;
 	BTRandomSelector* select_random_dir;
 	Escape* escape;
 	CheckIsClose* check_dist;
@@ -470,20 +656,6 @@ private:
 	bool is_init;
 
 public:
-	//ChickAI(const entt::entity e): e(e),
-	//	escape(),
-	//	move_up(MoveOneTile::Direction::UP), 
-	//	move_down(MoveOneTile::Direction::DOWN),
-	//	move_left(MoveOneTile::Direction::LEFT),
-	//	move_right(MoveOneTile::Direction::RIGHT),
-	//	select_random_dir(vector<BTNode*>{&move_up, &move_down, &move_left, &move_right}),
-	//	check_dist(),
-	//	roam(vector<BTNode*>{&check_dist, &select_random_dir}),
-	//	roam_or_escape(vector<BTNode*>{&roam, & escape}),
-	//	root(&roam_or_escape),
-	//	is_init(false) {
-	//}
-
 	ChickAI(const entt::entity e) : e(e), is_init(false) {
 	}
 
@@ -495,7 +667,8 @@ public:
 			roam = new BTSequence{ std::vector<BTNode*>{select_random_dir} };
 			//escape = new Escape();
 			//roam_or_escape = new BTSelector{ vector<BTNode*>{ roam,escape };
-			root = new BTRepeat(roam);
+			move_random = new MoveToRandomTile();
+			root = new BTRepeat(move_random);
 			root->init(e);
 			is_init = true;
 		}
@@ -509,6 +682,7 @@ public:
 		delete check_dist;
 		//delete escape;
 		delete roam;
+		delete move_random;
 	}
 };
 
