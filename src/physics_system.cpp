@@ -144,11 +144,8 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	for (entt::entity entity : registry.view<Motion>())
 	{
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		vec2 nextpos;
 		Motion& motion = registry.get<Motion>(entity);
-
-		if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
-		else { nextpos = motion.position; }
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
 		if (!registry.view<Player>().contains(entity)) {
 			if (player_is_manually_moving || do_pathfinding_movement) {
@@ -158,10 +155,8 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		else {
 			setMotionPosition(motion, nextpos);
 		}
-
-
 	}
-	
+
 	// Move enemy
 	// If player is moving, move enemies too
 	//if (player_is_manually_moving || do_pathfinding_movement) {
@@ -174,33 +169,57 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	Motion& player_motion = registry.get<Motion>(player);
 
 	// Deal with spell speed while moving
-	if (spellbook[1]["active"] == "true") {
+	if (spellbook[1]["active"] == "true" || registry.view<SpeedBoostTimer>().contains(player)) {
 		if (player_motion.velocity.x > 0) {
-			player_motion.velocity.x = 800.f;
+			player_motion.velocity.x = 600.f * global_scaling_vector.x;
 		}
 		else if (player_motion.velocity.x < 0) {
-			player_motion.velocity.x = -800.f;
+			player_motion.velocity.x = -600.f * global_scaling_vector.x;
 		}
 		if (player_motion.velocity.y > 0) {
-			player_motion.velocity.y = 800.f;
+			player_motion.velocity.y = 600.f * global_scaling_vector.y;
 		}
 		else if (player_motion.velocity.y < 0) {
-			player_motion.velocity.y = -800.f;
+			player_motion.velocity.y = -600.f * global_scaling_vector.y;
 		}
 	}
 
 	// Check for collisions between all moving entities
+	auto items_registry = registry.view<Item>();
 	for(entt::entity entity : registry.view<Motion>())
 	{
 		Motion& motion = registry.get<Motion>(entity);
 		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
-			if (entity == other)
+			bool other_is_item = items_registry.contains(other);
+			bool ent_is_item = items_registry.contains(entity);
+
+			// Allow enemies to pass over items
+			if (entity == other || (ent_is_item && other != player) || (other_is_item && entity != player))
 				continue;
 
 			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
+				// If collision involves an item and the player
+				if (other_is_item || ent_is_item) {
+					// Add item to inventory, prompt text from tips
+					// remove item from world
+					if (ent_is_item) {
+						current_item = items_registry.get<Item>(entity);
+						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						registry.destroy(entity);
+					} else {
+						current_item = items_registry.get<Item>(other);
+						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						registry.destroy(other);
+					}
+					// Start timer for 3 second text tip
+					registry.emplace_or_replace<TextTimer>(player);
+					tips.picked_up_item = 1;
+					tips.basic_help = 0;
+					return;
+				}
 				impulseCollisionResolution(motion, motion_other);
 				registry.emplace_or_replace<Collision>(entity, other);
 

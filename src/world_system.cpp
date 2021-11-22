@@ -45,7 +45,17 @@ bool active_spell = false;
 float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
-
+// Item-related
+std::vector<Item> inventory;
+Item current_item;
+std::map<std::string, ItemType> item_to_enum = {
+	{"wall breaker", ItemType::WALL_BREAKER},
+	{"extra life", ItemType::EXTRA_LIFE},
+	{"teleporter", ItemType::TELEPORT},
+	{"speed boost", ItemType::SPEED_BOOST},
+};
+bool wall_breaker_active = false;
+ItemType most_recent_used_item = ItemType::NONE;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -86,6 +96,7 @@ bool player_swing = false;
 
 // For enemy moving when player moves
 bool player_is_manually_moving = false;
+static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -372,18 +383,77 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
+	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) {
+		player_vel = default_player_vel * 2.f;
+	}
+
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
 
-	// process player flash timer
+	// progress timers
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
+	// TODO: abstract out helper given a component to advance timers
+	if (!registry.view<TextTimer>().empty()) {
+		TextTimer &counter = registry.get<TextTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<TextTimer>(player_minotaur);
+			most_recent_used_item = ItemType::NONE;
+		}
+	}
+
+	if (!registry.view<SpeedBoostTimer>().empty()) {
+		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<SpeedBoostTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<WallBreakerTimer>().empty()) {
+		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<WallBreakerTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<AnimationTimer>().empty()) {
+		AnimationTimer& counter = registry.get<AnimationTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<AnimationTimer>(player_minotaur);
+			tips.used_item = 0;
+		}
+	}
+
+	// Temporary for crossplay playability: Handle enemy respawn
+	// Problems: spawns in walls, spawns on player
+	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
+
+	//	entt::entity entity;
+	//	int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
+	//	vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
+	//	position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
+	//	spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
+
+	//	entity = createSpike(renderer, position);
+
+	//	// TODO this should be controlled by AI, not an initial velocity
+	//	Motion& motion = registry.get<Motion>(entity);
+	//	motion.mass = 200;
+	//	motion.coeff_rest = 0.9f;
+	//	motion.velocity = vec2(-100.f, 0.f);
+	//}
+
 	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+	// check if player has won
 	if (tile == MapTile::EXIT) {
 
 		// player has found the exit!
@@ -395,7 +465,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 			// For cutscenes
 			num_times_exit_reached++;
-			
+
 			if (num_times_exit_reached == 1) {
 				cutscene_selection = 10;
 				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
@@ -435,7 +505,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	// ************************************ Cutscenes ************************************************
-	// This is pretty much a hack to get around some issues with drawing images 
+	// This is pretty much a hack to get around some issues with drawing images
 	// Because of bufferswap in nuklear, we have to make sure two successive
 	// frames have the speaker drawn, hence the flags. (Three successive frames
 	// are required on load to give the maze walls time to draw/be colored in,
@@ -455,18 +525,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		cutscene_1_frame_2 = true;
 		cutscene_1_frame_1 = false;
 
-		// ***** Set up the variables ***** 
+		// ***** Set up the variables *****
 		entt::entity player						= registry.view<Player>().begin()[0];
 		Motion& motion							= registry.get<Motion>(player);
 
 		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
 
-		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2]; 
-		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5]; 
-		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4]; 
-		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3]; 
-		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1]; 
-		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0]; 
+		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1];
+		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0];
 
 		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
 		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
@@ -517,7 +587,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		if		(cutscene_selection == 102) { Mix_PlayChannel(-1, drone_were_it_only_so_easy_sound, 0); }
 		else if (cutscene_selection == 10)  { Mix_PlayChannel(-1, drone_stupid_boy_sound, 0); }
 		else								{ Mix_PlayChannel(-1, horse_snort_sound, 0); }
-		
+
 		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
 	}
@@ -770,12 +840,9 @@ void WorldSystem::restart_game() {
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {
-		process_entity_node(enemies, [this](std::string item_type, vec2 position) {
-			if (item_type == "extra_lives") {
-				// TODO create item here
-			}
-			else if (item_type == "wall_breaker") {
-				// TODO create item here
+		process_entity_node(items, [this](std::string item_type, vec2 position) {
+			if (item_to_enum[item_type]) {
+				createItem(renderer, position, item_type);
 			}
 			else {
 				assert(false); // unsupported item
@@ -789,13 +856,15 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+	current_item = Item();
+	tips = Help();
 
 	// reset player flash timer
 	flash_timer = 1000.f;
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-	
+
 	// Create cutscene entities
 	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
 	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
@@ -807,6 +876,7 @@ void WorldSystem::restart_game() {
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
 	player_is_manually_moving = false;
+	pressed_keys.clear();
 }
 
 // Compute collisions between entities
@@ -817,7 +887,7 @@ void WorldSystem::handle_collisions() {
 		// The entity and its collider
 		entt::entity entity_other = collisions.get<Collision>(entity).other;
 
-		// For now, we are only interested in collisions that involve the salmon
+		// For now, we are only interested in collisions that involve the minotaur
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
@@ -856,10 +926,52 @@ bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
 
+// Item functions
+void WorldSystem::use_wall_breaker(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
+	registry.emplace_or_replace<WallBreakerTimer>(player);
+}
+
+void WorldSystem::add_extra_life(Item& item){
+	// TODO: pending addition of life system
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used extra life item!" << std::endl;
+
+}
+
+void WorldSystem::use_teleport(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+
+	std::vector<vec2> teleportable_tiles;
+	auto maze = game_state.level.map_tiles;
+	for (uint i = 0; i < maze.size(); i++) {
+		auto row = maze[i];
+		for (uint j = 0; j < row.size(); j++) {
+			if (row[j] == MapTile::FREE_SPACE) {
+				// inverted coordinates
+				teleportable_tiles.push_back({ j, i });
+			}
+		}
+	}
+
+	int pos_ind = std::uniform_int_distribution<int>(0, teleportable_tiles.size() - 1)(rng);
+	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
+	position += vec2(map_scale.x / 2, map_scale.y / 2);
+	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
+	player_motion.position = position;
+}
+
+void WorldSystem::use_speed_boost(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used speed boost item!" << std::endl;
+	registry.emplace_or_replace<SpeedBoostTimer>(player);
+}
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
-	static std::map<int, bool> pressed_keys = std::map<int, bool>();
+
 
 	// Menu Interaction
 	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
@@ -917,9 +1029,56 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				if (pressed_keys.size() == 0) { 
-					player_is_manually_moving = false; 
+				if (pressed_keys.size() == 0) {
+					player_is_manually_moving = false;
 				}
+			}
+
+			//if (action == GLFW_RELEASE &&
+			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
+			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A ||
+			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
+			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
+			//	player_is_manually_moving = false;
+			//}
+
+			// Use Item
+			if (key == GLFW_KEY_I) {
+				if (!current_item.name.empty() && action == GLFW_PRESS) {
+					most_recent_used_item = item_to_enum[current_item.name];
+					switch (most_recent_used_item) {
+					case ItemType::WALL_BREAKER:
+						use_wall_breaker(current_item);
+						break;
+					case ItemType::EXTRA_LIFE:
+						add_extra_life(current_item);
+						break;
+					case ItemType::TELEPORT:
+						use_teleport(current_item);
+						break;
+					case ItemType::SPEED_BOOST:
+						use_speed_boost(current_item);
+						break;
+					default:
+						// unsupported item or NONE
+						assert(false);
+						break;
+					}
+					tips.basic_help = 0;
+					tips.picked_up_item = 0;
+					tips.item_info = 0;
+					tips.used_item = 1;
+					registry.emplace_or_replace<TextTimer>(player);
+					registry.emplace_or_replace<AnimationTimer>(player);
+					current_item = Item();
+				}
+			}
+
+			// Tell user about the item they are holding (toggle with T if they are holding an item)
+			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
+				tips.basic_help = 0;
+				tips.picked_up_item = 0;
+				tips.item_info = !tips.item_info;
 			}
 
 			// Pause Game
@@ -928,14 +1087,16 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 
 			// Help Mode
-			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				if (key == GLFW_KEY_H) { tips.in_help_mode = 1; }
-				else { tips.in_help_mode = 0; }
+			if (action == GLFW_PRESS) {
+				// toggle H for basic help mode
+				if (key == GLFW_KEY_H) {
+					tips.basic_help = !tips.basic_help;
+				}
 			}
 
 			// Toggle cutscene rtx
 			if (action == GLFW_RELEASE) {
-				if (key == GLFW_KEY_R) { 
+				if (key == GLFW_KEY_R) {
 					rtx_on = !rtx_on;
 					char* status;
 
@@ -1004,8 +1165,15 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 					do_generate_path = true;
 				}
 
-				// Did not click a traversable node...
-				else { std::cout << "Clicked on a wall!" << std::endl; }
+				// Clicked a wall
+				else {
+					std::cout << "Clicked a wall!" << std::endl;
+					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
+						// do attack or stab animation, maybe turn red?
+						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
+						registry.erase<WallBreakerTimer>(player);
+					}
+				}
 
 			}
 
