@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 
 // myLibs
@@ -102,13 +103,21 @@ Mouse_spell mouse_spell;
 //Debugging
 vec2 debug_pos = { 0,0 };
 
+std::string formatTime(float game_time_ms) {
+	float seconds = game_time_ms / 1000.f;
+	int minutes = floor(seconds) / 60;
+	seconds = seconds - minutes * 60;
+	char buf[10] = {0};
+	sprintf_s(buf, 10, "%02d:%06.3f", minutes, seconds);
+
+	return std::string(buf);
+}
 
 // Create the world
 WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
-
 }
 
 WorldSystem::~WorldSystem() {
@@ -246,14 +255,16 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
+	game_time_ms += elapsed_ms_since_last_update;
+
 	// Get the screen dimensions
 	int screen_width, screen_height;
 	glfwGetFramebufferSize(window, &screen_width, &screen_height);
 
 	// Updating window title with points
 	std::stringstream title_ss;
-	// TODO: add timer
-	title_ss << "Elapsed time: " << points;
+
+	title_ss << "Elapsed time: " << formatTime(game_time_ms);
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// setting coordinates of camera
@@ -355,6 +366,41 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			Mix_PlayChannel(-1, tada_sound, 0);
 			initial_game = false;
 			do_pathfinding_movement = false;
+
+			double finish_time = game_time_ms;
+			std::cout << "Finished game in " << formatTime(finish_time) << "!" << std::endl;
+
+			// leaderboard
+			std::string path = data_path() + "/leaderboard.yaml";
+			std::ifstream file(path);
+			if (!file.good()) {
+				std::ofstream outfile(path);
+				outfile.close();
+			}
+			file.close();
+
+			YAML::Node leaderboard = YAML::LoadFile(path);
+
+			std::vector<double> leaderboard_map = {};
+			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
+
+			leaderboard_map.push_back(finish_time);
+			std::sort(leaderboard_map.begin(), leaderboard_map.end());
+
+			std::cout << "LEADERBOARD:" << std::endl;
+			for (int i = 0; i < leaderboard_map.size(); i++) {
+				std::cout << "\t" << i + 1 << ". " << formatTime(leaderboard_map[i]);
+				if (leaderboard_map[i] == finish_time) std::cout << " <-- YOUR POSITION!";
+				std::cout << std::endl;
+			}
+
+			leaderboard[game_state.level_id] = leaderboard_map;
+
+			std::ofstream outfile(path);
+			YAML::Emitter out;
+			out << leaderboard;
+			outfile << out.c_str();
+			outfile.close();
 		}
 
 		// if (registry.view<EndGame>().size() == 0) {
@@ -635,9 +681,7 @@ void WorldSystem::restart_game() {
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-
-
-
+	game_time_ms = 0.f;
 }
 
 // Compute collisions between entities

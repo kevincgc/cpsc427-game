@@ -30,7 +30,6 @@ public:
 	// Creates a window
 	GLFWwindow* create_window();
 
-
 	// camera
 	static vec2 camera;
 
@@ -62,7 +61,6 @@ public:
 
 private:
 
-
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
@@ -73,6 +71,9 @@ private:
 
 	// Number of fish eaten by the salmon, displayed in the window title
 	unsigned int points;
+
+	// game time
+	double game_time_ms;
 
 	// Game state
 	RenderSystem* renderer;
