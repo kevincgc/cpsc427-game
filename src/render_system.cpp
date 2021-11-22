@@ -314,7 +314,7 @@ void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, c
 
 
 	// get program shader
-	const GLuint program = (GLuint)effects[(int)EFFECT_ASSET_ID::TEXT];
+	const GLuint program = (GLuint) effects[(int) EFFECT_ASSET_ID::TEXT];
 
 	//single texture object to render all the glyphs
 	GLuint tex;
