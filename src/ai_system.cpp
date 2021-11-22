@@ -299,53 +299,55 @@ void AISystem::generate_path(vec2 starting_map_pos, vec2 ending_map_pos) {
 					std::cout << "    [" << adj_node.x << ", " << adj_node.y << "]" << std::endl;
 				}
 			}
+			// if list of adjacent nodes is not empty
+			if (adjacent_nodes.size() > 0) {
+				// if node is not in queue and not in visited.
+				if (std::find(queue.begin(), queue.end(), n) == queue.end() && std::find(visited.begin(), visited.end(), n) == visited.end()) {
+					if (ai_debug) { std::cout << "Node is not in queue and not in visited" << std::endl; }
+					for (auto adj_node : adjacent_nodes) {
 
-			// if node is not in queue and not in visited.
-			if (std::find(queue.begin(), queue.end(), n) == queue.end() && std::find(visited.begin(), visited.end(), n) == visited.end()) {
-				if (ai_debug) { std::cout << "Node is not in queue and not in visited" << std::endl; }
-				for (auto adj_node : adjacent_nodes) {
+						// Debug
+						if (ai_debug) { std::cout << "Looking at node... [" << adj_node.x << ", " << adj_node.y << "]" << std::endl; }
 
-					// Debug
-					if (ai_debug) { std::cout << "Looking at node... [" << adj_node.x << ", " << adj_node.y << "]" << std::endl; }
+						// Set the parent node of the adjacent node to this current node
+						parent.push_back({ adj_node, n });
 
-					// Set the parent node of the adjacent node to this current node
-					parent.push_back({ adj_node, n });
+						// Debug
+						if (ai_debug) {
+							std::cout << "pushed adj node: [" << adj_node.x << ", " << adj_node.y << "] to parent map" << std::endl;
+							std::cout << "parent map now looks like this:" << std::endl;
+							for (auto pair : parent) {
+								std::cout << "    [" << pair[0].x << ", " << pair[0].y << "] : [" << pair[1].x << ", " << pair[1].y << "]" << std::endl;
+							}
+						}
 
-					// Debug
-					if (ai_debug) {
-						std::cout << "pushed adj node: [" << adj_node.x << ", " << adj_node.y << "] to parent map" << std::endl;
-						std::cout << "parent map now looks like this:" << std::endl;
-						for (auto pair : parent) {
-							std::cout << "    [" << pair[0].x << ", " << pair[0].y << "] : [" << pair[1].x << ", " << pair[1].y << "]" << std::endl;
+						// Add the adjacent node to the queue to search later
+						queue.push_back(adj_node);
+
+						// Debug
+						if (ai_debug) {
+							std::cout << "pushed adj node: [" << adj_node.x << ", " << adj_node.y << "] to queue to search later" << std::endl;
+							std::cout << "queue now looks like this:" << std::endl;
+							for (auto node : queue) {
+								std::cout << "    [" << node.x << ", " << node.y << "]" << std::endl;
+							}
 						}
 					}
 
-					// Add the adjacent node to the queue to search later
-					queue.push_back(adj_node);
+					// Add the current node to the visited list
+					visited.push_back(n);
 
 					// Debug
 					if (ai_debug) {
-						std::cout << "pushed adj node: [" << adj_node.x << ", " << adj_node.y << "] to queue to search later" << std::endl;
-						std::cout << "queue now looks like this:" << std::endl;
-						for (auto node : queue) {
+						std::cout << "visited now looks like this " << std::endl;
+						for (auto node : visited) {
 							std::cout << "    [" << node.x << ", " << node.y << "]" << std::endl;
 						}
 					}
 				}
-
-				// Add the current node to the visited list
-				visited.push_back(n);
-
-				// Debug
-				if (ai_debug) {
-					std::cout << "visited now looks like this " << std::endl;
-					for (auto node : visited) {
-						std::cout << "    [" << node.x << ", " << node.y << "]" << std::endl;
-					}
+				else {
+					if (ai_debug) { std::cout << "Already visited or is in queue" << std::endl; }
 				}
-			}
-			else {
-				if (ai_debug) { std::cout << "Already visited or is in queue" << std::endl; }
 			}
 		}
 	}
@@ -396,33 +398,40 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	// Assuming map is square
 	size_t max_size = game_state.level.map_tiles.size();
 
-	// For now, assuming map_tile == 0 is the only traversable tile
-	// If adjacent node is within bounds and map_tile == 0, add to adjacency list.
-	// Check right
-	if (root_node.x + 1 <= max_size) {
-		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x + 1])) {
-			adj_nodes.push_back({ root_node.x + 1, root_node.y });
-		}
-	}
-	// Check down
-	if (root_node.y + 1 <= max_size) {
-		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y + 1][root_node.x])) {
-			adj_nodes.push_back({ root_node.x,root_node.y + 1 });
-		}
-	}
-	// Check left
-	if (root_node.x - 1 >= 0) {
-		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x - 1])) {
-			adj_nodes.push_back({ root_node.x - 1, root_node.y });
-		}
-	}
-	// Check up
-	if (root_node.y - 1 >= 0) {
-		if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y - 1][root_node.x])) {
-			adj_nodes.push_back({ root_node.x, root_node.y - 1 });
-		}
-	}
+	// Try-catch. If clicked out of bounds, causing .map_tiles[][] to be out of vector bounds, will return empty {}.
+	try {
 
+		// For now, assuming map_tile == 0 is the only traversable tile
+		// If adjacent node is within bounds and map_tile == 0, add to adjacency list.
+		// Check right
+		if (root_node.x + 1 <= max_size) {
+			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles.at(root_node.y).at(root_node.x + 1))) {
+				adj_nodes.push_back({ root_node.x + 1, root_node.y });
+			}
+		}
+		// Check down
+		if (root_node.y + 1 <= max_size) {
+			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y + 1][root_node.x])) {
+				adj_nodes.push_back({ root_node.x,root_node.y + 1 });
+			}
+		}
+		// Check left
+		if (root_node.x - 1 >= 0) {
+			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x - 1])) {
+				adj_nodes.push_back({ root_node.x - 1, root_node.y });
+			}
+		}
+		// Check up
+		if (root_node.y - 1 >= 0) {
+			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y - 1][root_node.x])) {
+				adj_nodes.push_back({ root_node.x, root_node.y - 1 });
+			}
+		}
+	}
+	catch (...) {
+		std::cout << "Must click in maze bounds for pathfinding!" << std::endl;
+		do_generate_path = false;
+	}
 
 	return adj_nodes;
 }
