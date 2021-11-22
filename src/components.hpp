@@ -11,14 +11,12 @@ struct Player
 
 };
 
-// Turtles and pebbles have a hard shell
-struct HardShell
+struct Enemy
 {
 
 };
 
-// Fish and Salmon have a soft shell
-struct SoftShell
+struct Friendly
 {
 
 };
@@ -42,21 +40,26 @@ struct Collision
 };
 
 // map tiles
-/**
- * This map scale can be used as such:
- *	- to transform map coordinates to pixels do: {map_scale * map_coords.x, map_scale * map_coords.y}
- */
-const float map_scale = 150.0;
 enum MapTile {
 	FREE_SPACE = 0,
 	BREAKABLE_WALL,
-	UNBREAKABLE_WALL
+	UNBREAKABLE_WALL,
+	ENTRANCE,
+	EXIT
+};
+
+// Level State
+struct LoadedLevel
+{
+	std::vector<std::vector<MapTile>> map_tiles;
+	vec2 start_position;
 };
 
 // Global Game State
 struct GameState
 {
-	std::vector<std::vector<MapTile>> map_tiles;
+	std::string level_id = "procedural1";
+	LoadedLevel level;
 };
 extern GameState game_state;
 
@@ -72,6 +75,12 @@ struct ScreenState
 {
 	float darken_screen_factor = -1;
 };
+
+// Data structure for togglin help mode
+struct Help {
+	bool in_help_mode = 0;
+};
+extern Help tips;
 
 // A struct to refer to debugging graphics in the ECS
 struct DebugComponent
@@ -107,6 +116,11 @@ struct Colour
 struct Flash
 {
 	// flash the sprite
+};
+
+struct Attack
+{
+	// if the entity is in attack mode
 };
 
 // New Components for project
@@ -164,11 +178,10 @@ enum class TEXTURE_ASSET_ID {
 	// WALL_T_RIGHT,
 	// WALL_CROSS,
 	WALL = 0,
-
-	FISH,
-	TURTLE,
+	FREESPACE,
+	SPIKE,
+	DRONE,
 	MINOTAUR,
-
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -176,8 +189,8 @@ const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 enum class EFFECT_ASSET_ID {
 	COLOURED = 0,
 	PEBBLE = COLOURED + 1,
-	SALMON = PEBBLE + 1,
-	TEXTURED = SALMON + 1,
+	// SALMON = PEBBLE + 1, // remove salmon
+	TEXTURED = PEBBLE + 1,
 	WATER = TEXTURED + 1,
 	MINOTAUR = WATER + 1,
 	ENEMY = MINOTAUR + 1,
@@ -206,4 +219,3 @@ struct RenderRequest {
 	EFFECT_ASSET_ID used_effect = EFFECT_ASSET_ID::EFFECT_COUNT;
 	GEOMETRY_BUFFER_ID used_geometry = GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 };
-
