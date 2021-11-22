@@ -426,6 +426,7 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 	}
 	catch (...) {
 		std::cout << "Must click in maze bounds for pathfinding!" << std::endl;
+		do_generate_path = false;
 	}
 
 	return adj_nodes;
