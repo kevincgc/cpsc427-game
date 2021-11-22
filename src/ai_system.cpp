@@ -31,8 +31,12 @@ void AISystem::step()
 		Motion& entity_motion = registry.get<Motion>(entity);
 		vec2 entity_velocity = entity_motion.velocity;
 
+		if (registry.view<Item>().contains(entity)) {
+			continue;
+		}
+
 		// If it's an enemy entity...
-		if ( entity != player)
+		if (entity != player)
 		{
 
 			// =========== Swinging Attack ===========

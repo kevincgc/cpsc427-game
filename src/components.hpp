@@ -48,6 +48,13 @@ enum MapTile {
 	EXIT
 };
 
+enum ItemType {
+	WALL_BREAKER = 1,
+	EXTRA_LIFE,
+	TELEPORT,
+	TIME_SLOW
+};
+
 // Level State
 struct LoadedLevel
 {
@@ -88,10 +95,15 @@ struct DebugComponent
 	// Note, an empty struct has size 1
 };
 
-// A timer that will be associated to dying salmon
+// A timer that will be associated to dying minotaur
 struct DeathTimer
 {
 	float counter_ms = 1000;
+};
+
+struct WallBreakerTimer
+{
+	float counter_ms = 20000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
@@ -126,7 +138,8 @@ struct Attack
 // New Components for project
 struct Item
 {
-	int id = 0;
+	std::string name;
+	float duration_ms;
 };
 
 // Mesh datastructure for storing vertex and index buffers
@@ -182,6 +195,10 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
+	WALL_BREAKER,
+	EXTRA_LIFE,
+	TELEPORT,
+	TIME_SLOW,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

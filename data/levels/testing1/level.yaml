@@ -3,3 +3,5 @@ type: premade
 enemies:
     spikes: 1
     drones: [1, 2]
+items:
+    wall_breaker: 1

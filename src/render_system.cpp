@@ -111,6 +111,10 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint flash_uloc = glGetUniformLocation(program, "flash");
 		glUniform1f(flash_uloc, flash);
 
+		bool used_wall_breaker = registry.view<WallBreakerTimer>().contains(entity);
+		GLuint wall_breaker_uloc = glGetUniformLocation(program, "used_wall_breaker");
+		glUniform1f(wall_breaker_uloc, used_wall_breaker);
+
 		// pass gesture to the shader
 		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
 		int player_gesture = 0;

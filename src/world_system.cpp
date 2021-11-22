@@ -44,6 +44,17 @@ bool active_spell = false;
 float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
+// Item-related
+std::vector<Item> inventory;
+Item current_item;
+std::map<std::string, ItemType> item_to_enum = {
+	{"wall_breaker", ItemType::WALL_BREAKER},
+	{"extra_life", ItemType::EXTRA_LIFE},
+	{"teleport", ItemType::TELEPORT},
+	{"time_slow", ItemType::TIME_SLOW},
+};
+bool wall_breaker_active = false;
+
 // For pathfinding feature
 bool do_generate_path = false;
 vec2 path_target_map_pos;
@@ -310,6 +321,55 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
+	for (entt::entity entity : registry.view<WallBreakerTimer>()) {
+		// progress timer
+		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(entity);
+		std::cout << "Counter: " << counter.counter_ms << std::endl;
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<WallBreakerTimer>(player_minotaur);
+		}
+	}
+
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+
+	// TODO: delete if not using attack motion
+	// If wall breaker has been used, and a breakable wall is in range while attacking, destroy the wall (convert to free space)
+	//if (registry.view<WallBreakerTimer>().contains(player_minotaur) && player_swing) {
+	//	float swing_threshold = 100.f * global_scaling_vector.x; // Wall has to  be close enough to register as a hit
+	//	float vertical_threshold = 60.f * global_scaling_vector.y;  // Wall can't be too far above or below player to register as a hit
+	//	//&& within_threshold(player, entity, swing_threshold) && abs(entity_motion.position.y - motion.position.y) < vertical_threshold) 
+	//	vec2 swing_position;
+	//	if (player_motion.velocity.x >= 0) {
+	//		swing_position = {player_motion.position.x + swing_threshold, player_motion.position.y}
+	//	}
+	//	const vec2 test_point_x = WorldSystem::position_to_map_coords({ nextpos.x + corner.x, motion.position.y + corner.y });
+	//	const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
+	//	// If enemy is to the right of the player and the player is facing right
+	//	if (entity_motion.position.x > motion.position.x && motion.velocity.x >= 0) {
+	//		registry.destroy(entity);
+	//		break;
+	//	}
+
+	//	// If enemy is to the left of the player and the player is facing left
+	//	// Warning: Right now the render system renders the sprite as facing left if velocity.x < 0
+	//	else if (entity_motion.position.x < motion.position.x && motion.velocity.x < 0) {
+	//		registry.destroy(entity);
+	//		break;
+	//	}
+
+	//	else if (entity_motion.position.y < motion.position.y && motion.velocity.y < 0) {
+	//		registry.destroy(entity);
+	//		break;
+	//	}
+
+	//	else if (entity_motion.position.y > motion.position.y && motion.velocity.y > 0) {
+	//		registry.destroy(entity);
+	//		break;
+	//	}
+	//}
+
 	// Temporary for crossplay playability: Handle enemy respawn
 	// Problems: spawns in walls, spawns on player
 	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
@@ -329,8 +389,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	motion.velocity = vec2(-100.f, 0.f);
 	//}
 	// check if player has won
-	Motion& player_motion = registry.get<Motion>(player_minotaur);
-	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 	if (tile == MapTile::EXIT) {
 		// player has found the exit!
 		Mix_PlayChannel(-1, tada_sound, 0);
@@ -581,12 +639,9 @@ void WorldSystem::restart_game() {
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {
-		process_entity_node(enemies, [this](std::string item_type, vec2 position) {
-			if (item_type == "extra_lives") {
-				// TODO create item here
-			}
-			else if (item_type == "wall_breaker") {
-				// TODO create item here
+		process_entity_node(items, [this](std::string item_type, vec2 position) {
+			if (item_to_enum[item_type]) {
+				createItem(renderer, position, item_type);
 			}
 			else {
 				assert(false); // unsupported item
@@ -600,6 +655,7 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+	current_item = Item();
 
 	// reset player flash timer
 	flash_timer = 1000.f;
@@ -619,7 +675,7 @@ void WorldSystem::handle_collisions() {
 		// The entity and its collider
 		entt::entity entity_other = collisions.get<Collision>(entity).other;
 
-		// For now, we are only interested in collisions that involve the salmon
+		// For now, we are only interested in collisions that involve the minotaur
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
@@ -658,6 +714,52 @@ void WorldSystem::handle_collisions() {
 // Should the game be over ?
 bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
+}
+
+// Item functions
+void WorldSystem::use_wall_breaker(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
+	registry.emplace<WallBreakerTimer>(player);
+	//Colour& c = registry.get<Colour>(player);
+	//c.colour = vec3(0.f, 0.8f, 0.4f);
+	// consider starting a flashing or changing colour until timer is over
+	current_item = Item();
+}
+
+void WorldSystem::add_extra_life(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used extra life item!" << std::endl;
+	current_item = Item();
+
+}
+
+void WorldSystem::use_teleport(Item& item){
+	std::vector<vec2> teleportable_tiles;
+	auto maze = game_state.level.map_tiles;
+	for (uint i = 0; i < maze.size(); i++) {
+		auto row = maze[i];
+		for (uint j = 0; j < row.size(); j++) {
+			if (row[j] == MapTile::FREE_SPACE) {
+				// inverted coordinates
+				teleportable_tiles.push_back({ j, i });
+			}
+		}
+	}
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+	int pos_ind = std::uniform_int_distribution<int>(0, teleportable_tiles.size() - 1)(rng);
+	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
+	position += vec2(map_scale.x / 2, map_scale.y / 2);
+	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
+	player_motion.position = position;
+	current_item = Item();
+}
+
+void WorldSystem::use_time_slow(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used time slow item!" << std::endl;
+	current_item = Item();
 }
 
 // On key callback
@@ -731,6 +833,28 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			//	player_is_manually_moving = false;
 			//}
 
+			// Use Item
+			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_I) {
+				switch (item_to_enum[current_item.name]) {
+					case ItemType::WALL_BREAKER:
+						use_wall_breaker(current_item);
+						break;
+					case ItemType::EXTRA_LIFE:
+						add_extra_life(current_item);
+						break;
+					case ItemType::TELEPORT:
+						use_teleport(current_item);
+						break;
+					case ItemType::TIME_SLOW:
+						use_time_slow(current_item);
+						break;
+					default:
+						// unsupported item
+						assert(false);
+						break;
+				}
+			}
+
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				state = ProgramState::PAUSED;
@@ -800,8 +924,15 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 					do_generate_path = true;
 				}
 
-				// Did not click a traversable node...
-				else { std::cout << "Clicked on a wall!" << std::endl; }
+				// Clicked a wall
+				else { 
+					std::cout << "Clicked a wall!" << std::endl;
+					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
+						// do attack or stab animation, maybe turn red?
+						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
+						registry.erase<WallBreakerTimer>(player);
+					}
+				}
 
 			}
 

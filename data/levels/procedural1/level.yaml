@@ -7,3 +7,8 @@ procedural_options:
 enemies:
     spikes: 2
     drones: 3
+items:
+    wall_breaker: 2
+    extra_life: 1
+    teleport: [1,2]
+    time_slow: 1

@@ -196,17 +196,37 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	}
 
 	// Check for collisions between all moving entities
+	auto items_registry = registry.view<Item>();
 	for(entt::entity entity : registry.view<Motion>())
 	{
 		Motion& motion = registry.get<Motion>(entity);
 		for(entt::entity other : registry.view<Motion>()) // i+1
 		{
-			if (entity == other)
+			bool other_is_item = items_registry.contains(other);
+			bool ent_is_item = items_registry.contains(entity);
+			if (entity == other || (ent_is_item && other != player) || (other_is_item && entity != player))
 				continue;
 
 			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
+
+				// TODO: make dis shit better
+				if (other_is_item || ent_is_item) {
+					// add item to inventory
+					// prompt something.. recognition that item was picked up
+					// remove item from world
+					if (ent_is_item) {
+						current_item = items_registry.get<Item>(entity);
+						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						registry.destroy(entity);
+					} else {
+						current_item = items_registry.get<Item>(other);
+						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						registry.destroy(other);
+					}
+					return;
+				}
 				impulseCollisionResolution(motion, motion_other);
 				registry.emplace_or_replace<Collision>(entity, other);
 
