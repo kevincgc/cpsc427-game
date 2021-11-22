@@ -667,9 +667,7 @@ void WorldSystem::handle_collisions() {
 			if (registry.view<Prey>().contains(entity_other)) {
 				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
 					Prey& p = registry.get<Prey>(*it);
-					printf("%i\n", p.id);
 				}
-				printf("==========================\n");
 				Prey& prey = registry.get<Prey>(entity_other);
 				auto ai_it = chick_ai.begin();
 				for (auto it = chick_ai.begin(); it != chick_ai.end(); it++) {

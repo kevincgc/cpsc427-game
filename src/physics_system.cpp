@@ -207,7 +207,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
-				impulseCollisionResolution(motion, motion_other);
+				if (!((registry.view<Prey>().contains(entity) && other == player) ||
+					(registry.view<Prey>().contains(other) && entity == player))) {
+					impulseCollisionResolution(motion, motion_other);
+				}
 				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
