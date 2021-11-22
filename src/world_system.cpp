@@ -887,6 +887,21 @@ void WorldSystem::restart_game() {
 			});
 	}
 
+	chick_ai.clear();
+	// create prey for this level
+	const YAML::Node prey = level_config["prey"];
+	if (prey) {
+		process_entity_node(prey, [this](std::string prey_type, vec2 position) {
+			if (prey_type == "chick") {
+				createChick(renderer, position);
+			}
+			else {
+				assert(false);
+				return;
+			}
+			});
+	}
+
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {
@@ -965,6 +980,22 @@ void WorldSystem::handle_collisions() {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = false;
 				}
+			}
+			// Checking Player - Prey collisions
+			if (registry.view<Prey>().contains(entity_other)) {
+				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
+					Prey& p = registry.get<Prey>(*it);
+				}
+				Prey& prey = registry.get<Prey>(entity_other);
+				auto ai_it = chick_ai.begin();
+				for (auto it = chick_ai.begin(); it != chick_ai.end(); it++) {
+					if ((*it).get_id() == prey.id) {
+						ai_it = it;
+					}
+				}
+				(*ai_it).clear();
+				chick_ai.erase(ai_it);
+				registry.destroy(entity_other);
 			}
 		}
 	}

@@ -39,6 +39,7 @@ class RenderSystem {
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
+    textures_path("prey.png"),
 		textures_path("hammer.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("heart.png"),
 		textures_path("teleport.png"),  // <div>Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon">berkahicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>

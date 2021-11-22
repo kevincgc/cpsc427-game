@@ -36,7 +36,7 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 	vec2 relative_vel = motion_other.velocity - player_motion.velocity;
 	if (glm::dot(norm, relative_vel) > 0) // don't calculate this more than once
 		return;
-	float coeff_restitution = min(player_motion.coeff_rest, motion_other.coeff_rest);
+	float coeff_restitution = std::min(player_motion.coeff_rest, motion_other.coeff_rest);
 
 	// calculated based on "VelocityA + Impulse(Direction) / MassA - VelocityB + Impulse(Direction) / MassB = -Restitution(VelocityRelativeAtoB) * Direction"
 	float impulse_magnitude = -(coeff_restitution + 1) * glm::dot(norm, relative_vel) / (1 / player_motion.mass + 1 / motion_other.mass);
@@ -221,7 +221,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 					tips.basic_help = 0;
 					return;
 				}
-				impulseCollisionResolution(motion, motion_other);
+        if (!((registry.view<Prey>().contains(entity) && other == player) ||
+					(registry.view<Prey>().contains(other) && entity == player))) {
+					impulseCollisionResolution(motion, motion_other);
+				}
 				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping

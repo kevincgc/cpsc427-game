@@ -4,13 +4,13 @@
 #include <iostream>
 #include <algorithm> // for reversing a vector
 
-
 // Pathfinding Datastructure
 // Hold a vector of coordinates.
 // For example: If starting at [0,1]:
 //   [[0,1], [1,1], [2,1], [3,1]]
 // corresponds to traveling 3 tiles to the right
 std::vector<vec2> path;
+std::vector<ChickAI> chick_ai;
 
 // Variables
 extern bool  do_pathfinding_movement	 = false;
@@ -28,6 +28,8 @@ void AISystem::step()
 	// For each entity
 	for (entt::entity entity : registry.view<Motion>())
 	{
+		if (registry.view<Prey>().contains(entity))
+			continue;
 		Motion& entity_motion = registry.get<Motion>(entity);
 		vec2 entity_velocity = entity_motion.velocity;
 
@@ -161,8 +163,14 @@ void AISystem::step()
 		}
 	}
 
+	for (auto& ai : chick_ai) {
+		ai.step();
+	}
+
 	// ========= Feature: Pathfinding (BFS search and player movement)=========
-	if (do_generate_path) { generate_path(starting_map_pos, ending_map_pos); }
+	if (do_generate_path) { 
+		generate_path(starting_map_pos, ending_map_pos); 
+	}
 
 	if (do_pathfinding_movement) {
 
