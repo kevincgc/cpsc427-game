@@ -150,26 +150,14 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
 		else { nextpos = motion.position; }
 
-		if (player_is_manually_moving || do_pathfinding_movement) {
+		if (!registry.view<Player>().contains(entity)) {
+			if (player_is_manually_moving || do_pathfinding_movement) {
+				setMotionPosition(motion, nextpos);
+			}
+		}
+		else {
 			setMotionPosition(motion, nextpos);
 		}
-
-		//if (!registry.view<Player>().contains(entity)) {
-		//	if (player_is_manually_moving || do_pathfinding_movement) {
-		//		setMotionPosition(motion, nextpos);
-		//	}
-		//}
-		//else {
-		//	setMotionPosition(motion, nextpos);
-		//}
-		//Motion& motion = registry.get<Motion>(entity);
-		//float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		//
-		//vec2 nextpos;
-		//if   (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
-		//else					  { nextpos = motion.position; }
-
-		//setMotionPosition(motion, nextpos);
 
 
 	}

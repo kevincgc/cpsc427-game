@@ -59,6 +59,7 @@ bool do_cutscene_1 = true;
 bool cutscene_1_frame_2 = false;
 bool cutscene_1_frame_1 = false;
 bool cutscene_1_frame_0 = true;
+bool cutscene_reached_exit = false;
 int cutscene_selection = 1; // 1 = game start (see menu.c for more info)
 int cutscene_speaker = 1;
 int num_times_exit_reached = 0;
@@ -326,17 +327,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
 			cutscene_1_frame_0 = true;
-			if (death_count == 2) {
-				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING;
-			}
-			else if (death_count == 4) {
-				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
-			}
-			else {
-				cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
-			}
+
+			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
 			cutscene_selection = 100 + death_count;
-			 state = ProgramState::GAME_OVER_DEAD;
+
+			state = ProgramState::GAME_OVER_DEAD;
+
 			return true;
 		}
 	}
@@ -352,6 +350,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<EndGame>(entity);
+			cutscene_reached_exit = true;
+			cutscene_1_frame_0 = true;
 			state = ProgramState::GAME_OVER_WIN;
 			return true;
 		}
@@ -387,27 +387,34 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (tile == MapTile::EXIT) {
 
 		// player has found the exit!
-		registry.emplace<EndGame>(player_minotaur);
-		state = ProgramState::GAME_OVER_WIN;
-		Mix_PlayChannel(-1, tada_sound, 0);
-		initial_game = false;
-		do_pathfinding_movement = false;
+		if (!registry.view<EndGame>().contains(player_minotaur)) {
+			registry.emplace<EndGame>(player_minotaur);
+			Mix_PlayChannel(-1, tada_sound, 0);
+			initial_game = false;
+			do_pathfinding_movement = false;
 
-		// For cutscenes
-		num_times_exit_reached++;
-		cutscene_1_frame_0 = true;
+			// For cutscenes
+			num_times_exit_reached++;
+			
+			if (num_times_exit_reached == 1) {
+				cutscene_selection = 10;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+			}
+			else if (num_times_exit_reached > 1) {
+				cutscene_selection = 15;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+			}
 
-		if (num_times_exit_reached == 1) {
-			cutscene_selection = 10;
-			cutscene_speaker   = cutscene_speaker::SPEAKER_DRONE;
 		}
-		else if (num_times_exit_reached > 1) {
-			cutscene_selection = 15;
-			cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
-		}
+
+		// **ORIG START**
+		//registry.emplace<EndGame>(player_minotaur);
+		//state = ProgramState::GAME_OVER_WIN;
+		//Mix_PlayChannel(-1, tada_sound, 0);
+		//initial_game = false;
+		//do_pathfinding_movement = false;
+
 		// restart_game();
-
-
 
 		// if (!registry.view<EndGame>().contains(player_minotaur)) {
 		// 	registry.emplace<EndGame>(player_minotaur);
@@ -833,9 +840,6 @@ void WorldSystem::handle_collisions() {
 					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
 					player_is_manually_moving = false;
-
-					// Stop pathfinding movement
-					do_pathfinding_movement = false;
 				}
 			}
 		}
@@ -911,7 +915,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				// For some reason, pressed_keys.size() stays no less than 1 after moving after reset.
 				if (pressed_keys.size() == 0) { 
 					player_is_manually_moving = false; 
 				}

@@ -30,8 +30,7 @@ float scale_x;
 float scale_y;
 
 // Andrew's Variables
-float cutscene_alpha = 255;
-char* cutscene_chosen_text;
+char* cutscene_chosen_text; // Helps determine which of the random dialogues to choose from
 
 char **levels;
 int levels_size;
@@ -327,16 +326,14 @@ void drawCutscene(GLFWwindow* win, int* out)
 			// Reached exit - speaker: drone
 			min_cutscene_selection = 10;
 			max_cutscene_selection = 12;
-			nk_label(ctx, "Daedalus: Oh Son of Minos,",							NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "Did you think Poseidon would appoint any artificer", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "To be your warden?",									NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Daedalus: Oh Son of Minos, suely you held me to greater esteem.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Your revenge upon your father will have to wait...", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 11) {
 			min_cutscene_selection = 10;
 			max_cutscene_selection = 12;
-			nk_label(ctx, "Your revenge upon your father will have to wait, for", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "during your feable attempt to escape my labyrinth", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "I have constructed yet another.",					   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "For I am the greatest artificer there was! During your feeble attempt", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "to escape my labyrinth, I have constructed yet another.", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 12) {
 			min_cutscene_selection = 10;
@@ -348,18 +345,13 @@ void drawCutscene(GLFWwindow* win, int* out)
 		else if (*out == 15) {
 			// Reached exit - speaker: drone
 			min_cutscene_selection = 15;
-			max_cutscene_selection = 17;
-			nk_label(ctx, "Daedalus: NoOoOooOOo!", NK_TEXT_ALIGN_LEFT);
+			max_cutscene_selection = 16;
+			nk_label(ctx, "Daedalus: What?! I haven't finished my next labyrinth!", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 16) {
 			min_cutscene_selection = 15;
-			max_cutscene_selection = 17;
-			nk_label(ctx, "I haven't finished my next labryinth!", NK_TEXT_ALIGN_LEFT);
-		}
-		else if (*out == 17) {
-			min_cutscene_selection = 15;
-			max_cutscene_selection = 17;
-			nk_label(ctx, "Enjoy your victory, Son of Minos, for it will be short lived.", NK_TEXT_ALIGN_LEFT);
+			max_cutscene_selection = 16;
+			nk_label(ctx, "Enjoy your empty victory, Son of Minos, for it will be short lived.", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// ********** Death Dialogue **********
@@ -379,8 +371,8 @@ void drawCutscene(GLFWwindow* win, int* out)
 		else if (*out == 103) {
 			// Third death - speaker: minotaur
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
-			nk_label(ctx, "Minotaur:  I wonder what your son Icarus would think,", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "were he alive to see you driven mad, Daedalus", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Minotaur: I wonder what your son Icarus would think,", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "were he alive to see you in such state, Daedalus.", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 104) {
 			// Fourth death - speaker: drone

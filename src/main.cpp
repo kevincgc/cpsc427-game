@@ -50,10 +50,6 @@ int main()
 	bool has_completed_init = false;
 	auto t = Clock::now();
 
-	// Cutscene
-
-	bool render_once = true;
-
 	while (!world.is_over()) {
 		glfwPollEvents();
 		auto now = Clock::now();
