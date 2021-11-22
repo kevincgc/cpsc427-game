@@ -341,6 +341,22 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
+	for (entt::entity entity : registry.view<EndGame>()) {
+		// progress timer
+		EndGame& counter = registry.get<EndGame>(entity);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		// if (counter.counter_ms < min_counter_ms) {
+		// 	min_counter_ms = counter.counter_ms;
+		// }
+
+		// restart the game once the death timer expired
+		if (counter.counter_ms < 0) {
+			registry.remove<EndGame>(entity);
+			state = ProgramState::GAME_OVER_WIN;
+			return true;
+		}
+	}
+
 	// Temporary implementation: General timer for spell duration. Later implementation will have spell-specific timers
 	// Deactivate spells based on time
 	for (auto& spell : spellbook) {
@@ -371,10 +387,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (tile == MapTile::EXIT) {
 
 		// player has found the exit!
+		registry.emplace<EndGame>(player_minotaur);
 		state = ProgramState::GAME_OVER_WIN;
 		Mix_PlayChannel(-1, tada_sound, 0);
-		//game_start_time = (float)(glfwGetTime()); // record game start time
-		//initial_game = false;
+		initial_game = false;
 		do_pathfinding_movement = false;
 
 		// For cutscenes
@@ -389,7 +405,25 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			cutscene_selection = 15;
 			cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
 		}
-		restart_game();
+		// restart_game();
+
+
+
+		// if (!registry.view<EndGame>().contains(player_minotaur)) {
+		// 	registry.emplace<EndGame>(player_minotaur);
+		// 	Mix_PlayChannel(-1, tada_sound, 0);
+		// 	initial_game = false;
+		// 	do_pathfinding_movement = false;
+		// }
+
+		// if (registry.view<EndGame>().size() == 0) {
+		// 	state = ProgramState::GAME_OVER_WIN;
+		// 	// Mix_PlayChannel(-1, tada_sound, 0);
+		// 	// game_start_time = (float)(glfwGetTime()); // record game start time
+		// 	// initial_game = false;
+		// 	restart_game();
+		// 	// do_pathfinding_movement = false;
+		// }
 
 	}
 
@@ -405,6 +439,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Set the switches
 		cutscene_1_frame_0 = false;
 		cutscene_1_frame_1 = true;
+
 	}
 
 	// Gate 2

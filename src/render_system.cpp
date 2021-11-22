@@ -435,10 +435,11 @@ void RenderSystem::drawToScreen()
 	const GLuint water_program = effects[(GLuint)EFFECT_ASSET_ID::WATER];
 	// Set clock
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
-	GLuint dead_timer_uloc = glGetUniformLocation(water_program, "darken_screen_factor");
-	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
-	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
-	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
+	glUniform1f(time_uloc, time_total);
+	GLuint init_game_uloc = glGetUniformLocation(water_program, "initial_game");
+	glUniform1f(init_game_uloc, initial_game);
+	GLuint end_game_uloc = glGetUniformLocation(water_program, "endGame");
+	glUniform1f(end_game_uloc, registry.view<EndGame>().size() != 0);
 	gl_has_errors();
 	// Set the vertex position and vertex texture coordinates (both stored in the
 	// same VBO)
