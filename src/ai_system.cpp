@@ -4,7 +4,6 @@
 #include <iostream>
 #include <algorithm> // for reversing a vector
 
-
 // Pathfinding Datastructure
 // Hold a vector of coordinates.
 // For example: If starting at [0,1]:

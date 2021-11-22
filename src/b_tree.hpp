@@ -253,6 +253,7 @@ class MoveOneTile : public BTNode {
 	vec2 target_tile;
 	Direction d;
 	vec2 last_pos;
+	int cnt = 0;
 public:
 	MoveOneTile(Direction d) : d(d) {
 	}
@@ -276,6 +277,7 @@ public:
 		//printf("current tile: %f, %f\n", current_tile[0], current_tile[1]);
 		//printf("target tile: %f, %f\n", target_tile[0], target_tile[1]);
 		last_pos = { -1,-1 };
+		cnt = 0;
 	}
 
 	void update_dir(Direction dir) {
@@ -289,6 +291,10 @@ public:
 	BTState process(entt::entity e) override {
 		current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
 		Motion& motion = registry.get<Motion>(e);
+		if (!(player_is_manually_moving || do_pathfinding_movement)) {
+			last_pos = motion.position;
+			return BTState::Running;
+		}
 		if (current_tile == target_tile) {
 			float x = motion.position.x - floor(motion.position.x / map_scale.x) * map_scale.x;
 			float y = motion.position.y - floor(motion.position.y / map_scale.y) * map_scale.y;
@@ -297,8 +303,12 @@ public:
 				return BTState::Success;
 			}
 		}
-		if (motion.position == last_pos && state != ProgramState::PAUSED) {
-			return BTState::Failure;
+		if (motion.position == last_pos && (player_is_manually_moving || do_pathfinding_movement)) {
+			if (cnt > 10) {
+				cnt = 0;
+				return BTState::Failure;
+			}
+			cnt++;
 		}
 		last_pos = motion.position;
 		if (!WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(target_tile)) || !WorldSystem::is_within_bounds(target_tile)) {
@@ -402,9 +412,9 @@ class AStarSearch {
 			path.push_back({ current_node->coord.x, current_node->coord.y });
 			current_node = current_node->parent;
 		}
-		for (auto& coordinate : path) {
-			printf("%f, %f\n", coordinate.x, coordinate.y);
-		}
+		//for (auto& coordinate : path) {
+		//	printf("%f, %f\n", coordinate.x, coordinate.y);
+		//}
 
 		for (int i = 0; i < open.size(); i++) {
 			delete open[i];
@@ -493,8 +503,10 @@ public:
 			child = nullptr;
 			return BTState::Success;
 		}
+
+
 		if (child_state == BTState::Failure || (child_state == BTState::Success && current_tile != target_tile && path.size() == 0)) {
-			if (state != ProgramState::PAUSED) {
+			if ((player_is_manually_moving || do_pathfinding_movement) && state != ProgramState::PAUSED) {
 				delete child;
 				child = nullptr;
 				return BTState::Failure;
