@@ -372,6 +372,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 		// player has found the exit!
 		Mix_PlayChannel(-1, tada_sound, 0);
+		game_start_time = (float)(glfwGetTime()); // record game start time
+		initial_game = false;
+		restart_game();
 		do_pathfinding_movement = false;
 
 		// For cutscenes
