@@ -282,9 +282,9 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 
 /* tutorial reference :
 / https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
-void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const mat3& projection)
+void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, const mat3& projection, vec3 text_colour)
 {
-	if (strlen(text) <= 0) return; // skip, nothing drawn
+	if (text.length() <= 0) return; // skip, nothing drawn
 
 	// prepare for transformation
 	Transform transform;
@@ -293,7 +293,7 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	FT_GlyphSlot g = face->glyph;
 
 	// setting text's pixel size
-	pixel_size = 20.f;
+	pixel_size = 15.f;
 	FT_Set_Pixel_Sizes(face, pixel_size, pixel_size);
 
 
@@ -322,7 +322,7 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	gl_has_errors();
 
 	GLuint uniform_color = glGetUniformLocation(program, "textColor");
-	glUniform3f(uniform_color, 0.6 , 0.5 , 0.5);
+	glUniform3f(uniform_color, text_colour[0] , text_colour[1], text_colour[2]);
 
 	glEnableVertexAttribArray(attribute_coord);
 	glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
@@ -340,9 +340,9 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl_has_errors();
 
-	for (const char* p = text; *p; p++)
+	for (int p = 0; p < text.length(); p++)
 	{
-		if (FT_Load_Char(face, *p, FT_LOAD_RENDER)) {continue;}
+		if (FT_Load_Char(face, text[p], FT_LOAD_RENDER)) {continue;}
 
 		glTexImage2D(
 				GL_TEXTURE_2D,
@@ -500,14 +500,37 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+	entt::entity player = registry.view<Player>().begin()[0];
 
-	// render help text
-	char* renderedText_1;
-	char* renderedText_2;
-	if (tips.in_help_mode)
+	// render text
+	vec2 text1_pos = { 0.f, 0.f };
+	vec2 text2_pos = { 0.f, 0.f };
+	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
+	bool wall_breaker_active = registry.view<WallBreakerTimer>().contains(player);
+
+	if (tips.in_help_mode && !wall_breaker_active)
 	{
-		renderedText_1 = "Movement keys: arrows/W(up)/A(left)/S(down)/D(right)";
-		renderedText_2 = "Click to find path.";
+		renderedText_1 = "Click and point to a square to move to it.";
+		renderedText_2 = "Press spacebar to attack enemies and \"I\" to use an item!";
+		text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	}
+	else if (false && tips.picked_up_item) {
+		// collected item, press different button to explain what item you current hold does (will read current_item's type and render appropriate text)
+		renderedText_1 = "You picked up a " + current_item.name;
+		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
+
+	}
+	else if (wall_breaker_active) {
+		// used wall_breaker item
+		renderedText_1 = "You used the wall breaker!";
+		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		text_colour = { 0.f, 0.f, 1.f };
+	}
+	else if (false) {
+		// used teleporter
 	}
 	else
 	{
@@ -515,11 +538,8 @@ void RenderSystem::draw()
 		renderedText_2 = "";
 	}
 
-	vec2 text1_pos = { 1 / 2*w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2*w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
-
-	drawText(renderedText_1, text1_pos, { 2.f* global_scaling_vector.x, -2.5f* global_scaling_vector.y }, projection_2D);
-	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D);
+	drawText(renderedText_1, text1_pos, { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
+	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 
 	// Truely render to the screen
 	drawToScreen();

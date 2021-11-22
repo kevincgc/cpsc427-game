@@ -48,10 +48,10 @@ std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 std::vector<Item> inventory;
 Item current_item;
 std::map<std::string, ItemType> item_to_enum = {
-	{"wall_breaker", ItemType::WALL_BREAKER},
-	{"extra_life", ItemType::EXTRA_LIFE},
-	{"teleport", ItemType::TELEPORT},
-	{"time_slow", ItemType::TIME_SLOW},
+	{"wall breaker", ItemType::WALL_BREAKER},
+	{"extra life", ItemType::EXTRA_LIFE},
+	{"teleporter", ItemType::TELEPORT},
+	{"time slow", ItemType::TIME_SLOW},
 };
 bool wall_breaker_active = false;
 
@@ -324,7 +324,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	for (entt::entity entity : registry.view<WallBreakerTimer>()) {
 		// progress timer
 		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(entity);
-		std::cout << "Counter: " << counter.counter_ms << std::endl;
 		counter.counter_ms -= elapsed_ms_since_last_update;
 		if (counter.counter_ms < 0) {
 			registry.remove<WallBreakerTimer>(player_minotaur);
@@ -861,9 +860,10 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 
 			// Help Mode
-			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				if (key == GLFW_KEY_H) { tips.in_help_mode = 1; }
-				else { tips.in_help_mode = 0; }
+			if (action == GLFW_PRESS) {
+				if (key == GLFW_KEY_H) {
+					tips.in_help_mode = !tips.in_help_mode;
+				}
 			}
 		}
 	}

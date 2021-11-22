@@ -142,11 +142,11 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	for (entt::entity entity : registry.view<Motion>())
 	{
 		float step_seconds = 1.0f * (elapsed_ms / 1000.f);
-		vec2 nextpos;
 		Motion& motion = registry.get<Motion>(entity);
+		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
-		if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
-		else { nextpos = motion.position; }
+		//if (!tips.in_help_mode) { nextpos = motion.position + motion.velocity * step_seconds; }
+		//else { nextpos = motion.position; }
 
 		if (!registry.view<Player>().contains(entity)) {
 			if (player_is_manually_moving || do_pathfinding_movement) {
@@ -225,6 +225,8 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
 						registry.destroy(other);
 					}
+					tips.picked_up_item = 1;
+					tips.in_help_mode = 0;
 					return;
 				}
 				impulseCollisionResolution(motion, motion_other);
