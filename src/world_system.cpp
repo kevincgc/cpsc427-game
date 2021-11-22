@@ -336,6 +336,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// player has found the exit!
 		state = ProgramState::GAME_OVER_WIN;
 		Mix_PlayChannel(-1, tada_sound, 0);
+		game_start_time = (float)(glfwGetTime()); // record game start time
+		initial_game = false;
 		do_pathfinding_movement = false;
 	}
 
