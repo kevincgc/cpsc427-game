@@ -302,9 +302,7 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 
 
 	// get program shader
-	GLuint program;
-	assert(loadEffectFromFile(
-		shader_path("text") + ".vs.glsl", shader_path("text") + ".fs.glsl", program));
+	const GLuint program = (GLuint) effects[(int) EFFECT_ASSET_ID::TEXT];
 
 	//single texture object to render all the glyphs
 	GLuint tex;
@@ -392,7 +390,9 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 		gl_has_errors();
 	}
 
-
+	// clear memory
+	glDeleteTextures(1, &tex);
+	glDeleteBuffers(1, &text_vbo);
 }
 
 

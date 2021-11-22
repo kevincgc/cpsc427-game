@@ -51,8 +51,9 @@ class RenderSystem {
 		// shader_path("salmon"),
 		shader_path("textured"),
 		shader_path("water"),
-		shader_path("minotaur"), 
-		};
+		shader_path("minotaur"),
+		shader_path("text"),
+	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -98,7 +99,7 @@ public:
 	FT_Face face;
 
 	mat3 createProjectionMatrix();
-	
+
 	mat3 createProjectionMatrixforText();
 
 private:
@@ -107,7 +108,7 @@ private:
 	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3& projection, vec2 screen);
 	void drawText(const char* text, vec2 position, vec2 scale, const mat3& projection);
 	void drawToScreen();
-	
+
 
 	// Window handle
 	GLFWwindow* window;
@@ -123,7 +124,7 @@ private:
 	GLuint off_screen_render_buffer_depth;
 	entt::entity screen_state_entity = registry.create();
 
-	
+
 
 };
 
