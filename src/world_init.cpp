@@ -21,44 +21,43 @@
 // 	return e;
 // }
 
-entt::entity createSpike(RenderSystem* renderer, vec2 position)
+
+entt::entity createFish(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
-	motion.velocity = { -50.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
+	motion.velocity = { -50, 0 };
 	motion.position = position;
-	motion.scale = mesh.original_size * 75.f * global_scaling_vector;
-	motion.mass = 200;
-	motion.coeff_rest = 0.9f;
+	// motion.scale = vec2({ -FISH_BB_WIDTH, FISH_BB_HEIGHT });
+	motion.scale = mesh.original_size * 75.f;
 	const entt::entity e = registry.create();
-	registry.emplace<Enemy>(e);
+	registry.emplace<SoftShell>(e);
 	registry.emplace<Motion>(e, motion);
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
-		TEXTURE_ASSET_ID::SPIKE,
+		TEXTURE_ASSET_ID::FISH,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
-
+	
 	return e;
 }
 
-entt::entity createDrone(RenderSystem* renderer, vec2 position)
+entt::entity createTurtle(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
-	motion.velocity = { -100.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
+	motion.velocity = { -100.f, 0.f };
 	motion.position = position;
-	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
-	motion.mass = 200;
-	motion.coeff_rest = 0.9f;
+	// motion.scale = vec2({ -TURTLE_BB_WIDTH, TURTLE_BB_HEIGHT });
+	motion.scale = mesh.original_size * 75.f;
 	const entt::entity e = registry.create();
-	registry.emplace<Enemy>(e);
+	registry.emplace<HardShell>(e);
 	registry.emplace<Motion>(e, motion);
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
-		TEXTURE_ASSET_ID::DRONE,
+		TEXTURE_ASSET_ID::TURTLE,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
 
@@ -74,8 +73,9 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
-	motion.scale.x *= 1.5f;
+	motion.scale = mesh.original_size * 75.f;
+	motion.scale.x *= 1.5;
+
 	const entt::entity e = registry.create();
 	registry.emplace<Player>(e);
 	registry.emplace<Motion>(e, motion);
@@ -85,7 +85,24 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 			EFFECT_ASSET_ID::MINOTAUR, // SALMON
 			GEOMETRY_BUFFER_ID::MINOTAUR); //SALMON
 	return e;
+	// Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
+	// Motion motion = Motion();
+	// motion.position = pos;
+	// motion.angle = 0.f;
+	// motion.velocity = { 0.f, 0.f };
+	// motion.scale = mesh.original_size * 150.f;
+	// motion.scale.x *= -1;
 
+	// const entt::entity e = registry.create();
+	// registry.emplace<Player>(e);
+	// registry.emplace<Motion>(e, motion);
+	// registry.emplace<Mesh*>(e, &mesh);
+	// registry.emplace<RenderRequest>(e,
+	// 	TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+	// 	EFFECT_ASSET_ID::MINOTAUR,
+	// 	GEOMETRY_BUFFER_ID::MINOTAUR);
+
+	// return e;
 }
 
 entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
@@ -95,7 +112,7 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 75.f;
+	motion.scale = mesh.original_size * 150.f;
 	motion.scale.x *= -1;
 
 	const entt::entity e = registry.create();
@@ -148,3 +165,47 @@ entt::entity createTraps(RenderSystem* renderer, vec2 pos)
 
 	return e;
 }
+
+//entt::entity createLine(vec2 position, vec2 scale)
+//{
+//	Entity entity = Entity();
+//
+//	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
+//	registry.renderRequests.insert(
+//		entity,
+//		{ TEXTURE_ASSET_ID::TEXTURE_COUNT,
+//		 EFFECT_ASSET_ID::PEBBLE,
+//		 GEOMETRY_BUFFER_ID::DEBUG_LINE });
+//
+//	// Create motion
+//	Motion& motion = registry.motions.emplace(entity);
+//	motion.angle = 0.f;
+//	motion.velocity = { 0, 0 };
+//	motion.position = position;
+//	motion.scale = scale;
+//
+//	registry.debugComponents.emplace(entity);
+//	return entity;
+//}
+
+//entt::entity createPebble(vec2 pos, vec2 size)
+//{
+//	auto entity = Entity();
+//
+//	// Setting initial motion values
+//	Motion& motion = registry.motions.emplace(entity);
+//	motion.position = pos;
+//	motion.angle = 0.f;
+//	motion.velocity = { 0.f, 0.f };
+//	motion.scale = size;
+//
+//	// Create and (empty) Salmon component to be able to refer to all turtles
+//	registry.players.emplace(entity);
+//	registry.renderRequests.insert(
+//		entity,
+//		{ TEXTURE_ASSET_ID::TEXTURE_COUNT, // TEXTURE_COUNT indicates that no txture is needed
+//			EFFECT_ASSET_ID::PEBBLE,
+//			GEOMETRY_BUFFER_ID::PEBBLE });
+//
+//	return entity;
+//}
