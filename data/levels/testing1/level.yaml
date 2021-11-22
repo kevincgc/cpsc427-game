@@ -5,3 +5,6 @@ enemies:
     drones: [1, 2]
 items:
     wall_breaker: 1
+    speed boost: 1
+    extra life: 0
+    teleporter: 1

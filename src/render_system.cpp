@@ -492,10 +492,11 @@ void RenderSystem::draw()
 
 	entt::entity player = registry.view<Player>().begin()[0];
 
-	// render text with initial positiona and colour
+	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 	vec2 text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
+	// ensures text disappears after 3 seconds for non-toggled options
 	bool text_timer_on = registry.view<TextTimer>().contains(player);
 
 	if (tips.basic_help)
@@ -510,7 +511,6 @@ void RenderSystem::draw()
 		renderedText_2 = "Press \"I\" to use it and toggle \"T\" for a description of the item's usage.";
 		text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
-		//text_colour = { 0.f, 1.f, 0.f };
 	}
 	else if (tips.item_info && !current_item.name.empty()) {
 		switch (item_to_enum[current_item.name]) {
@@ -550,6 +550,7 @@ void RenderSystem::draw()
 		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// blue
 		text_colour = { 0.f, 0.f, 1.f };
 	}
 	else if (most_recent_used_item == ItemType::TELEPORT && text_timer_on) {
@@ -558,12 +559,16 @@ void RenderSystem::draw()
 		renderedText_2 = "You were teleported to a random spot in the maze.";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// pink-ish
+		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f }; 
 	}
 	else if (most_recent_used_item == ItemType::SPEED_BOOST && text_timer_on) {
 		renderedText_1 = "You used the speed boost!";
 		renderedText_2 = "Speed is doubled for 10 seconds! Go, go, go!";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (17.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// light blue
+		text_colour = { 0.f, 1.f, 1.f };
 	}
 	else if (most_recent_used_item == ItemType::EXTRA_LIFE && text_timer_on) {
 		renderedText_1 = "You gained an extra life!";
