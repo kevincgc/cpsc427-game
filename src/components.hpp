@@ -49,10 +49,11 @@ enum MapTile {
 };
 
 enum ItemType {
-	WALL_BREAKER = 1,
+	NONE = 0,
+	WALL_BREAKER,
 	EXTRA_LIFE,
 	TELEPORT,
-	SPEED_BOOST
+	SPEED_BOOST,
 };
 
 // Level State
@@ -88,6 +89,7 @@ struct Help {
 	bool basic_help = 0;
 	bool picked_up_item = 0;
 	bool item_info = 0;
+	bool used_item = 0;
 };
 extern Help tips;
 
@@ -95,6 +97,10 @@ extern Help tips;
 struct DebugComponent
 {
 	// Note, an empty struct has size 1
+};
+struct AnimationTimer
+{
+	float counter_ms = 1000;
 };
 
 // A timer that will be associated to dying minotaur
@@ -220,10 +226,11 @@ enum class EFFECT_ASSET_ID {
 	TEXTURED = PEBBLE + 1,
 	WATER = TEXTURED + 1,
 	MINOTAUR = WATER + 1,
+	TEXT = MINOTAUR + 1,
 	ENEMY = MINOTAUR + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	EFFECT_COUNT = MINOTAUR + 1
+	EFFECT_COUNT = TEXT + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 

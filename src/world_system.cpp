@@ -54,7 +54,7 @@ std::map<std::string, ItemType> item_to_enum = {
 	{"speed boost", ItemType::SPEED_BOOST},
 };
 bool wall_breaker_active = false;
-ItemType most_recent_used_item;
+ItemType most_recent_used_item = ItemType::NONE;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -332,6 +332,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		counter.counter_ms -= elapsed_ms_since_last_update;
 		if (counter.counter_ms < 0) {
 			registry.remove<TextTimer>(player_minotaur);
+			most_recent_used_item = ItemType::NONE;
 		}
 	}
 
@@ -348,6 +349,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		counter.counter_ms -= elapsed_ms_since_last_update;
 		if (counter.counter_ms < 0) {
 			registry.remove<WallBreakerTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<AnimationTimer>().empty()) {
+		AnimationTimer& counter = registry.get<AnimationTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<AnimationTimer>(player_minotaur);
+			tips.used_item = 0;
 		}
 	}
 
@@ -703,10 +713,6 @@ void WorldSystem::use_wall_breaker(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
 	registry.emplace_or_replace<WallBreakerTimer>(player);
-
-	// TODO: flashing animation, and possibly taunt animation
-	//Colour& c = registry.get<Colour>(player);
-	//c.colour = vec3(0.f, 0.8f, 0.4f);
 }
 
 void WorldSystem::add_extra_life(Item& item){
@@ -817,9 +823,10 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			//}
 
 			// Use Item
-			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_I) {
-				most_recent_used_item = item_to_enum[current_item.name];
-				switch (most_recent_used_item) {
+			if (key == GLFW_KEY_I) {
+				if (!current_item.name.empty() && action == GLFW_PRESS) {
+					most_recent_used_item = item_to_enum[current_item.name];
+					switch (most_recent_used_item) {
 					case ItemType::WALL_BREAKER:
 						use_wall_breaker(current_item);
 						break;
@@ -833,15 +840,18 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 						use_speed_boost(current_item);
 						break;
 					default:
-						// unsupported item
+						// unsupported item or NONE
 						assert(false);
 						break;
+					}
+					tips.basic_help = 0;
+					tips.picked_up_item = 0;
+					tips.item_info = 0;
+					tips.used_item = 1;
+					registry.emplace_or_replace<TextTimer>(player);
+					registry.emplace_or_replace<AnimationTimer>(player);
+					current_item = Item();
 				}
-				tips.basic_help = 0;
-				tips.picked_up_item = 0;
-				tips.item_info = 0;
-				registry.emplace_or_replace<TextTimer>(player);
-				current_item = Item();
 			}
 
 			// Tell user about the item they are holding (toggle with T if they are holding an item)
@@ -858,7 +868,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// Help Mode
 			if (action == GLFW_PRESS) {
-				// toggle H for help mode
+				// toggle H for basic help mode
 				if (key == GLFW_KEY_H) {
 					tips.basic_help = !tips.basic_help;
 				}

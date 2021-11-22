@@ -56,6 +56,7 @@ class RenderSystem {
 		shader_path("textured"),
 		shader_path("water"),
 		shader_path("minotaur"), 
+		shader_path("text"),
 		};
 
 	std::array<GLuint, geometry_count> vertex_buffers;

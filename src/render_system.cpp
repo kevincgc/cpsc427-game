@@ -113,6 +113,10 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		GLuint wall_breaker_uloc = glGetUniformLocation(program, "used_wall_breaker");
 		glUniform1f(wall_breaker_uloc, used_wall_breaker);
 
+		bool used_speed_boost = registry.view<SpeedBoostTimer>().contains(entity);
+		GLuint speed_boost_uloc = glGetUniformLocation(program, "used_speed_boost");
+		glUniform1f(speed_boost_uloc, used_speed_boost);
+
 		// pass gesture to the shader
 		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
 		int player_gesture = 0;
@@ -123,6 +127,12 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		}
 		else if (registry.view<Attack>().contains(entity)) {
 			player_gesture = 3;
+		}
+		else if (registry.view<WallBreakerTimer>().contains(entity) || (registry.view<SpeedBoostTimer>().contains(entity))) {
+			player_gesture = 2;
+		}
+		else if (tips.used_item) {
+			player_gesture = 5;
 		}
 		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
 			player_gesture = 0;
@@ -296,9 +306,7 @@ void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, c
 
 
 	// get program shader
-	GLuint program;
-	assert(loadEffectFromFile(
-		shader_path("text") + ".vs.glsl", shader_path("text") + ".fs.glsl", program));
+	const GLuint program = (GLuint)effects[(int)EFFECT_ASSET_ID::TEXT];
 
 	//single texture object to render all the glyphs
 	GLuint tex;
@@ -386,7 +394,9 @@ void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, c
 		gl_has_errors();
 	}
 
-
+	// clear memory
+	glDeleteTextures(1, &tex);
+	glDeleteBuffers(1, &text_vbo);
 }
 
 // draw the intermediate texture to the screen, with some distortion to simulate

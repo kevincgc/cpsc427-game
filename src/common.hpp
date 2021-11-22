@@ -81,7 +81,6 @@ extern ProgramState state;
 // From main.cpp - now globally accessible
 extern int window_width_px;
 extern int window_height_px;
-extern float global_scaling_factor;
 extern vec2 global_scaling_vector;
 extern vec2 map_scale;
 
