@@ -87,6 +87,7 @@ extern vec2 map_scale;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
 extern vec2  player_vel;
+extern vec2	 default_player_vel;
 extern vec2  enemy_vel;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;

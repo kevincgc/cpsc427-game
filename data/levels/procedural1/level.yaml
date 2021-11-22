@@ -8,7 +8,7 @@ enemies:
     spikes: 2
     drones: 3
 items:
-    wall breaker: 2
-    extra life: 1
+    wall breaker: [1,2]
+    extra life: 0
     teleporter: [1,2]
-    time slow: 1
+    speed boost: [1,2]

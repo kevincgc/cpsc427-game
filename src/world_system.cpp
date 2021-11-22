@@ -51,10 +51,10 @@ std::map<std::string, ItemType> item_to_enum = {
 	{"wall breaker", ItemType::WALL_BREAKER},
 	{"extra life", ItemType::EXTRA_LIFE},
 	{"teleporter", ItemType::TELEPORT},
-	{"time slow", ItemType::TIME_SLOW},
+	{"speed boost", ItemType::SPEED_BOOST},
 };
 bool wall_breaker_active = false;
-bool used_teleport = false;
+ItemType most_recent_used_item;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -313,18 +313,38 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
+	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) {
+		player_vel = default_player_vel * 2.f;
+	}
+
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
 
-	// process player flash timer
+	// progress timers
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
 	}
 
-	for (entt::entity entity : registry.view<WallBreakerTimer>()) {
-		// progress timer
-		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(entity);
+	// TODO: abstract out helper given a component to advance timers
+	if (!registry.view<TextTimer>().empty()) {
+		TextTimer &counter = registry.get<TextTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<TextTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<SpeedBoostTimer>().empty()) {
+		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<SpeedBoostTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<WallBreakerTimer>().empty()) {
+		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
 		counter.counter_ms -= elapsed_ms_since_last_update;
 		if (counter.counter_ms < 0) {
 			registry.remove<WallBreakerTimer>(player_minotaur);
@@ -656,14 +676,13 @@ void WorldSystem::restart_game() {
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
 	current_item = Item();
+	tips = Help();
 
 	// reset player flash timer
 	flash_timer = 1000.f;
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-
-
 
 }
 
@@ -688,7 +707,6 @@ void WorldSystem::handle_collisions() {
 					Mix_PlayChannel(-1, salmon_dead_sound, 0);
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
-
 
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
@@ -720,7 +738,7 @@ bool WorldSystem::is_over() const {
 void WorldSystem::use_wall_breaker(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
-	registry.emplace<WallBreakerTimer>(player);
+	registry.emplace_or_replace<WallBreakerTimer>(player);
 	tips.basic_help = 0;
 	tips.picked_up_item = 0;
 	tips.item_info = 0;
@@ -730,12 +748,16 @@ void WorldSystem::use_wall_breaker(Item& item){
 }
 
 void WorldSystem::add_extra_life(Item& item){
+	// TODO: pending addition of life system
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used extra life item!" << std::endl;
 
 }
 
 void WorldSystem::use_teleport(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+
 	std::vector<vec2> teleportable_tiles;
 	auto maze = game_state.level.map_tiles;
 	for (uint i = 0; i < maze.size(); i++) {
@@ -747,19 +769,18 @@ void WorldSystem::use_teleport(Item& item){
 			}
 		}
 	}
-	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& player_motion = registry.get<Motion>(player);
+
 	int pos_ind = std::uniform_int_distribution<int>(0, teleportable_tiles.size() - 1)(rng);
 	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
-	used_teleport = true;
 	player_motion.position = position;
 }
 
-void WorldSystem::use_time_slow(Item& item){
+void WorldSystem::use_speed_boost(Item& item){
 	entt::entity player = registry.view<Player>().begin()[0];
-	std::cout << "Used time slow item!" << std::endl;
+	std::cout << "Used speed boost item!" << std::endl;
+	registry.emplace_or_replace<SpeedBoostTimer>(player);
 }
 
 // On key callback
@@ -835,7 +856,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// Use Item
 			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_I) {
-				switch (item_to_enum[current_item.name]) {
+				most_recent_used_item = item_to_enum[current_item.name];
+				switch (most_recent_used_item) {
 					case ItemType::WALL_BREAKER:
 						use_wall_breaker(current_item);
 						break;
@@ -845,14 +867,15 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					case ItemType::TELEPORT:
 						use_teleport(current_item);
 						break;
-					case ItemType::TIME_SLOW:
-						use_time_slow(current_item);
+					case ItemType::SPEED_BOOST:
+						use_speed_boost(current_item);
 						break;
 					default:
 						// unsupported item
 						assert(false);
 						break;
 				}
+				registry.emplace_or_replace<TextTimer>(player);
 				current_item = Item();
 			}
 

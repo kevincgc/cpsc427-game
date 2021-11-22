@@ -52,7 +52,7 @@ enum ItemType {
 	WALL_BREAKER = 1,
 	EXTRA_LIFE,
 	TELEPORT,
-	TIME_SLOW
+	SPEED_BOOST
 };
 
 // Level State
@@ -106,6 +106,14 @@ struct DeathTimer
 struct WallBreakerTimer
 {
 	float counter_ms = 20000;
+};
+
+struct TextTimer {
+	float counter_ms = 3000;
+};
+
+struct SpeedBoostTimer {
+	float counter_ms = 10000;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
@@ -200,7 +208,7 @@ enum class TEXTURE_ASSET_ID {
 	WALL_BREAKER,
 	EXTRA_LIFE,
 	TELEPORT,
-	TIME_SLOW,
+	SPEED_BOOST,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

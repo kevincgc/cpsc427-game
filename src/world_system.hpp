@@ -22,9 +22,7 @@ extern std::map < int, std::map <std::string, std::string>> spellbook;
 extern std::vector<Item> inventory;
 extern Item current_item;
 extern std::map<std::string, ItemType> item_to_enum;
-extern bool wall_breaker_active;
-extern bool used_teleport;
-
+extern ItemType most_recent_used_item;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -65,7 +63,7 @@ public:
 	void use_wall_breaker(Item& item);
 	void add_extra_life(Item& item);
 	void use_teleport(Item& item);
-	void use_time_slow(Item& item);
+	void use_speed_boost(Item& item);
 
 	// restart level
 	void restart_game();

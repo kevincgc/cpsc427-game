@@ -96,8 +96,7 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
 	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
-	motion.scale.x *= -1;
-
+	
 	Item item = Item();
 	item.name = item_type;
 	TEXTURE_ASSET_ID texture_type;
@@ -105,7 +104,7 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 	switch (item_enum) {
 		case ItemType::WALL_BREAKER:
 			texture_type = TEXTURE_ASSET_ID::WALL_BREAKER;
-			item.duration_ms = 10000;
+			item.duration_ms = 20000;
 			break;
 		case ItemType::EXTRA_LIFE:
 			texture_type = TEXTURE_ASSET_ID::EXTRA_LIFE;
@@ -113,9 +112,9 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 		case ItemType::TELEPORT:
 			texture_type = TEXTURE_ASSET_ID::TELEPORT;
 			break;
-		case ItemType::TIME_SLOW:
-			texture_type = TEXTURE_ASSET_ID::TIME_SLOW;
-			item.duration_ms = 20000;
+		case ItemType::SPEED_BOOST:
+			texture_type = TEXTURE_ASSET_ID::SPEED_BOOST;
+			item.duration_ms = 10000;
 			break;
 		default:
 			// unsupported item

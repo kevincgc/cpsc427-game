@@ -180,18 +180,18 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 	Motion& player_motion = registry.get<Motion>(player);
 
 	// Deal with spell speed while moving
-	if (spellbook[1]["active"] == "true") {
+	if (spellbook[1]["active"] == "true" || registry.view<SpeedBoostTimer>().contains(player)) {
 		if (player_motion.velocity.x > 0) {
-			player_motion.velocity.x = 800.f;
+			player_motion.velocity.x = 600.f;
 		}
 		else if (player_motion.velocity.x < 0) {
-			player_motion.velocity.x = -800.f;
+			player_motion.velocity.x = -600.f;
 		}
 		if (player_motion.velocity.y > 0) {
-			player_motion.velocity.y = 800.f;
+			player_motion.velocity.y = 600.f;
 		}
 		else if (player_motion.velocity.y < 0) {
-			player_motion.velocity.y = -800.f;
+			player_motion.velocity.y = -600.f;
 		}
 	}
 
@@ -211,10 +211,8 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			if (collides(motion, motion_other))
 			{
 
-				// TODO: make dis shit better
 				if (other_is_item || ent_is_item) {
-					// add item to inventory
-					// prompt something.. recognition that item was picked up
+					// add item to inventory, prompt text from tips
 					// remove item from world
 					if (ent_is_item) {
 						current_item = items_registry.get<Item>(entity);
@@ -225,6 +223,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
 						registry.destroy(other);
 					}
+					registry.emplace_or_replace<TextTimer>(player);
 					tips.picked_up_item = 1;
 					tips.basic_help = 0;
 					return;
