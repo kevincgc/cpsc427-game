@@ -57,6 +57,8 @@ int main()
 			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 		t = now;
 
+		world.play_sounds();
+
 		switch (state) {
 		case ProgramState::INIT:
 			window = world.create_window();

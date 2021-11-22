@@ -5,6 +5,25 @@
 #include "../ext/stb_image/stb_image.h"
 #include <entt.hpp>
 
+// map tiles
+enum class SoundEffects {
+	PLAYER_DEAD = 0,
+	PLAYER_ITEM,
+	TADA,
+	HORSE_SNORT,
+	DRONE_WERE_IT_ONLY_SO_EASY,
+	DRONE_STUPID_BOY,
+	ITEM_BREAK_WALL,
+
+	COUNT
+};
+const int sound_effect_count = (int)SoundEffects::COUNT;
+
+struct SoundEffectRequest
+{
+	SoundEffects sound;
+};
+
 // Player component
 struct Player
 {
@@ -61,6 +80,8 @@ struct GameState
 {
 	std::string level_id = "procedural1";
 	LoadedLevel level;
+
+	std::vector<SoundEffectRequest> sound_requests;
 };
 extern GameState game_state;
 

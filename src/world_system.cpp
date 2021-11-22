@@ -146,18 +146,10 @@ WorldSystem::~WorldSystem() {
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (player_death_sound != nullptr)
-		Mix_FreeChunk(player_death_sound);
-	if (player_item_sound != nullptr)
-		Mix_FreeChunk(player_item_sound);
-	if (tada_sound != nullptr)
-		Mix_FreeChunk(tada_sound);
-	if (horse_snort_sound != nullptr)
-		Mix_FreeChunk(horse_snort_sound);
-	if (drone_were_it_only_so_easy_sound != nullptr)
-		Mix_FreeChunk(drone_were_it_only_so_easy_sound);
-	if (drone_stupid_boy_sound != nullptr)
-		Mix_FreeChunk(drone_stupid_boy_sound);
+
+	for (int i = 0; i < sound_effect_count; i++) {
+		if (sound_effects[i] != nullptr) Mix_FreeChunk(sound_effects[i]);
+	}
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -248,19 +240,23 @@ GLFWwindow* WorldSystem::create_window() {
 
 
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	player_death_sound = Mix_LoadWAV(audio_path("player_death.wav").c_str());
-	player_item_sound = Mix_LoadWAV(audio_path("player_item.wav").c_str());
-	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
-	horse_snort_sound				 = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
-	drone_were_it_only_so_easy_sound = Mix_LoadWAV(audio_path("drone_were_it_only_so_easy.wav").c_str());
-	drone_stupid_boy_sound			 = Mix_LoadWAV(audio_path("drone_stupid_boy.wav").c_str());
+	std::array<std::string, sound_effect_count> sound_effect_paths = {
+		"player_death.wav",
+		"player_item.wav",
+		"tada.wav",
+		"horse_snort.wav",
+		"drone_were_it_only_so_easy.wav",
+		"drone_stupid_boy.wav",
+		"item_break_wall.wav",
+	};
 
-	if (background_music == nullptr || player_death_sound == nullptr || player_item_sound == nullptr) {
-		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
-			audio_path("music.wav").c_str(),
-			audio_path("player_death.wav").c_str(),
-			audio_path("player_item.wav").c_str());
-		return nullptr;
+	for (int i = 0; i < sound_effect_count; i++) {
+		sound_effects[i] = Mix_LoadWAV(audio_path(sound_effect_paths[i]).c_str());
+		if (sound_effects[i] == nullptr) {
+			fprintf(stderr, "Not found: ");
+			fprintf(stderr, sound_effect_paths[i].c_str());
+			assert(false);
+		}
 	}
 
 	return window;
@@ -286,6 +282,13 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 
 // ************************************************************************************* step ***********************************************************
 // Update our game world
+void WorldSystem::play_sounds() {
+	for (auto sound_request : game_state.sound_requests) {
+		Mix_PlayChannel(-1, sound_effects[(int) sound_request.sound], 0);
+	}
+	game_state.sound_requests.clear();
+}
+
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Get the screen dimensions
 	int screen_width, screen_height;
@@ -389,13 +392,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
-			Mix_PlayChannel(-1, tada_sound, 0);
+			game_state.sound_requests.push_back({SoundEffects::TADA});
 			initial_game = false;
 			do_pathfinding_movement = false;
 
 			// For cutscenes
 			num_times_exit_reached++;
-			
+
 			if (num_times_exit_reached == 1) {
 				cutscene_selection = 10;
 				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
@@ -435,7 +438,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	// ************************************ Cutscenes ************************************************
-	// This is pretty much a hack to get around some issues with drawing images 
+	// This is pretty much a hack to get around some issues with drawing images
 	// Because of bufferswap in nuklear, we have to make sure two successive
 	// frames have the speaker drawn, hence the flags. (Three successive frames
 	// are required on load to give the maze walls time to draw/be colored in,
@@ -455,18 +458,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		cutscene_1_frame_2 = true;
 		cutscene_1_frame_1 = false;
 
-		// ***** Set up the variables ***** 
+		// ***** Set up the variables *****
 		entt::entity player						= registry.view<Player>().begin()[0];
 		Motion& motion							= registry.get<Motion>(player);
 
 		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
 
-		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2]; 
-		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5]; 
-		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4]; 
-		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3]; 
-		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1]; 
-		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0]; 
+		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1];
+		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0];
 
 		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
 		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
@@ -514,10 +517,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		cutscene_1_frame_2 = false;
 
 		// Play audio files
-		if		(cutscene_selection == 102) { Mix_PlayChannel(-1, drone_were_it_only_so_easy_sound, 0); }
-		else if (cutscene_selection == 10)  { Mix_PlayChannel(-1, drone_stupid_boy_sound, 0); }
-		else								{ Mix_PlayChannel(-1, horse_snort_sound, 0); }
-		
+		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
+		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
+		else								{ game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
+
 		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
 	}
@@ -795,7 +798,7 @@ void WorldSystem::restart_game() {
 	registry.emplace<Flash>(player_minotaur);
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-	
+
 	// Create cutscene entities
 	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
 	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
@@ -827,7 +830,7 @@ void WorldSystem::handle_collisions() {
 					// Scream, reset timer, and make the salmon sink
 					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
-					Mix_PlayChannel(-1, player_death_sound, 0);
+					game_state.sound_requests.push_back({SoundEffects::PLAYER_DEAD});
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
@@ -917,8 +920,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				if (pressed_keys.size() == 0) { 
-					player_is_manually_moving = false; 
+				if (pressed_keys.size() == 0) {
+					player_is_manually_moving = false;
 				}
 			}
 
@@ -935,7 +938,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// Toggle cutscene rtx
 			if (action == GLFW_RELEASE) {
-				if (key == GLFW_KEY_R) { 
+				if (key == GLFW_KEY_R) {
 					rtx_on = !rtx_on;
 					char* status;
 
