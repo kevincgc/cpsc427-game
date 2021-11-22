@@ -21,13 +21,16 @@ vec2 global_scaling_vector = { 1.f, 1.f };
 vec2 map_scale = { 150.f, 150.f };
 
 extern entt::registry registry;
+float game_start_time;
+bool initial_game;
+
 
 extern "C" {
 	void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, float scale_x_in, float scale_y_in);
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
-	void drawGameOverMenu( GLFWwindow* win, int* out);
+	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win);
 
 	void initOptionsMenu();
 	void closeOptionsMenu();
@@ -71,6 +74,8 @@ int main()
 				renderer.init(window_width_px, window_height_px, window);
 				world.init(&renderer);
 				has_completed_init = true;
+				initial_game = true;
+				game_start_time = (float)(glfwGetTime());
 				state = ProgramState::RUNNING;
 			}
 			else if (selection == 1 && has_completed_init) {
@@ -98,6 +103,8 @@ int main()
 		case ProgramState::RESET_GAME:
 			renderer.reinit(window_width_px, window_height_px, window);
 			world.restart_game();
+			initial_game = true;
+			game_start_time = (float)(glfwGetTime());
 			state = ProgramState::RUNNING;
 			break;
 		case ProgramState::RUNNING:
@@ -130,10 +137,11 @@ int main()
 			}
 			break;
 		}
-		case ProgramState::GAME_OVER:
+		case ProgramState::GAME_OVER_DEAD:
+		case ProgramState::GAME_OVER_WIN:
 		{
 			int selection = 0;
-			drawGameOverMenu(window, &selection);
+			drawGameOverMenu(window, &selection, state == ProgramState::GAME_OVER_WIN);
 			switch (selection) {
 			case 1:
 				state = ProgramState::RESET_GAME;

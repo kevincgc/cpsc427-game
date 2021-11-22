@@ -6,6 +6,7 @@
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
 {
+	static bool reflected = false;
 	Motion &motion = registry.get<Motion>(entity);
 	// Transformation code, see Rendering and Transformation in the template
 	// specification for more info Incrementally updates transformation matrix,
@@ -14,12 +15,18 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	if (motion.velocity.x < 0) {
-		transform.reflect();
-	}
 
 	assert(registry.view<RenderRequest>().contains(entity));
-	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	if (motion.velocity.x < 0) {
+		render_request.is_reflected = true;
+	} else if (motion.velocity.x > 0) {
+		render_request.is_reflected = false;
+	} // if zero keep last
+
+	if (render_request.is_reflected) transform.reflect();
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -101,7 +108,8 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
-		float time_total = (float)(glfwGetTime());
+		float time_total = (float)(glfwGetTime()) - game_start_time;
+
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
@@ -431,11 +439,13 @@ void RenderSystem::drawToScreen()
 	gl_has_errors();
 	const GLuint water_program = effects[(GLuint)EFFECT_ASSET_ID::WATER];
 	// Set clock
+	float time_total = (float)glfwGetTime() - game_start_time;
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
-	GLuint dead_timer_uloc = glGetUniformLocation(water_program, "darken_screen_factor");
-	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
-	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
-	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
+	glUniform1f(time_uloc, time_total);
+	GLuint init_game_uloc = glGetUniformLocation(water_program, "initial_game");
+	glUniform1f(init_game_uloc, initial_game);
+	GLuint end_game_uloc = glGetUniformLocation(water_program, "endGame");
+	glUniform1f(end_game_uloc, registry.view<EndGame>().size() != 0);
 	gl_has_errors();
 	// Set the vertex position and vertex texture coordinates (both stored in the
 	// same VBO)

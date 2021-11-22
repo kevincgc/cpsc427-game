@@ -120,17 +120,17 @@ WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
-	
+
 }
 
 WorldSystem::~WorldSystem() {
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (salmon_dead_sound != nullptr)
-		Mix_FreeChunk(salmon_dead_sound);
-	if (salmon_eat_sound != nullptr)
-		Mix_FreeChunk(salmon_eat_sound);
+	if (player_death_sound != nullptr)
+		Mix_FreeChunk(player_death_sound);
+	if (player_item_sound != nullptr)
+		Mix_FreeChunk(player_item_sound);
 	if (tada_sound != nullptr)
 		Mix_FreeChunk(tada_sound);
 	Mix_CloseAudio();
@@ -222,17 +222,17 @@ GLFWwindow* WorldSystem::create_window() {
 	}
 
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
-	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
+	player_death_sound = Mix_LoadWAV(audio_path("player_death.wav").c_str());
+	player_item_sound = Mix_LoadWAV(audio_path("player_item.wav").c_str());
 	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
 
-	
 
-	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
+
+	if (background_music == nullptr || player_death_sound == nullptr || player_item_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 			audio_path("music.wav").c_str(),
-			audio_path("salmon_dead.wav").c_str(),
-			audio_path("salmon_eat.wav").c_str());
+			audio_path("player_death.wav").c_str(),
+			audio_path("player_item.wav").c_str());
 		return nullptr;
 	}
 
@@ -242,7 +242,8 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	// Mix_PlayMusic(background_music, -1);
+	Mix_PlayMusic(background_music, -1);
+	Mix_VolumeMusic(Mix_VolumeMusic(-1) / 20);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -293,7 +294,23 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			state = ProgramState::GAME_OVER;
+			state = ProgramState::GAME_OVER_DEAD;
+			return true;
+		}
+	}
+
+	for (entt::entity entity : registry.view<EndGame>()) {
+		// progress timer
+		EndGame& counter = registry.get<EndGame>(entity);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		// if (counter.counter_ms < min_counter_ms) {
+		// 	min_counter_ms = counter.counter_ms;
+		// }
+
+		// restart the game once the death timer expired
+		if (counter.counter_ms < 0) {
+			registry.remove<EndGame>(entity);
+			state = ProgramState::GAME_OVER_WIN;
 			return true;
 		}
 	}
@@ -385,9 +402,21 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// check if player has won
 	if (tile == MapTile::EXIT) {
 		// player has found the exit!
-		Mix_PlayChannel(-1, tada_sound, 0);
-		restart_game();
-		do_pathfinding_movement = false;
+		if (!registry.view<EndGame>().contains(player_minotaur)) {
+			registry.emplace<EndGame>(player_minotaur);
+			Mix_PlayChannel(-1, tada_sound, 0);
+			initial_game = false;
+			do_pathfinding_movement = false;
+		}
+
+		// if (registry.view<EndGame>().size() == 0) {
+		// 	state = ProgramState::GAME_OVER_WIN;
+		// 	// Mix_PlayChannel(-1, tada_sound, 0);
+		// 	// game_start_time = (float)(glfwGetTime()); // record game start time
+		// 	// initial_game = false;
+		// 	restart_game();
+		// 	// do_pathfinding_movement = false;
+		// }
 	}
 
 	return true;
@@ -678,7 +707,7 @@ void WorldSystem::handle_collisions() {
 					// Scream, reset timer, and make the salmon sink
 					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
-					Mix_PlayChannel(-1, salmon_dead_sound, 0);
+					Mix_PlayChannel(-1, player_death_sound, 0);
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
@@ -792,7 +821,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving = true;
 					motion.velocity.y = -1 * player_vel.y;
 				}
-        
+
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = true;

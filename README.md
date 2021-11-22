@@ -15,3 +15,12 @@ This commit is our submission for M2.
 ### Libraries
 * FreeType: https://sourceforge.net/projects/freetype/
 
+### Audio
+
+* Music by <a href="/users/juliush-3921568/?tab=audio&amp;utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=audio&amp;utm_content=4238">JuliusH</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=4238">Pixabay</a>
+
+* Death sound: http://freesoundeffect.net/sound/mythical-beast-minotaur-sound-effect
+
+* Power up sound: https://www.fesliyanstudios.com/royalty-free-sound-effects-download/spells-and-power-ups-217
+
+* Finish sound effect from <a href="https://pixabay.com/music/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=6185">Pixabay</a>
