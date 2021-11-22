@@ -24,7 +24,6 @@ vec2 rand1(vec2 v)
 }
 
 
-
 float rand(vec2 n) {
     return fract(sin(cos(dot(n, vec2(12.9898,12.1414)))) * 83758.5453);
 }
@@ -57,14 +56,14 @@ vec4 fire( ) {
     vec2 speed = vec2(0.1, 0.9);
     float shift = 1.327+sin(iTime*2.0)/2.4;
     float alpha = 1.0;
-    
+
 	float dist = 3.5-sin(iTime*0.4)/1.89;
-    
+
     vec2 uv = fragCoord.xy / iResolution.xy;
     vec2 p = fragCoord.xy * dist / iResolution.xx;
     p += sin(p.yx*4.0+vec2(.2,-.3)*iTime)*0.04;
     p += sin(p.yx*8.0+vec2(.6,+.1)*iTime)*0.01;
-    
+
     p.x -= iTime/1.1;
     float q = fbm(p - iTime * 0.3+1.0*sin(iTime+0.5)/2.0);
     float qb = fbm(p - iTime * 0.4+0.1*cos(iTime)/2.0);
@@ -75,7 +74,7 @@ vec4 fire( ) {
     vec2 r = vec2(fbm(p + q /2.0 + iTime * speed.x - p.x - p.y), fbm(p + q - iTime * speed.y));
     vec3 c = mix(c1, c2, fbm(p + r)) + mix(c3, c4, r.x) - mix(c5, c6, r.y);
     vec3 color = vec3(1.0/(pow(c+1.61,vec3(4.0))) * cos(shift * fragCoord.y / iResolution.y));
-    
+
     color=vec3(1.0,.2,.05)/(pow((r.y+r.y)* max(.0,p.y)+0.1, 4.0));;
     color += (texture(screen_texture,uv).xyz*0.01*pow((r.y+r.y)*.65,5.0)+0.055)*mix( vec3(.9,.4,.3),vec3(.7,.5,.2), uv.y);
     color = color/(1.0+max(vec3(0),color));
@@ -85,24 +84,23 @@ vec4 fire( ) {
 vec4 explode(vec2 p, float time,  float blast)
 {
 	float t = clamp(time-2.0, 0.0, 4.0);
-    
+
 	p = floor(p / 5.0) + vec2(18.0, 16.0);
-	
+
     vec2 r = rand1(p);
 	vec2 delta = 2.0*r * vec2(0.4*(3.0-t), 1.0) - vec2(0.0, t*0.9);
-    
+
 	p -= blast * delta * t;
-    
+
 	if (clamp(p.x, 0.0, 37.0) != p.x || clamp(p.y, 0.0, 32.0) != p.y) return fire();
 	// if (clamp(p.x, 0.0, 37.0) != p.x || clamp(p.y, 0.0, 32.0) != p.y) return vec4(0.0, 0.0, 0.0, 1.0);
 	p.y= 32.0-p.y;
-    
+
 	return smoothstep(0.0, 0.2, time) * smoothstep(2.0, 1.2, t) * texture(screen_texture, texcoord);
 }
 
 #define dur 5.0
 #define spd 1.0
-
 
 void main()
 {

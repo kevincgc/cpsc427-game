@@ -39,6 +39,12 @@ class RenderSystem {
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
+		textures_path("cutscene_minotaur.png"),
+		textures_path("cutscene_drone.png"),
+		textures_path("cutscene_drone_sad.png"),
+		textures_path("cutscene_drone_laughing.png"),
+		textures_path("cutscene_minotaur_rtx_off.png"),
+		textures_path("cutscene_drone_rtx_off.png")
 	};
 
 
@@ -51,8 +57,9 @@ class RenderSystem {
 		// shader_path("salmon"),
 		shader_path("textured"),
 		shader_path("water"),
-		shader_path("minotaur"), 
-		};
+		shader_path("minotaur"),
+		shader_path("text"),
+	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -98,7 +105,7 @@ public:
 	FT_Face face;
 
 	mat3 createProjectionMatrix();
-	
+
 	mat3 createProjectionMatrixforText();
 
 private:
@@ -107,7 +114,7 @@ private:
 	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3& projection, vec2 screen);
 	void drawText(const char* text, vec2 position, vec2 scale, const mat3& projection);
 	void drawToScreen();
-	
+
 
 	// Window handle
 	GLFWwindow* window;
@@ -123,7 +130,7 @@ private:
 	GLuint off_screen_render_buffer_depth;
 	entt::entity screen_state_entity = registry.create();
 
-	
+
 
 };
 
