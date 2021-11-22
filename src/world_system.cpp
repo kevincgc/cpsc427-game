@@ -33,6 +33,7 @@ vec2 WorldSystem::camera = { 0, 0 };
 vec2 player_vel = { 300.f, 300.f };
 vec2 enemy_vel = { 100.f, 100.f };
 vec2 default_player_vel = { 300.f, 300.f };
+int death_count = 0;
 
 // My Settings
 auto t = Clock::now();
@@ -61,6 +62,34 @@ bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos;
+
+// For cutscene feature
+bool rtx_on = true;
+bool do_cutscene_1 = true;
+bool cutscene_1_frame_2 = false;
+bool cutscene_1_frame_1 = false;
+bool cutscene_1_frame_0 = true;
+bool cutscene_reached_exit = false;
+int cutscene_selection = 1; // 1 = game start (see menu.c for more info)
+int cutscene_speaker = 1;
+int num_times_exit_reached = 0;
+
+
+entt::entity cutscene_minotaur_entity;
+entt::entity cutscene_drone_entity;
+entt::entity cutscene_drone_sad_entity;
+entt::entity cutscene_drone_laughing_entity;
+entt::entity cutscene_minotaur_rtx_off_entity;
+entt::entity cutscene_drone_rtx_off_entity;
+
+enum cutscene_speaker {
+	SPEAKER_MINOTAUR		 = 1,
+	SPEAKER_DRONE			 = 2,
+	SPEAKER_DRONE_SAD		 = 3,
+	SPEAKER_DRONE_LAUGHING   = 4,
+	SPEAKER_MINOTAUR_RTX_OFF = 5,
+	SPEAKER_DRONE_RTX_OFF    = 6
+};
 
 // For attack
 bool player_swing = false;
@@ -133,6 +162,12 @@ WorldSystem::~WorldSystem() {
 		Mix_FreeChunk(player_item_sound);
 	if (tada_sound != nullptr)
 		Mix_FreeChunk(tada_sound);
+	if (horse_snort_sound != nullptr)
+		Mix_FreeChunk(horse_snort_sound);
+	if (drone_were_it_only_so_easy_sound != nullptr)
+		Mix_FreeChunk(drone_were_it_only_so_easy_sound);
+	if (drone_stupid_boy_sound != nullptr)
+		Mix_FreeChunk(drone_stupid_boy_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -221,12 +256,14 @@ GLFWwindow* WorldSystem::create_window() {
 		return nullptr;
 	}
 
+
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
 	player_death_sound = Mix_LoadWAV(audio_path("player_death.wav").c_str());
 	player_item_sound = Mix_LoadWAV(audio_path("player_item.wav").c_str());
 	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
-
-
+	horse_snort_sound				 = Mix_LoadWAV(audio_path("horse_snort.wav").c_str());
+	drone_were_it_only_so_easy_sound = Mix_LoadWAV(audio_path("drone_were_it_only_so_easy.wav").c_str());
+	drone_stupid_boy_sound			 = Mix_LoadWAV(audio_path("drone_stupid_boy.wav").c_str());
 
 	if (background_music == nullptr || player_death_sound == nullptr || player_item_sound == nullptr) {
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
@@ -256,6 +293,8 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	restart_game();
 }
 
+
+// ************************************************************************************* step ***********************************************************
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Get the screen dimensions
@@ -272,13 +311,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Removing out of screen entities
+	// Removing out of screen entities (that are not cutscene entities)
 	auto motions = registry.view<Motion>();
 
+
 	for (auto entity : motions) {
-		Motion& motion = motions.get<Motion>(entity);
-		if (motion.position.x + abs(motion.scale.x) < 0.f) {
-			registry.destroy(entity);
+		if (!registry.view<Cutscene>().contains(entity)) {
+			Motion& motion = motions.get<Motion>(entity);
+			if (motion.position.x + abs(motion.scale.x) < 0.f) {
+				registry.destroy(entity);
+			}
 		}
 	}
 
@@ -294,7 +336,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
+			cutscene_1_frame_0 = true;
+
+			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
+			cutscene_selection = 100 + death_count;
+
 			state = ProgramState::GAME_OVER_DEAD;
+
 			return true;
 		}
 	}
@@ -310,6 +360,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<EndGame>(entity);
+			cutscene_reached_exit = true;
+			cutscene_1_frame_0 = true;
 			state = ProgramState::GAME_OVER_WIN;
 			return true;
 		}
@@ -397,17 +449,48 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	motion.velocity = vec2(-100.f, 0.f);
 	//}
 
+	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 	// check if player has won
 	if (tile == MapTile::EXIT) {
+
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
 			Mix_PlayChannel(-1, tada_sound, 0);
 			initial_game = false;
 			do_pathfinding_movement = false;
+
+			// For cutscenes
+			num_times_exit_reached++;
+
+			if (num_times_exit_reached == 1) {
+				cutscene_selection = 10;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+			}
+			else if (num_times_exit_reached > 1) {
+				cutscene_selection = 15;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+			}
+
 		}
+
+		// **ORIG START**
+		//registry.emplace<EndGame>(player_minotaur);
+		//state = ProgramState::GAME_OVER_WIN;
+		//Mix_PlayChannel(-1, tada_sound, 0);
+		//initial_game = false;
+		//do_pathfinding_movement = false;
+
+		// restart_game();
+
+		// if (!registry.view<EndGame>().contains(player_minotaur)) {
+		// 	registry.emplace<EndGame>(player_minotaur);
+		// 	Mix_PlayChannel(-1, tada_sound, 0);
+		// 	initial_game = false;
+		// 	do_pathfinding_movement = false;
+		// }
 
 		// if (registry.view<EndGame>().size() == 0) {
 		// 	state = ProgramState::GAME_OVER_WIN;
@@ -417,7 +500,98 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// 	restart_game();
 		// 	// do_pathfinding_movement = false;
 		// }
+
 	}
+
+	// ************************************ Cutscenes ************************************************
+	// This is pretty much a hack to get around some issues with drawing images
+	// Because of bufferswap in nuklear, we have to make sure two successive
+	// frames have the speaker drawn, hence the flags. (Three successive frames
+	// are required on load to give the maze walls time to draw/be colored in,
+	// hence three flags frame_0, frame_1, and frame_2)
+
+	// Gate 1
+	if (cutscene_1_frame_0) {
+		// Set the switches
+		cutscene_1_frame_0 = false;
+		cutscene_1_frame_1 = true;
+
+	}
+
+	// Gate 2
+	else if (cutscene_1_frame_1) {
+		// Set the switches
+		cutscene_1_frame_2 = true;
+		cutscene_1_frame_1 = false;
+
+		// ***** Set up the variables *****
+		entt::entity player						= registry.view<Player>().begin()[0];
+		Motion& motion							= registry.get<Motion>(player);
+
+		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
+
+		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1];
+		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0];
+
+		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+		Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+		Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
+		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+
+		// Determine which image to show and scale it up
+		float scale_x = 900.f * global_scaling_vector.x;
+		float scale_y = 800.f * global_scaling_vector.y;
+		if (rtx_on) {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale = { scale_x, scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
+				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
+				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
+				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
+			}
+		}
+		else {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+			else {
+				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+		}
+	}
+
+	// Gate 3
+	else if (cutscene_1_frame_2) {
+		// Reset switch
+		cutscene_1_frame_2 = false;
+
+		// Play audio files
+		if		(cutscene_selection == 102) { Mix_PlayChannel(-1, drone_were_it_only_so_easy_sound, 0); }
+		else if (cutscene_selection == 10)  { Mix_PlayChannel(-1, drone_stupid_boy_sound, 0); }
+		else								{ Mix_PlayChannel(-1, horse_snort_sound, 0); }
+
+		// Set state to cutscene
+		state = ProgramState::CUTSCENE1;
+	}
+
+	// ************************************************************************************************
 
 	return true;
 }
@@ -573,6 +747,9 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
+
+
+
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
@@ -687,6 +864,17 @@ void WorldSystem::restart_game() {
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
+	// Create cutscene entities
+	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
+	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
+	cutscene_drone_laughing_entity   = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_LAUGHING);
+	cutscene_minotaur_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR);
+	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
+	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
+
+	// To prevent enemies from moving before player moves
+	do_pathfinding_movement   = false;
+	player_is_manually_moving = false;
 }
 
 // Compute collisions between entities
@@ -711,18 +899,17 @@ void WorldSystem::handle_collisions() {
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
+					// Increment death_count
+					death_count++;
+					std::cout << "Death count is: " << death_count << std::endl;
+
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
 					m.velocity.y = 0;
 
-					// Stop pathfinding movement
+					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
-
-					// Below is the acceleration/flag-based movement implementation
-					//move_right = false;
-					//move_left = false;
-					//move_up = false;
-					//move_down = false;
+					player_is_manually_moving = false;
 				}
 			}
 		}
@@ -793,8 +980,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	} // not GLFW_REPEAT
 
 	if (state == ProgramState::RUNNING) {
-		entt::entity player = registry.view<Player>().begin()[0];
-		Motion& motion = registry.get<Motion>(player);
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -840,12 +1027,14 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
+				if (pressed_keys.size() == 0) {
+					player_is_manually_moving = false;
+				}
 			}
 
-			//if (action == GLFW_RELEASE && 
+			//if (action == GLFW_RELEASE &&
 			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
-			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
+			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A ||
 			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
 			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
 			//	player_is_manually_moving = false;
@@ -888,7 +1077,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				tips.basic_help = 0;
 				tips.picked_up_item = 0;
 				tips.item_info = !tips.item_info;
-			} 
+			}
 
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
@@ -900,6 +1089,19 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				// toggle H for basic help mode
 				if (key == GLFW_KEY_H) {
 					tips.basic_help = !tips.basic_help;
+				}
+			}
+
+			// Toggle cutscene rtx
+			if (action == GLFW_RELEASE) {
+				if (key == GLFW_KEY_R) {
+					rtx_on = !rtx_on;
+					char* status;
+
+					if (rtx_on) { status = "on"; }
+					else { status = "off"; }
+
+					std::cout << "RTX has been turned " << status << std::endl;
 				}
 			}
 		}
@@ -962,7 +1164,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				}
 
 				// Clicked a wall
-				else { 
+				else {
 					std::cout << "Clicked a wall!" << std::endl;
 					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
 						// do attack or stab animation, maybe turn red?

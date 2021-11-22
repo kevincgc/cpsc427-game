@@ -109,7 +109,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 				vec3)); // note the stride to skip the preceeding vertex position
 
 		float time_total = (float)(glfwGetTime()) - game_start_time;
-
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
@@ -496,7 +495,7 @@ void RenderSystem::draw()
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
-			drawTile({j, i}, map_tiles[i][j], projection_2D, vec2(w, h));
+			drawTile({ j, i }, map_tiles[i][j], projection_2D, vec2(w, h));
 		}
 	}
 
@@ -507,10 +506,21 @@ void RenderSystem::draw()
 			continue;
 		// Note, its not very efficient to access elements indirectly via the entity
 		// albeit iterating through all Sprites in sequence. A good point to optimize
-		drawTexturedMesh(entity, projection_2D);
+
+		// Render the sprites first
+		if (!registry.view<Cutscene>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
+		}
+
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
+	// Render the cutscene images last so they'll be on top of the sprites
+	for (entt::entity entity : registry.view <Cutscene>()) {
+		if (registry.view<RenderRequest>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
+		}
+	}
 
 	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
@@ -580,7 +590,7 @@ void RenderSystem::draw()
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 		// pink-ish
-		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f }; 
+		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f };
 	}
 	else if (most_recent_used_item == ItemType::SPEED_BOOST && text_timer_on) {
 		// used speed boost

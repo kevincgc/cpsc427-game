@@ -43,6 +43,12 @@ class RenderSystem {
 		textures_path("heart.png"),
 		textures_path("teleport.png"),  // <div>Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon">berkahicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("speedboost.png")
+		textures_path("cutscene_minotaur.png"),
+		textures_path("cutscene_drone.png"),
+		textures_path("cutscene_drone_sad.png"),
+		textures_path("cutscene_drone_laughing.png"),
+		textures_path("cutscene_minotaur_rtx_off.png"),
+		textures_path("cutscene_drone_rtx_off.png")
 	};
 
 
