@@ -29,7 +29,7 @@ int height;
 float scale_x;
 float scale_y;
 
-// Andrew's Variables
+// Cutscene Variables
 char* cutscene_chosen_text; // Helps determine which of the random dialogues to choose from
 
 char **levels;
