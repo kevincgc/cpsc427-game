@@ -3,6 +3,10 @@ type: premade
 enemies:
     spikes: 1
     drones: [1, 2]
-
 prey: 
     chick: 5
+items:
+    wall breaker: 1
+    speed boost: 1
+    extra life: 0
+    teleporter: 1

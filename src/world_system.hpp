@@ -19,6 +19,10 @@
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
+extern std::vector<Item> inventory;
+extern Item current_item;
+extern std::map<std::string, ItemType> item_to_enum;
+extern ItemType most_recent_used_item;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -29,7 +33,6 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window();
-
 
 	// camera
 	static vec2 camera;
@@ -42,6 +45,7 @@ public:
 
 	// Steps the game ahead by ms milliseconds
 	bool step(float elapsed_ms);
+	void play_sounds();
 
 	// Check for collisions
 	void handle_collisions();
@@ -56,12 +60,15 @@ public:
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
+	void use_wall_breaker(Item& item);
+	void add_extra_life(Item& item);
+	void use_teleport(Item& item);
+	void use_speed_boost(Item& item);
 
 	// restart level
 	void restart_game();
 
 private:
-
 
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
@@ -74,6 +81,9 @@ private:
 	// Number of fish eaten by the salmon, displayed in the window title
 	unsigned int points;
 
+	// game time
+	double game_time_ms;
+
 	// Game state
 	RenderSystem* renderer;
 	float next_item_spawn;
@@ -82,9 +92,7 @@ private:
 
 	// music references
 	Mix_Music* background_music;
-	Mix_Chunk* salmon_dead_sound;
-	Mix_Chunk* salmon_eat_sound;
-	Mix_Chunk* tada_sound;
+	std::array<Mix_Chunk *, sound_effect_count> sound_effects;
 
 	// entity spawning
 	std::vector<vec2> spawnable_tiles;

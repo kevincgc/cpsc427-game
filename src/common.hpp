@@ -72,8 +72,10 @@ enum class ProgramState {
 	RESET_GAME,
 	RUNNING,
 	PAUSED,
-	GAME_OVER,
-	EXIT
+	GAME_OVER_WIN,
+	GAME_OVER_DEAD,
+	EXIT,
+	CUTSCENE1
 };
 
 extern ProgramState state;
@@ -81,12 +83,13 @@ extern ProgramState state;
 // From main.cpp - now globally accessible
 extern int window_width_px;
 extern int window_height_px;
-extern float global_scaling_factor;
 extern vec2 global_scaling_vector;
 extern vec2 map_scale;
+extern int cutscene_selection;
 
 // From world_system.cpp - now globally accessible (especially for ai_system.cpp)
 extern vec2  player_vel;
+extern vec2	 default_player_vel;
 extern vec2  enemy_vel;
 extern vec2  starting_map_pos;
 extern vec2  ending_map_pos;
@@ -94,5 +97,15 @@ extern bool  do_generate_path;
 extern bool  player_swing;
 extern bool  player_is_manually_moving;
 
+extern entt::entity cutscene_minotaur_entity;
+extern entt::entity cutscene_drone_entity;
+extern entt::entity cutscene_drone_sad_entity;
+extern entt::entity cutscene_drone_laughing_entity;
+extern entt::entity cutscene_minotaur_rtx_off_entity;
+extern entt::entity cutscene_drone_rtx_off_entity;
+
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;
+
+extern float game_start_time;
+extern bool initial_game;

@@ -3,11 +3,10 @@
 #include "world_system.hpp"
 #include <iostream>
 
-
-
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
 {
+	static bool reflected = false;
 	Motion &motion = registry.get<Motion>(entity);
 	// Transformation code, see Rendering and Transformation in the template
 	// specification for more info Incrementally updates transformation matrix,
@@ -16,12 +15,18 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	transform.translate(motion.position - vec2(WorldSystem::camera.x, WorldSystem::camera.y));
 	transform.rotate(motion.angle);
 	transform.scale(motion.scale);
-	if (motion.velocity.x < 0) {
-		transform.reflect();
-	}
 
 	assert(registry.view<RenderRequest>().contains(entity));
-	const RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	RenderRequest &render_request = registry.get<RenderRequest>(entity);
+
+	if (motion.velocity.x < 0) {
+		render_request.is_reflected = true;
+	} else if (motion.velocity.x > 0) {
+		render_request.is_reflected = false;
+	} // if zero keep last
+
+	if (render_request.is_reflected) transform.reflect();
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -103,13 +108,21 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
-		float time_total = (float)(glfwGetTime());
+		float time_total = (float)(glfwGetTime()) - game_start_time;
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
 
 		bool flash = registry.view<Flash>().contains(entity);
 		GLuint flash_uloc = glGetUniformLocation(program, "flash");
 		glUniform1f(flash_uloc, flash);
+
+		bool used_wall_breaker = registry.view<WallBreakerTimer>().contains(entity);
+		GLuint wall_breaker_uloc = glGetUniformLocation(program, "used_wall_breaker");
+		glUniform1f(wall_breaker_uloc, used_wall_breaker);
+
+		bool used_speed_boost = registry.view<SpeedBoostTimer>().contains(entity);
+		GLuint speed_boost_uloc = glGetUniformLocation(program, "used_speed_boost");
+		glUniform1f(speed_boost_uloc, used_speed_boost);
 
 		// pass gesture to the shader
 		GLuint motion_uloc = glGetUniformLocation(program, "gesture");
@@ -121,6 +134,12 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		}
 		else if (registry.view<Attack>().contains(entity)) {
 			player_gesture = 3;
+		}
+		else if (registry.view<WallBreakerTimer>().contains(entity) || (registry.view<SpeedBoostTimer>().contains(entity))) {
+			player_gesture = 2;
+		}
+		else if (tips.used_item) {
+			player_gesture = 5;
 		}
 		else if (player_motion.velocity.x == 0 && player_motion.velocity.y == 0) {
 			player_gesture = 0;
@@ -278,9 +297,9 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 
 /* tutorial reference :
 / https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
-void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const mat3& projection)
+void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, const mat3& projection, vec3 text_colour)
 {
-	if (strlen(text) <= 0) return; // skip, nothing drawn
+	if (text.length() <= 0) return; // skip, nothing drawn
 
 	// prepare for transformation
 	Transform transform;
@@ -289,14 +308,12 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	FT_GlyphSlot g = face->glyph;
 
 	// setting text's pixel size
-	pixel_size = 20.f;
+	pixel_size = 15.f;
 	FT_Set_Pixel_Sizes(face, pixel_size, pixel_size);
 
 
 	// get program shader
-	GLuint program;
-	assert(loadEffectFromFile(
-		shader_path("text") + ".vs.glsl", shader_path("text") + ".fs.glsl", program));
+	const GLuint program = (GLuint) effects[(int) EFFECT_ASSET_ID::TEXT];
 
 	//single texture object to render all the glyphs
 	GLuint tex;
@@ -318,7 +335,7 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	gl_has_errors();
 
 	GLuint uniform_color = glGetUniformLocation(program, "textColor");
-	glUniform3f(uniform_color, 0.6 , 0.5 , 0.5);
+	glUniform3f(uniform_color, text_colour[0] , text_colour[1], text_colour[2]);
 
 	glEnableVertexAttribArray(attribute_coord);
 	glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
@@ -336,9 +353,9 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl_has_errors();
 
-	for (const char* p = text; *p; p++)
+	for (int p = 0; p < text.length(); p++)
 	{
-		if (FT_Load_Char(face, *p, FT_LOAD_RENDER)) {continue;}
+		if (FT_Load_Char(face, text[p], FT_LOAD_RENDER)) {continue;}
 
 		glTexImage2D(
 				GL_TEXTURE_2D,
@@ -384,16 +401,10 @@ void RenderSystem::drawText(const char* text, vec2 position, vec2 scale, const m
 		gl_has_errors();
 	}
 
-
+	// clear memory
+	glDeleteTextures(1, &tex);
+	glDeleteBuffers(1, &text_vbo);
 }
-
-
-
-
-
-
-
-
 
 // draw the intermediate texture to the screen, with some distortion to simulate
 // water
@@ -427,11 +438,13 @@ void RenderSystem::drawToScreen()
 	gl_has_errors();
 	const GLuint water_program = effects[(GLuint)EFFECT_ASSET_ID::WATER];
 	// Set clock
+	float time_total = (float)glfwGetTime() - game_start_time;
 	GLuint time_uloc = glGetUniformLocation(water_program, "time");
-	GLuint dead_timer_uloc = glGetUniformLocation(water_program, "darken_screen_factor");
-	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
-	//ScreenState &screen = registry.get<ScreenState>(screen_state_entity);
-	//glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
+	glUniform1f(time_uloc, time_total);
+	GLuint init_game_uloc = glGetUniformLocation(water_program, "initial_game");
+	glUniform1f(init_game_uloc, initial_game);
+	GLuint end_game_uloc = glGetUniformLocation(water_program, "endGame");
+	glUniform1f(end_game_uloc, registry.view<EndGame>().size() != 0);
 	gl_has_errors();
 	// Set the vertex position and vertex texture coordinates (both stored in the
 	// same VBO)
@@ -482,7 +495,7 @@ void RenderSystem::draw()
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
-			drawTile({j, i}, map_tiles[i][j], projection_2D, vec2(w, h));
+			drawTile({ j, i }, map_tiles[i][j], projection_2D, vec2(w, h));
 		}
 	}
 
@@ -493,17 +506,107 @@ void RenderSystem::draw()
 			continue;
 		// Note, its not very efficient to access elements indirectly via the entity
 		// albeit iterating through all Sprites in sequence. A good point to optimize
-		drawTexturedMesh(entity, projection_2D);
+
+		// Render the sprites first
+		if (!registry.view<Cutscene>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
+		}
+
 	}
 
+	entt::entity player = registry.view<Player>().begin()[0];
+	// Render the cutscene images last so they'll be on top of the sprites
+	for (entt::entity entity : registry.view <Cutscene>()) {
+		if (registry.view<RenderRequest>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
+		}
+	}
 
-	// render help text
-	char* renderedText_1;
-	char* renderedText_2;
-	if (tips.in_help_mode)
+	// render text with initial position and colour
+	vec2 text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	vec2 text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
+	// ensures text disappears after 3 seconds for non-toggled options
+	bool text_timer_on = registry.view<TextTimer>().contains(player);
+
+	if (tips.basic_help)
 	{
-		renderedText_1 = "Movement keys: arrows/W(up)/A(left)/S(down)/D(right)";
-		renderedText_2 = "Click to find path.";
+		renderedText_1 = "Click and point to a square to move to it.";
+		renderedText_2 = "Press spacebar to attack enemies and \"I\" to use an item!";
+
+	}
+	else if (tips.picked_up_item && !current_item.name.empty() && text_timer_on) {
+		// collected item, press T to explain what item you current hold does (will read current_item's type and render appropriate text)
+		renderedText_1 = "You picked up the " + current_item.name + ". Note that you may only hold ONE item at a time!";
+		renderedText_2 = "Press \"I\" to use it and toggle \"T\" for a description of the item's usage.";
+		text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	}
+	else if (tips.item_info && !current_item.name.empty()) {
+		switch (item_to_enum[current_item.name]) {
+		case ItemType::WALL_BREAKER:
+			renderedText_1 = "Wall breaker: The user gains the ability to break one inner wall of their choosing.";
+			renderedText_2 = "The item effect will wear off after 20 seconds if unused.";
+			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::EXTRA_LIFE:
+			renderedText_1 = "Extra life: The player gains one extra life.";
+			renderedText_2 = "";
+			text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::TELEPORT:
+			renderedText_1 = "Teleporter: The user will be teleported to a random location in the maze.";
+			renderedText_2 = "Hope you don't land on an enemy! Good luck.";
+			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		case ItemType::SPEED_BOOST:
+			renderedText_1 = "Speed boost: The user's speed is doubled for 10 seconds.";
+			renderedText_2 = "Vroom Vroom!";
+			text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text2_pos = { 1 / 2 * w + (35.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			break;
+		default:
+			// unsupported item
+			assert(false);
+			break;
+		}
+	}
+	else if (most_recent_used_item == ItemType::WALL_BREAKER && text_timer_on) {
+		// used wall_breaker item
+		renderedText_1 = "You used the wall breaker!";
+		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// blue
+		text_colour = { 0.f, 0.f, 1.f };
+	}
+	else if (most_recent_used_item == ItemType::TELEPORT && text_timer_on) {
+		// used teleporter
+		renderedText_1 = "You used the teleporter!";
+		renderedText_2 = "You were teleported to a random spot in the maze.";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// pink-ish
+		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f };
+	}
+	else if (most_recent_used_item == ItemType::SPEED_BOOST && text_timer_on) {
+		// used speed boost
+		renderedText_1 = "You used the speed boost!";
+		renderedText_2 = "Speed is doubled for 10 seconds! Go, go, go!";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (17.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		// light blue
+		text_colour = { 0.f, 1.f, 1.f };
+	}
+	else if (most_recent_used_item == ItemType::EXTRA_LIFE && text_timer_on) {
+		// used extra life
+		renderedText_1 = "You gained an extra life!";
+		renderedText_2 = "";
+		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
 	else
 	{
@@ -511,11 +614,8 @@ void RenderSystem::draw()
 		renderedText_2 = "";
 	}
 
-	vec2 text1_pos = { 1 / 2*w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2*w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
-
-	drawText(renderedText_1, text1_pos, { 2.f* global_scaling_vector.x, -2.5f* global_scaling_vector.y }, projection_2D);
-	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D);
+	drawText(renderedText_1, text1_pos, { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
+	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 
 	// Truely render to the screen
 	drawToScreen();

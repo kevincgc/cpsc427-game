@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 
 // myLibs
@@ -33,6 +34,7 @@ vec2 WorldSystem::camera = { 0, 0 };
 vec2 player_vel = { 300.f, 300.f };
 vec2 enemy_vel = { 100.f, 100.f };
 vec2 default_player_vel = { 300.f, 300.f };
+int death_count = 0;
 
 // My Settings
 auto t = Clock::now();
@@ -44,17 +46,58 @@ bool active_spell = false;
 float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
+// Item-related
+std::vector<Item> inventory;
+Item current_item;
+std::map<std::string, ItemType> item_to_enum = {
+	{"wall breaker", ItemType::WALL_BREAKER},
+	{"extra life", ItemType::EXTRA_LIFE},
+	{"teleporter", ItemType::TELEPORT},
+	{"speed boost", ItemType::SPEED_BOOST},
+};
+bool wall_breaker_active = false;
+ItemType most_recent_used_item = ItemType::NONE;
+
 // For pathfinding feature
 bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos;
 
+// For cutscene feature
+bool rtx_on = true;
+bool do_cutscene_1 = true;
+bool cutscene_1_frame_2 = false;
+bool cutscene_1_frame_1 = false;
+bool cutscene_1_frame_0 = true;
+bool cutscene_reached_exit = false;
+int cutscene_selection = 1; // 1 = game start (see menu.c for more info)
+int cutscene_speaker = 1;
+int num_times_exit_reached = 0;
+
+
+entt::entity cutscene_minotaur_entity;
+entt::entity cutscene_drone_entity;
+entt::entity cutscene_drone_sad_entity;
+entt::entity cutscene_drone_laughing_entity;
+entt::entity cutscene_minotaur_rtx_off_entity;
+entt::entity cutscene_drone_rtx_off_entity;
+
+enum cutscene_speaker {
+	SPEAKER_MINOTAUR		 = 1,
+	SPEAKER_DRONE			 = 2,
+	SPEAKER_DRONE_SAD		 = 3,
+	SPEAKER_DRONE_LAUGHING   = 4,
+	SPEAKER_MINOTAUR_RTX_OFF = 5,
+	SPEAKER_DRONE_RTX_OFF    = 6
+};
+
 // For attack
 bool player_swing = false;
 
 // For enemy moving when player moves
 bool player_is_manually_moving = false;
+static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
@@ -102,25 +145,31 @@ Mouse_spell mouse_spell;
 //Debugging
 vec2 debug_pos = { 0,0 };
 
+std::string formatTime(float game_time_ms) {
+	float seconds = game_time_ms / 1000.f;
+	int minutes = floor(seconds) / 60;
+	seconds = seconds - minutes * 60;
+	char buf[10] = {0};
+	sprintf_s(buf, 10, "%02d:%06.3f", minutes, seconds);
+
+	return std::string(buf);
+}
 
 // Create the world
 WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
-	
 }
 
 WorldSystem::~WorldSystem() {
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (salmon_dead_sound != nullptr)
-		Mix_FreeChunk(salmon_dead_sound);
-	if (salmon_eat_sound != nullptr)
-		Mix_FreeChunk(salmon_eat_sound);
-	if (tada_sound != nullptr)
-		Mix_FreeChunk(tada_sound);
+
+	for (int i = 0; i < sound_effect_count; i++) {
+		if (sound_effects[i] != nullptr) Mix_FreeChunk(sound_effects[i]);
+	}
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -209,19 +258,27 @@ GLFWwindow* WorldSystem::create_window() {
 		return nullptr;
 	}
 
+
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	salmon_dead_sound = Mix_LoadWAV(audio_path("salmon_dead.wav").c_str());
-	salmon_eat_sound = Mix_LoadWAV(audio_path("salmon_eat.wav").c_str());
-	tada_sound = Mix_LoadWAV(audio_path("tada.wav").c_str());
+	std::array<std::string, sound_effect_count> sound_effect_paths = {
+		"player_death.wav",
+		"player_item.wav",
+		"tada.wav",
+		"horse_snort.wav",
+		"drone_were_it_only_so_easy.wav",
+		"drone_stupid_boy.wav",
+		"item_break_wall.wav",
+		"item_teleport.wav",
+		"item_speed_boost.wav",
+	};
 
-	
-
-	if (background_music == nullptr || salmon_dead_sound == nullptr || salmon_eat_sound == nullptr) {
-		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
-			audio_path("music.wav").c_str(),
-			audio_path("salmon_dead.wav").c_str(),
-			audio_path("salmon_eat.wav").c_str());
-		return nullptr;
+	for (int i = 0; i < sound_effect_count; i++) {
+		sound_effects[i] = Mix_LoadWAV(audio_path(sound_effect_paths[i]).c_str());
+		if (sound_effects[i] == nullptr) {
+			fprintf(stderr, "Not found: ");
+			fprintf(stderr, sound_effect_paths[i].c_str());
+			assert(false);
+		}
 	}
 
 	return window;
@@ -230,7 +287,8 @@ GLFWwindow* WorldSystem::create_window() {
 void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 	// Playing background music indefinitely
-	// Mix_PlayMusic(background_music, -1);
+	Mix_PlayMusic(background_music, -1);
+	Mix_VolumeMusic(Mix_VolumeMusic(-1) / 20);
 	fprintf(stderr, "Loaded music\n");
 
 	// scale global variables according to user's screen resolution (map, meshes, motion, etc)
@@ -243,29 +301,43 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	restart_game();
 }
 
+
+// ************************************************************************************* step ***********************************************************
 // Update our game world
+void WorldSystem::play_sounds() {
+	for (auto sound_request : game_state.sound_requests) {
+		Mix_PlayChannel(-1, sound_effects[(int) sound_request.sound], 0);
+	}
+	game_state.sound_requests.clear();
+}
+
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
+	game_time_ms += elapsed_ms_since_last_update;
+
 	// Get the screen dimensions
 	int screen_width, screen_height;
 	glfwGetFramebufferSize(window, &screen_width, &screen_height);
 
 	// Updating window title with points
 	std::stringstream title_ss;
-	// TODO: add timer
-	title_ss << "Elapsed time: " << points;
+
+	title_ss << "Elapsed time: " << formatTime(game_time_ms);
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// setting coordinates of camera
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Removing out of screen entities
+	// Removing out of screen entities (that are not cutscene entities)
 	auto motions = registry.view<Motion>();
 
+
 	for (auto entity : motions) {
-		Motion& motion = motions.get<Motion>(entity);
-		if (motion.position.x + abs(motion.scale.x) < 0.f) {
-			registry.destroy(entity);
+		if (!registry.view<Cutscene>().contains(entity)) {
+			Motion& motion = motions.get<Motion>(entity);
+			if (motion.position.x + abs(motion.scale.x) < 0.f) {
+				registry.destroy(entity);
+			}
 		}
 	}
 
@@ -281,7 +353,33 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// restart the game once the death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			state = ProgramState::GAME_OVER;
+			cutscene_1_frame_0 = true;
+
+			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
+			cutscene_selection = 100 + death_count;
+
+			state = ProgramState::GAME_OVER_DEAD;
+
+			return true;
+		}
+	}
+
+	for (entt::entity entity : registry.view<EndGame>()) {
+		// progress timer
+		EndGame& counter = registry.get<EndGame>(entity);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		// if (counter.counter_ms < min_counter_ms) {
+		// 	min_counter_ms = counter.counter_ms;
+		// }
+
+		// restart the game once the death timer expired
+		if (counter.counter_ms < 0) {
+			registry.remove<EndGame>(entity);
+			cutscene_reached_exit = true;
+			cutscene_1_frame_0 = true;
+			state = ProgramState::GAME_OVER_WIN;
 			return true;
 		}
 	}
@@ -301,13 +399,52 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
+	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) {
+		player_vel = default_player_vel * 2.f;
+	}
+
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
 
-	// process player flash timer
+	// progress timers
 	flash_timer -= elapsed_ms_since_last_update;
 	if (flash_timer <= 0) {
 		registry.remove<Flash>(player_minotaur);
+	}
+
+	// TODO: abstract out helper given a component to advance timers
+	if (!registry.view<TextTimer>().empty()) {
+		TextTimer &counter = registry.get<TextTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<TextTimer>(player_minotaur);
+			most_recent_used_item = ItemType::NONE;
+		}
+	}
+
+	if (!registry.view<SpeedBoostTimer>().empty()) {
+		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<SpeedBoostTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<WallBreakerTimer>().empty()) {
+		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<WallBreakerTimer>(player_minotaur);
+		}
+	}
+
+	if (!registry.view<AnimationTimer>().empty()) {
+		AnimationTimer& counter = registry.get<AnimationTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<AnimationTimer>(player_minotaur);
+			tips.used_item = 0;
+		}
 	}
 
 	// Temporary for crossplay playability: Handle enemy respawn
@@ -328,15 +465,184 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	//	motion.coeff_rest = 0.9f;
 	//	motion.velocity = vec2(-100.f, 0.f);
 	//}
+
 	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+	// check if player has won
 	if (tile == MapTile::EXIT) {
+
 		// player has found the exit!
-		Mix_PlayChannel(-1, tada_sound, 0);
-		restart_game();
-		do_pathfinding_movement = false;
+		if (!registry.view<EndGame>().contains(player_minotaur)) {
+			registry.emplace<EndGame>(player_minotaur);
+			game_state.sound_requests.push_back({SoundEffects::TADA});
+			initial_game = false;
+			do_pathfinding_movement = false;
+
+			double finish_time = game_time_ms;
+			std::cout << "Finished game in " << formatTime(finish_time) << "!" << std::endl;
+
+			// For cutscenes
+			num_times_exit_reached++;
+
+			if (num_times_exit_reached == 1) {
+				cutscene_selection = 10;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+			}
+			else if (num_times_exit_reached > 1) {
+				cutscene_selection = 15;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+			}
+
+			// For leaderboard
+			std::string path = data_path() + "/leaderboard.yaml";
+			std::ifstream file(path);
+			if (!file.good()) {
+				std::ofstream outfile(path);
+				outfile.close();
+			}
+			file.close();
+
+			YAML::Node leaderboard = YAML::LoadFile(path);
+
+			std::vector<double> leaderboard_map = {};
+			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
+
+			leaderboard_map.push_back(finish_time);
+			std::sort(leaderboard_map.begin(), leaderboard_map.end());
+
+			std::cout << "LEADERBOARD:" << std::endl;
+			for (int i = 0; i < leaderboard_map.size(); i++) {
+				std::cout << "\t" << i + 1 << ". " << formatTime(leaderboard_map[i]);
+				if (leaderboard_map[i] == finish_time) std::cout << " <-- YOUR POSITION!";
+				std::cout << std::endl;
+			}
+
+			leaderboard[game_state.level_id] = leaderboard_map;
+
+			std::ofstream outfile(path);
+			YAML::Emitter out;
+			out << leaderboard;
+			outfile << out.c_str();
+			outfile.close();
+		}
+
+		// **ORIG START**
+		//registry.emplace<EndGame>(player_minotaur);
+		//state = ProgramState::GAME_OVER_WIN;
+		//Mix_PlayChannel(-1, tada_sound, 0);
+		//initial_game = false;
+		//do_pathfinding_movement = false;
+
+		// restart_game();
+
+		// if (!registry.view<EndGame>().contains(player_minotaur)) {
+		// 	registry.emplace<EndGame>(player_minotaur);
+		// 	Mix_PlayChannel(-1, tada_sound, 0);
+		// 	initial_game = false;
+		// 	do_pathfinding_movement = false;
+		// }
+
+		// if (registry.view<EndGame>().size() == 0) {
+		// 	state = ProgramState::GAME_OVER_WIN;
+		// 	// Mix_PlayChannel(-1, tada_sound, 0);
+		// 	// game_start_time = (float)(glfwGetTime()); // record game start time
+		// 	// initial_game = false;
+		// 	restart_game();
+		// 	// do_pathfinding_movement = false;
+		// }
+
 	}
+
+	// ************************************ Cutscenes ************************************************
+	// This is pretty much a hack to get around some issues with drawing images
+	// Because of bufferswap in nuklear, we have to make sure two successive
+	// frames have the speaker drawn, hence the flags. (Three successive frames
+	// are required on load to give the maze walls time to draw/be colored in,
+	// hence three flags frame_0, frame_1, and frame_2)
+
+	// Gate 1
+	if (cutscene_1_frame_0) {
+		// Set the switches
+		cutscene_1_frame_0 = false;
+		cutscene_1_frame_1 = true;
+
+	}
+
+	// Gate 2
+	else if (cutscene_1_frame_1) {
+		// Set the switches
+		cutscene_1_frame_2 = true;
+		cutscene_1_frame_1 = false;
+
+		// ***** Set up the variables *****
+		entt::entity player						= registry.view<Player>().begin()[0];
+		Motion& motion							= registry.get<Motion>(player);
+
+		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
+
+		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1];
+		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0];
+
+		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+		Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+		Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
+		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+
+		// Determine which image to show and scale it up
+		float scale_x = 900.f * global_scaling_vector.x;
+		float scale_y = 800.f * global_scaling_vector.y;
+		if (rtx_on) {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale = { scale_x, scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
+				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
+				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
+				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
+			}
+		}
+		else {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+			else {
+				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+		}
+	}
+
+	// Gate 3
+	else if (cutscene_1_frame_2) {
+		// Reset switch
+		cutscene_1_frame_2 = false;
+
+		// Play audio files
+		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
+		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
+		else								{ game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
+
+		// Set state to cutscene
+		state = ProgramState::CUTSCENE1;
+	}
+
+	// ************************************************************************************************
 
 	return true;
 }
@@ -492,6 +798,9 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
+
+
+
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
@@ -596,12 +905,9 @@ void WorldSystem::restart_game() {
 	// create items for this level
 	const YAML::Node items = level_config["items"];
 	if (items) {
-		process_entity_node(enemies, [this](std::string item_type, vec2 position) {
-			if (item_type == "extra_lives") {
-				// TODO create item here
-			}
-			else if (item_type == "wall_breaker") {
-				// TODO create item here
+		process_entity_node(items, [this](std::string item_type, vec2 position) {
+			if (item_to_enum[item_type]) {
+				createItem(renderer, position, item_type);
 			}
 			else {
 				assert(false); // unsupported item
@@ -615,6 +921,8 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+	current_item = Item();
+	tips = Help();
 
 	// reset player flash timer
 	flash_timer = 1000.f;
@@ -622,8 +930,20 @@ void WorldSystem::restart_game() {
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
+	// Create cutscene entities
+	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
+	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
+	cutscene_drone_laughing_entity   = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_LAUGHING);
+	cutscene_minotaur_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR);
+	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
+	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
+	// To prevent enemies from moving before player moves
+	do_pathfinding_movement   = false;
+	player_is_manually_moving = false;
 
+	pressed_keys.clear();
+	game_time_ms = 0.f;
 }
 
 // Compute collisions between entities
@@ -634,7 +954,7 @@ void WorldSystem::handle_collisions() {
 		// The entity and its collider
 		entt::entity entity_other = collisions.get<Collision>(entity).other;
 
-		// For now, we are only interested in collisions that involve the salmon
+		// For now, we are only interested in collisions that involve the minotaur
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
@@ -644,23 +964,21 @@ void WorldSystem::handle_collisions() {
 					// Scream, reset timer, and make the salmon sink
 					Motion& m = registry.get<Motion>(entity);
 					registry.emplace<DeathTimer>(entity);
-					Mix_PlayChannel(-1, salmon_dead_sound, 0);
+					game_state.sound_requests.push_back({SoundEffects::PLAYER_DEAD});
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
+					// Increment death_count
+					death_count++;
+					std::cout << "Death count is: " << death_count << std::endl;
 
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
 					m.velocity.y = 0;
 
-					// Stop pathfinding movement
+					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
-
-					// Below is the acceleration/flag-based movement implementation
-					//move_right = false;
-					//move_left = false;
-					//move_up = false;
-					//move_down = false;
+					player_is_manually_moving = false;
 				}
 			}
 			// Checking Player - Prey collisions
@@ -691,9 +1009,56 @@ bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window) || state == ProgramState::EXIT);
 }
 
+// Item functions
+void WorldSystem::use_wall_breaker(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
+	registry.emplace_or_replace<WallBreakerTimer>(player);
+}
+
+void WorldSystem::add_extra_life(Item& item){
+	// TODO: pending addition of life system
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used extra life item!" << std::endl;
+
+}
+
+void WorldSystem::use_teleport(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& player_motion = registry.get<Motion>(player);
+
+	std::vector<vec2> teleportable_tiles;
+	auto maze = game_state.level.map_tiles;
+	for (uint i = 0; i < maze.size(); i++) {
+		auto row = maze[i];
+		for (uint j = 0; j < row.size(); j++) {
+			if (row[j] == MapTile::FREE_SPACE) {
+				// inverted coordinates
+				teleportable_tiles.push_back({ j, i });
+			}
+		}
+	}
+
+	int pos_ind = std::uniform_int_distribution<int>(0, teleportable_tiles.size() - 1)(rng);
+	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
+	position += vec2(map_scale.x / 2, map_scale.y / 2);
+	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
+	player_motion.position = position;
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_TELEPORT});
+}
+
+void WorldSystem::use_speed_boost(Item& item){
+	entt::entity player = registry.view<Player>().begin()[0];
+	std::cout << "Used speed boost item!" << std::endl;
+	registry.emplace_or_replace<SpeedBoostTimer>(player);
+
+	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
+}
+
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
-	static std::map<int, bool> pressed_keys = std::map<int, bool>();
+
 
 	// Menu Interaction
 	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
@@ -704,8 +1069,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	} // not GLFW_REPEAT
 
 	if (state == ProgramState::RUNNING) {
-		entt::entity player = registry.view<Player>().begin()[0];
-		Motion& motion = registry.get<Motion>(player);
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -732,7 +1097,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving = true;
 					motion.velocity.y = -1 * player_vel.y;
 				}
-        
+
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement = false;
 					player_is_manually_moving = true;
@@ -751,16 +1116,57 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
+				if (pressed_keys.size() == 0) {
+					player_is_manually_moving = false;
+				}
 			}
 
-			//if (action == GLFW_RELEASE && 
+			//if (action == GLFW_RELEASE &&
 			//	(key == GLFW_KEY_UP    || key == GLFW_KEY_W ||
-			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A || 
+			//	 key == GLFW_KEY_LEFT  || key == GLFW_KEY_A ||
 			//	 key == GLFW_KEY_RIGHT || key == GLFW_KEY_D ||
 			//	 key == GLFW_KEY_DOWN  || key == GLFW_KEY_S)) {
 			//	player_is_manually_moving = false;
 			//}
+
+			// Use Item
+			if (key == GLFW_KEY_I) {
+				if (!current_item.name.empty() && action == GLFW_PRESS) {
+					most_recent_used_item = item_to_enum[current_item.name];
+					switch (most_recent_used_item) {
+					case ItemType::WALL_BREAKER:
+						use_wall_breaker(current_item);
+						break;
+					case ItemType::EXTRA_LIFE:
+						add_extra_life(current_item);
+						break;
+					case ItemType::TELEPORT:
+						use_teleport(current_item);
+						break;
+					case ItemType::SPEED_BOOST:
+						use_speed_boost(current_item);
+						break;
+					default:
+						// unsupported item or NONE
+						assert(false);
+						break;
+					}
+					tips.basic_help = 0;
+					tips.picked_up_item = 0;
+					tips.item_info = 0;
+					tips.used_item = 1;
+					registry.emplace_or_replace<TextTimer>(player);
+					registry.emplace_or_replace<AnimationTimer>(player);
+					current_item = Item();
+				}
+			}
+
+			// Tell user about the item they are holding (toggle with T if they are holding an item)
+			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
+				tips.basic_help = 0;
+				tips.picked_up_item = 0;
+				tips.item_info = !tips.item_info;
+			}
 
 			// Pause Game
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
@@ -768,9 +1174,24 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 
 			// Help Mode
-			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				if (key == GLFW_KEY_H) { tips.in_help_mode = 1; }
-				else { tips.in_help_mode = 0; }
+			if (action == GLFW_PRESS) {
+				// toggle H for basic help mode
+				if (key == GLFW_KEY_H) {
+					tips.basic_help = !tips.basic_help;
+				}
+			}
+
+			// Toggle cutscene rtx
+			if (action == GLFW_RELEASE) {
+				if (key == GLFW_KEY_R) {
+					rtx_on = !rtx_on;
+					char* status;
+
+					if (rtx_on) { status = "on"; }
+					else { status = "off"; }
+
+					std::cout << "RTX has been turned " << status << std::endl;
+				}
 			}
 		}
 	}
@@ -831,8 +1252,16 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 					do_generate_path = true;
 				}
 
-				// Did not click a traversable node...
-				else { std::cout << "Clicked on a wall!" << std::endl; }
+				// Clicked a wall
+				else {
+					std::cout << "Clicked a wall!" << std::endl;
+					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
+						// do attack or stab animation, maybe turn red?
+						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
+						game_state.sound_requests.push_back({SoundEffects::ITEM_BREAK_WALL});
+						registry.erase<WallBreakerTimer>(player);
+					}
+				}
 
 			}
 

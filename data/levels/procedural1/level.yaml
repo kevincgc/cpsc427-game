@@ -7,6 +7,10 @@ procedural_options:
 enemies:
     spikes: 2
     drones: 3
-
 prey: 
     chick: 3
+items:
+    wall breaker: [1,2]
+    extra life: 0
+    teleporter: [1,2]
+    speed boost: [1,2]
