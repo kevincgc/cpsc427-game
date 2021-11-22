@@ -794,6 +794,10 @@ void WorldSystem::restart_game() {
 	cutscene_minotaur_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR);
 	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
+
+	// To prevent enemies from moving before player moves
+	do_pathfinding_movement   = false;
+	player_is_manually_moving = false;
 }
 
 // Compute collisions between entities
@@ -825,6 +829,7 @@ void WorldSystem::handle_collisions() {
 					// Reset player speed/movement to 0
 					m.velocity.x = 0;
 					m.velocity.y = 0;
+
 					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
 					player_is_manually_moving = false;
@@ -906,7 +911,10 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					motion.velocity.y = player_vel.y;
 				}
 
-				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
+				// For some reason, pressed_keys.size() stays no less than 1 after moving after reset.
+				if (pressed_keys.size() == 0) { 
+					player_is_manually_moving = false; 
+				}
 			}
 
 			// Pause Game

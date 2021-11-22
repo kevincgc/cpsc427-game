@@ -18,7 +18,6 @@ layout(location = 0) out vec4 color;
 
 vec2 iResolution = vec2(1200., 800.); 
 vec2 rand1(vec2 v)
-vec2 distort(vec2 uv) 
 {
     return vec2(fract(sin(dot(v.xy ,vec2(12.9898,78.233))) * 43758.5453),
                 fract(cos(dot(v.yx ,vec2(31.6245,22.723))) * 63412.9227)) - 0.5;
