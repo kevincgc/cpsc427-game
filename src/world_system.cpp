@@ -663,6 +663,12 @@ void WorldSystem::handle_collisions() {
 					//move_down = false;
 				}
 			}
+			// Checking Player - Prey collisions
+			if (registry.view<Prey>().contains(entity_other)) {
+				Prey& prey = registry.get<Prey>(entity_other);
+				chick_ai.erase(chick_ai.begin() + prey.id);
+				registry.destroy(entity_other);
+			}
 		}
 	}
 

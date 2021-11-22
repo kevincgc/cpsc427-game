@@ -160,6 +160,10 @@ void AISystem::step()
 		}
 	}
 
+	for (auto& ai : chick_ai) {
+		ai.step();
+	}
+
 	// ========= Feature: Pathfinding (BFS search and player movement)=========
 	if (do_generate_path) { generate_path(starting_map_pos, ending_map_pos); }
 
