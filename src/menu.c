@@ -101,7 +101,7 @@ void initMainMenu( GLFWwindow* win, int window_width_px, int window_height_px, f
         strcpy(path, PROJECT_SOURCE_DIR);
         strcat(path, relPath);
         #endif
-        
+
         struct nk_font *future = nk_font_atlas_add_from_file(atlas, path, 26 * scale_x_in, 0);
         free(path);
         nk_glfw3_font_stash_end(&glfw);
@@ -232,15 +232,18 @@ void drawPauseMenu( GLFWwindow* win, int* out)
     glfwSwapBuffers(win);
 }
 
-void drawGameOverMenu( GLFWwindow* win, int* out)
+void drawGameOverMenu( GLFWwindow* win, int* out, int player_win)
 {
     nk_glfw3_new_frame(&glfw);
-    if (nk_begin(ctx, "You Died", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
-        NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+    int res;
+
+    if (player_win) res = nk_begin(ctx, "You escaped!", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
+        NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+    else res = nk_begin(ctx, "You died.", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
+        NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+
+    if (res)
     {
-        enum { EASY, HARD };
-         int op = EASY;
-         int property = 20;
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "TRY AGAIN")) {
             fprintf(stdout, "Restarting Game\n");
