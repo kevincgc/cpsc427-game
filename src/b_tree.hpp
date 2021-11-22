@@ -9,6 +9,7 @@
 #include "common.hpp"
 #include "components.hpp"
 #include "world_system.hpp"
+#include "a_star.hpp"
 
 enum class Direction {
 	UP,
@@ -285,7 +286,7 @@ public:
 	BTState process(entt::entity e) override {
 		current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
 		Motion& motion = registry.get<Motion>(e);
-		if (current_tile == target_tile) {
+		if (current_tile == target_tile && state != ProgramState::PAUSED) {
 			float x = motion.position.x - floor(motion.position.x / map_scale.x) * map_scale.x;
 			float y = motion.position.y - floor(motion.position.y / map_scale.y) * map_scale.y;
 			if (is_approx_eq(x, map_scale.x/2) && is_approx_eq(y, map_scale.y / 2)) {
@@ -341,7 +342,7 @@ public:
 	void init(entt::entity e) override
 	{
 		reset();
-		printf("init\n");
+		//printf("init\n");
 		m_index = 0;
 		const auto& child = m_children[randomized_indexes[m_index]];
 		child->init(e);
@@ -379,124 +380,11 @@ private:
 		Motion& motion = registry.get<Motion>(e);
 		vec2 difference = motion.position - player_motion.position;
 		float distance = sqrt(dot(difference, difference));
-		return distance <= 150;
+		return distance <= 0;
 	}
 
 	BTState process(entt::entity e) override {
 		return is_close(e) ? BTState::Failure : BTState::Success;
-	}
-};
-
-class AStarSearch {
-	class Node {
-	public:
-		vec2 coord;
-		Node* parent;
-		float g; // dist from start
-		float h; // dist to target
-		float f; // g + h
-		Node(vec2 c) : coord(c), parent(nullptr), f(0), g(0), h(0) { }
-		//Node(vec2 c, vec2 p, float f_) : coord(c), parent(p), f(f_) { }
-		Node(vec2 c, Node* p, float f_, float g_, float h_) : coord(c), parent(p), f(f_), g(g_), h(h_) { }
-	};
-	std::vector<vec2> path;
-	std::vector<Node> closed;
-	std::vector<Node> open;
-	vec2 start;
-	vec2 target;
-	std::vector<int> x_adj = { 1, -1, 0, 0 };
-	std::vector<int> y_adj = { 0, 0, 1, -1 };
-
-	bool eq(float f1, float f2) {
-		return abs(f1 - f2) < 1e-6;
-	}
-
-	// Manhattan distance to calculate h cost
-	int get_cost(vec2 target, vec2 current) {
-		return abs(target[0] - current[0]) + abs(target[1] - current[1]);
-	}
-
-	void trace_path(Node& node) {
-		path.push_back(node.coord);
-		Node* parent = node.parent;
-		while (parent != nullptr) {
-			path.push_back(parent->coord);
-			parent = parent->parent;
-		}
-		path.pop_back();
-		//std::reverse(path.begin(), path.end());
-	}
-
-	void search() {
-		open.push_back(Node(start));
-		while (open.size() > 0) {
-			float min_f = FLT_MAX;
-			int min_f_index;
-			for (int i = 0; i < open.size(); i++) {
-				if (open[i].f < min_f) {
-					min_f_index = i;
-					min_f = open[i].f;
-				}
-			}
-			Node& parent = open[min_f_index];
-			closed.push_back(parent);
-			open.erase(open.begin() + min_f_index);
-			if (parent.coord == target) {
-				trace_path(parent);
-				return;
-			}
-			for (int i = 0; i < x_adj.size(); i++) {
-				vec2 coordinates = { parent.coord.x + x_adj[i], parent.coord.y + y_adj[i] };
-				if (WorldSystem::is_within_bounds(coordinates)) {
-					bool found = false;
-					for (auto& e : closed) {
-						if (e.coord == coordinates) {
-							found = true;
-						}
-					}
-					if (found)
-						continue;
-					Node* found_node;
-					for (auto& e : open) {
-						if (e.coord == coordinates) {
-							found = true;
-							found_node = &e;
-						}
-					}
-					float h_cost = get_cost(coordinates, target);
-					float g_cost = parent.g + 1;
-					float f_cost = h_cost + g_cost;
-					if (!found) {
-						open.push_back(Node(coordinates, &parent, f_cost, g_cost, h_cost));
-					}
-					else {
-						if (f_cost < found_node->f) {
-							found_node->f = f_cost;
-							found_node->g = g_cost;
-							found_node->h = h_cost;
-							found_node->parent = &parent;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	void init(vec2 t, vec2 s) {
-		path.clear();
-		closed.clear();
-		open.clear();
-		target = t;
-		start = s;
-	}
-
-public:
-	std::vector<vec2> get_path(vec2 t, vec2 s) {
-		if ((!(target == t) || !(start == s))) {
-			init(t, s);
-			search();
-		}
-		return path;
 	}
 };
 
@@ -603,9 +491,10 @@ public:
 		if (!is_init) {
 			check_dist = new CheckIsClose();
 			select_random_dir = new BTRandomSelector{ std::vector<BTNode*>{&move_up,& move_down,& move_left,& move_right} };
-			roam = new BTSequence{ std::vector<BTNode*>{check_dist,select_random_dir} };
+			//roam = new BTSequence{ std::vector<BTNode*>{check_dist,select_random_dir} };
+			roam = new BTSequence{ std::vector<BTNode*>{select_random_dir} };
 			//escape = new Escape();
-			//roam_or_escape = new BTSelector{ std::vector<BTNode*>{ roam,escape };
+			//roam_or_escape = new BTSelector{ vector<BTNode*>{ roam,escape };
 			root = new BTRepeat(roam);
 			root->init(e);
 			is_init = true;

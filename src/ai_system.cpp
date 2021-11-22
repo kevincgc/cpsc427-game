@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm> // for reversing a vector
+#include "a_star.hpp"
 
 
 // Pathfinding Datastructure
@@ -165,7 +166,13 @@ void AISystem::step()
 	}
 
 	// ========= Feature: Pathfinding (BFS search and player movement)=========
-	if (do_generate_path) { generate_path(starting_map_pos, ending_map_pos); }
+	if (do_generate_path) { 
+		AStarSearch search;
+		path = search.get_path(ending_map_pos, starting_map_pos);
+		do_generate_path = false;
+		do_pathfinding_movement = true;
+		//generate_path(starting_map_pos, ending_map_pos); 
+	}
 
 	if (do_pathfinding_movement) {
 
