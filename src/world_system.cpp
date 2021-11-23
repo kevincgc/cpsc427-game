@@ -1021,12 +1021,15 @@ void WorldSystem::use_wall_breaker(){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
 	registry.emplace_or_replace<WallBreakerTimer>(player);
+	most_recent_used_item = ItemType::WALL_BREAKER;
+
 }
 
 void WorldSystem::add_extra_life(){
 	// TODO: pending addition of life system
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used extra life item!" << std::endl;
+	most_recent_used_item = ItemType::EXTRA_LIFE;
 
 }
 
@@ -1051,6 +1054,7 @@ void WorldSystem::use_teleport(){
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
 	player_motion.position = position;
+	most_recent_used_item = ItemType::TELEPORT;
 	game_state.sound_requests.push_back({SoundEffects::ITEM_TELEPORT});
 }
 
@@ -1058,6 +1062,7 @@ void WorldSystem::use_speed_boost(){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used speed boost item!" << std::endl;
 	registry.emplace_or_replace<SpeedBoostTimer>(player);
+	most_recent_used_item = ItemType::SPEED_BOOST;
 	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
 }
 
@@ -1065,10 +1070,7 @@ void WorldSystem::use_speed_boost(){
 void WorldSystem::postItemUse(entt::entity& player) {
 	registry.emplace_or_replace<TextTimer>(player);
 	registry.emplace_or_replace<AnimationTimer>(player);
-	tips.basic_help = 0;
-	tips.picked_up_item = 0;
-	tips.show_inventory = 0;
-	tips.item_info = 0;
+	tips = Help();
 	tips.used_item = 1;
 }
 
