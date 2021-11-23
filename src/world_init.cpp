@@ -169,7 +169,7 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
 	motion.scale = mesh.original_size * 40.f * global_scaling_vector;
-	
+
 	Item item = Item();
 	item.name = item_type;
 	TEXTURE_ASSET_ID texture_type;
