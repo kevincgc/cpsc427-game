@@ -346,7 +346,7 @@ class AStarSearch {
 	std::vector<vec2> path;
 	vec2 start;
 	vec2 target;
-	std::vector<vec2> direction = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 } };
+	std::vector<vec2> adj = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 } };
 
 	// Manhattan distance
 	int get_cost(vec2 target, vec2 current) {
@@ -388,23 +388,23 @@ class AStarSearch {
 			open.erase(open.begin() + current_index);
 
 			for (int i = 0; i < 4; ++i) {
-				vec2 new_coord(current_node->coord + direction[i]);
+				vec2 new_coord(current_node->coord + adj[i]);
 				if (!is_valid_tile(new_coord) || find_node(close, new_coord)) {
 					continue;
 				}
 
-				uint totalCost = current_node->g + 10;
+				float f_cost = current_node->g + 1;
 
 				Node* new_node = find_node(open, new_coord);
 				if (new_node == nullptr) {
 					new_node = new Node(new_coord, current_node);
-					new_node->g = totalCost;
+					new_node->g = f_cost;
 					new_node->h = get_cost(new_node->coord, target);
 					open.push_back(new_node);
 				}
-				else if (totalCost < new_node->g) {
+				else if (f_cost < new_node->g) {
 					new_node->parent = current_node;
-					new_node->g = totalCost;
+					new_node->g = f_cost;
 				}
 			}
 		}
