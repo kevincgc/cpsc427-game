@@ -1,4 +1,4 @@
-=// internal
+// internal
 #include "render_system.hpp"
 
 #include <array>
@@ -21,7 +21,7 @@ const int SPRITE_SHEET_WIDTH = 844;
 const int SPRITE_SHEET_HEIGHT = 1868;
 
 const float ANIMATION_FRAME_W = 56.f / SPRITE_SHEET_WIDTH; // 0-1
-const float ANIMATION_FRAME_H = 50.f / SPRITE_SHEET_HEIGHT; 
+const float ANIMATION_FRAME_H = 50.f / SPRITE_SHEET_HEIGHT;
 const float OFFSET_X = 0.f;
 const float OFFSET_Y = 0.f;
 
@@ -51,6 +51,7 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 void RenderSystem::reinitSetBuffer(int width, int height, GLFWwindow* window_arg) {
 	// Create a frame buffer
 	frame_buffer = 0;
+	glDeleteFramebuffers(1, &frame_buffer);
 	glGenFramebuffers(1, &frame_buffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 	gl_has_errors();
@@ -148,13 +149,13 @@ void RenderSystem::initializeGlMeshes()
 		// Initialize meshes
 		GEOMETRY_BUFFER_ID geom_index = mesh_paths[i].first;
 		std::string name = mesh_paths[i].second;
-		Mesh::loadFromOBJFile(name, 
+		Mesh::loadFromOBJFile(name,
 			meshes[(int)geom_index].vertices,
 			meshes[(int)geom_index].vertex_indices,
 			meshes[(int)geom_index].original_size);
 
 		bindVBOandIBO(geom_index,
-			meshes[(int)geom_index].vertices, 
+			meshes[(int)geom_index].vertices,
 			meshes[(int)geom_index].vertex_indices);
 	}
 }
@@ -180,10 +181,10 @@ void RenderSystem::initializeGlGeometryBuffers()
 	textured_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
 	textured_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
 	textured_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
-	textured_vertices[0].texcoord = { 0.f, 1.f };  
-	textured_vertices[1].texcoord = { 1.f, 1.f };  
-	textured_vertices[2].texcoord = { 1.f, 0.f };  
-	textured_vertices[3].texcoord = { 0.f, 0.f };  
+	textured_vertices[0].texcoord = { 0.f, 1.f };
+	textured_vertices[1].texcoord = { 1.f, 1.f };
+	textured_vertices[2].texcoord = { 1.f, 0.f };
+	textured_vertices[3].texcoord = { 0.f, 0.f };
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> textured_indices = { 0, 3, 1, 1, 3, 2 };
@@ -197,10 +198,10 @@ void RenderSystem::initializeGlGeometryBuffers()
 	minotaur_sprite_sheet_vertices[1].position = { +1.f/2, +1.f/2, 0.f };
 	minotaur_sprite_sheet_vertices[2].position = { +1.f/2, -1.f/2, 0.f };
 	minotaur_sprite_sheet_vertices[3].position = { -1.f/2, -1.f/2, 0.f };
-	minotaur_sprite_sheet_vertices[0].texcoord = {OFFSET_X, OFFSET_Y + ANIMATION_FRAME_H};  
-	minotaur_sprite_sheet_vertices[1].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y + ANIMATION_FRAME_H};  
-	minotaur_sprite_sheet_vertices[2].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y};  
-	minotaur_sprite_sheet_vertices[3].texcoord = {OFFSET_X, OFFSET_Y};  
+	minotaur_sprite_sheet_vertices[0].texcoord = {OFFSET_X, OFFSET_Y + ANIMATION_FRAME_H};
+	minotaur_sprite_sheet_vertices[1].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y + ANIMATION_FRAME_H};
+	minotaur_sprite_sheet_vertices[2].texcoord = {OFFSET_X + ANIMATION_FRAME_W, OFFSET_Y};
+	minotaur_sprite_sheet_vertices[3].texcoord = {OFFSET_X, OFFSET_Y};
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> minotaur_sprite_sheet_indices = { 0, 3, 1, 1, 3, 2 };
@@ -300,6 +301,7 @@ bool RenderSystem::initScreenTexture()
 	int width, height;
 	glfwGetFramebufferSize(const_cast<GLFWwindow*>(window), &width, &height);
 
+	glDeleteTextures(1, &off_screen_render_buffer_color);
 	glGenTextures(1, &off_screen_render_buffer_color);
 	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
@@ -307,6 +309,7 @@ bool RenderSystem::initScreenTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	gl_has_errors();
 
+	glDeleteRenderbuffers(1, &off_screen_render_buffer_depth);
 	glGenRenderbuffers(1, &off_screen_render_buffer_depth);
 	glBindRenderbuffer(GL_RENDERBUFFER, off_screen_render_buffer_depth);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, off_screen_render_buffer_color, 0);
@@ -440,3 +443,4 @@ bool loadEffectFromFile(
 
 	return true;
 }
+

@@ -19,6 +19,10 @@
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
+extern std::map<ItemType, int> inventory;
+extern Item most_recent_collected_item;
+extern std::map<std::string, ItemType> item_to_enum;
+extern ItemType most_recent_used_item;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
@@ -29,7 +33,6 @@ public:
 
 	// Creates a window
 	GLFWwindow* create_window();
-
 
 	// camera
 	static vec2 camera;
@@ -42,6 +45,7 @@ public:
 
 	// Steps the game ahead by ms milliseconds
 	bool step(float elapsed_ms);
+	void play_sounds();
 
 	// Check for collisions
 	void handle_collisions();
@@ -56,12 +60,19 @@ public:
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
+	void use_wall_breaker();
+	void add_extra_life();
+	void use_teleport();
+	void use_speed_boost();
+	void postItemUse(entt::entity& player);
 
 	// restart level
 	void restart_game();
 
-private:
+	std::vector<std::string> get_leaderboard();
+	std::string get_player_time();
 
+private:
 
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
@@ -74,6 +85,9 @@ private:
 	// Number of fish eaten by the salmon, displayed in the window title
 	unsigned int points;
 
+	// game time
+	double game_time_ms;
+
 	// Game state
 	RenderSystem* renderer;
 	float next_item_spawn;
@@ -82,9 +96,7 @@ private:
 
 	// music references
 	Mix_Music* background_music;
-	Mix_Chunk* salmon_dead_sound;
-	Mix_Chunk* salmon_eat_sound;
-	Mix_Chunk* tada_sound;
+	std::array<Mix_Chunk *, sound_effect_count> sound_effects;
 
 	// entity spawning
 	std::vector<vec2> spawnable_tiles;
@@ -98,4 +110,7 @@ private:
 	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
 
 	void process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
+
+	double current_finish_time;
+	std::vector<std::string> current_leaderboard;
 };

@@ -5,6 +5,7 @@
 #include "common.hpp"
 #include "components.hpp"
 #include "world_system.hpp"
+#include "b_tree.hpp"
 
 #include <entt.hpp>
 
@@ -27,3 +28,5 @@ public:
 	void step();
 
 };
+
+extern std::vector<ChickAI> chick_ai;

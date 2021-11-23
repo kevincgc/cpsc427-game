@@ -5,6 +5,28 @@
 #include "../ext/stb_image/stb_image.h"
 #include <entt.hpp>
 
+// map tiles
+enum class SoundEffects {
+	PLAYER_DEAD = 0,
+	PLAYER_ITEM,
+	TADA,
+	HORSE_SNORT,
+	DRONE_WERE_IT_ONLY_SO_EASY,
+	DRONE_STUPID_BOY,
+	ITEM_BREAK_WALL,
+	ITEM_TELEPORT,
+	ITEM_SPEED_BOOST,
+	CHICK_DIE,
+
+	COUNT
+};
+const int sound_effect_count = (int)SoundEffects::COUNT;
+
+struct SoundEffectRequest
+{
+	SoundEffects sound;
+};
+
 // Player component
 struct Player
 {
@@ -21,6 +43,11 @@ struct Friendly
 
 };
 
+struct Prey
+{
+	int id;
+};
+
 // All data relevant to the shape and motion of entities
 struct Motion {
 	vec2 position = { 0, 0 };
@@ -29,6 +56,7 @@ struct Motion {
 	vec2 scale = { 10, 10 };
 	float mass = 50.0f;
 	float coeff_rest = 0.8f;
+	bool can_collide = true;
 };
 
 // Stucture to store collision information
@@ -48,6 +76,14 @@ enum MapTile {
 	EXIT
 };
 
+enum ItemType {
+	NONE = 0,
+	WALL_BREAKER,
+	TELEPORT,
+	SPEED_BOOST,
+	EXTRA_LIFE,
+};
+
 // Level State
 struct LoadedLevel
 {
@@ -60,6 +96,8 @@ struct GameState
 {
 	std::string level_id = "procedural1";
 	LoadedLevel level;
+
+	std::vector<SoundEffectRequest> sound_requests;
 };
 extern GameState game_state;
 
@@ -78,7 +116,11 @@ struct ScreenState
 
 // Data structure for togglin help mode
 struct Help {
-	bool in_help_mode = 0;
+	bool basic_help = 0;
+	bool picked_up_item = 0;
+	bool item_info = 0;
+	bool used_item = 0;
+	bool show_inventory = 0;
 };
 extern Help tips;
 
@@ -87,11 +129,28 @@ struct DebugComponent
 {
 	// Note, an empty struct has size 1
 };
+struct AnimationTimer
+{
+	float counter_ms = 1000.f;
+};
 
-// A timer that will be associated to dying salmon
+// A timer that will be associated to dying minotaur
 struct DeathTimer
 {
-	float counter_ms = 1000;
+	float counter_ms = 1000.f;
+};
+
+struct WallBreakerTimer
+{
+	float counter_ms = 20000.f;
+};
+
+struct TextTimer {
+	float counter_ms = 7000.f;
+};
+
+struct SpeedBoostTimer {
+	float counter_ms = 10000.f;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
@@ -122,11 +181,28 @@ struct Attack
 {
 	// if the entity is in attack mode
 };
-
+struct EndGame {
+	float counter_ms = 3000;
+};
 // New Components for project
 struct Item
 {
-	int id = 0;
+	std::string name;
+	float duration_ms;
+};
+
+// Cutscene Elements
+enum Cutscene_enum {
+	BACKGROUND = 1,
+	MINOTAUR = 2,
+	DRONE = 3,
+	DRONE_SAD = 4,
+	DRONE_LAUGHING = 5,
+	MINOTAUR_RTX_OFF = 6,
+	DRONE_RTX_OFF = 7
+};
+struct Cutscene {
+
 };
 
 // Mesh datastructure for storing vertex and index buffers
@@ -182,6 +258,17 @@ enum class TEXTURE_ASSET_ID {
 	SPIKE,
 	DRONE,
 	MINOTAUR,
+	CHICK,
+	WALL_BREAKER,
+	EXTRA_LIFE,
+	TELEPORT,
+	SPEED_BOOST,
+	CUTSCENE_MINOTAUR,
+	CUTSCENE_DRONE,
+	CUTSCENE_DRONE_SAD,
+	CUTSCENE_DRONE_LAUGHING,
+	CUTSCENE_MINOTAUR_RTX_OFF,
+	CUTSCENE_DRONE_RTX_OFF,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -193,10 +280,11 @@ enum class EFFECT_ASSET_ID {
 	TEXTURED = PEBBLE + 1,
 	WATER = TEXTURED + 1,
 	MINOTAUR = WATER + 1,
+	TEXT = MINOTAUR + 1,
 	ENEMY = MINOTAUR + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	EFFECT_COUNT = MINOTAUR + 1
+	EFFECT_COUNT = TEXT + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -218,4 +306,6 @@ struct RenderRequest {
 	TEXTURE_ASSET_ID used_texture = TEXTURE_ASSET_ID::TEXTURE_COUNT;
 	EFFECT_ASSET_ID used_effect = EFFECT_ASSET_ID::EFFECT_COUNT;
 	GEOMETRY_BUFFER_ID used_geometry = GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
+	bool is_reflected = false;
 };
+

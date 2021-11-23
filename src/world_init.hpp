@@ -5,6 +5,7 @@
 #include <entt.hpp>
 #include "render_system.hpp"
 #include "world_system.hpp"
+#include "ai_system.hpp"
 
 extern entt::registry registry;
 
@@ -18,6 +19,11 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 position);
 
 entt::entity createEnemy(RenderSystem* renderer, vec2 position);
 
-entt::entity createItem(RenderSystem* renderer, vec2 position);
+entt::entity createItem(RenderSystem* renderer, vec2 position, std::string item_type);
 
 entt::entity createTrap(RenderSystem* renderer, vec2 position);
+
+entt::entity createChick(RenderSystem* renderer, vec2 position);
+
+entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element);
+
