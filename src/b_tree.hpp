@@ -782,7 +782,7 @@ public:
 	void clear() {
 		delete select_random_dir;
 		delete root;
-		//delete roam_or_escape;
+		delete roam_or_escape;
 		delete check_dist;
 		delete escape;
 		delete roam;
