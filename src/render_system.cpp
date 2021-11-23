@@ -523,50 +523,69 @@ void RenderSystem::draw()
 	}
 
 	// render text with initial position and colour
-	vec2 text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	vec2 text2_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
 	// ensures text disappears after 3 seconds for non-toggled options
 	bool text_timer_on = registry.view<TextTimer>().contains(player);
 
 	if (tips.basic_help)
 	{
-		renderedText_1 = "Click and point to a square to move to it.";
-		renderedText_2 = "Press spacebar to attack enemies and \"I\" to use an item!";
+		renderedText_1 = "Click and point to a square to move to it and press spacebar to attack enemies.";
+		renderedText_2 = "Toggle \"I\" to see your inventory and press 1,2,3, or 4 to use collected items!";
+	}
+	else if (tips.show_inventory) {
+		std::string wall_breaker_ct = std::to_string(inventory[ItemType::WALL_BREAKER]);
+		std::string wall_breaker_txt = "Wall Breaker: " + wall_breaker_ct;
 
+		std::string teleporter_ct = std::to_string(inventory[ItemType::TELEPORT]);
+		std::string teleporter_txt = "Teleporter: " + teleporter_ct;
+
+		std::string speed_boost_ct = std::to_string(inventory[ItemType::SPEED_BOOST]);
+		std::string speed_boost_txt = "Speed Boost: " + speed_boost_ct;
+
+		std::string extra_life_ct = std::to_string(inventory[ItemType::EXTRA_LIFE]);
+		std::string extra_life_txt = "Extra Life: " + extra_life_ct;
+
+		renderedText_1 = "Inventory: " + wall_breaker_txt + ", " + teleporter_txt + ",";
+		renderedText_2 = speed_boost_txt + ", " + extra_life_txt;
+		text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
-	else if (tips.picked_up_item && !current_item.name.empty() && text_timer_on) {
-		// collected item, press T to explain what item you current hold does (will read current_item's type and render appropriate text)
-		renderedText_1 = "You picked up the " + current_item.name + ". Note that you may only hold ONE item at a time!";
-		renderedText_2 = "Press \"I\" to use it and toggle \"T\" for a description of the item's usage.";
-		text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	else if (tips.picked_up_item && !most_recent_collected_item.name.empty() && text_timer_on) {
+		// Item collected
+		std::string key = std::to_string(static_cast<typename std::underlying_type<ItemType>::type>(item_to_enum[most_recent_collected_item.name]));
+		renderedText_1 = "You picked up the " + most_recent_collected_item.name + "! It has been added to your inventory.";
+		renderedText_2 = "Press " + key + " to use it and toggle \"T\" for a description of the item's usage.";
+		text1_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
-	else if (tips.item_info && !current_item.name.empty()) {
-		switch (item_to_enum[current_item.name]) {
+	else if (tips.item_info && !most_recent_collected_item.name.empty()) {
+		// Item info
+		switch (item_to_enum[most_recent_collected_item.name]) {
 		case ItemType::WALL_BREAKER:
 			renderedText_1 = "Wall breaker: The user gains the ability to break one inner wall of their choosing.";
 			renderedText_2 = "The item effect will wear off after 20 seconds if unused.";
 			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		case ItemType::EXTRA_LIFE:
 			renderedText_1 = "Extra life: The player gains one extra life.";
 			renderedText_2 = "";
 			text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		case ItemType::TELEPORT:
 			renderedText_1 = "Teleporter: The user will be teleported to a random location in the maze.";
 			renderedText_2 = "Hope you don't land on an enemy! Good luck.";
 			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			text2_pos = { 1 / 2 * w + (18.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		case ItemType::SPEED_BOOST:
 			renderedText_1 = "Speed boost: The user's speed is doubled for 10 seconds.";
 			renderedText_2 = "Vroom Vroom!";
 			text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-			text2_pos = { 1 / 2 * w + (35.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+			text2_pos = { 1 / 2 * w + (35.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		default:
 			// unsupported item
@@ -575,11 +594,11 @@ void RenderSystem::draw()
 		}
 	}
 	else if (most_recent_used_item == ItemType::WALL_BREAKER && text_timer_on) {
-		// used wall_breaker item
+		// used wall_breaker
 		renderedText_1 = "You used the wall breaker!";
 		renderedText_2 = "You have 20 seconds to click an inner wall and destroy it!";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 		// blue
 		text_colour = { 0.f, 0.f, 1.f };
 	}
@@ -588,7 +607,7 @@ void RenderSystem::draw()
 		renderedText_1 = "You used the teleporter!";
 		renderedText_2 = "You were teleported to a random spot in the maze.";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 		// pink-ish
 		text_colour = { 204.f/255.f, 51.f/255.f, 153.f/255.f };
 	}
@@ -597,7 +616,7 @@ void RenderSystem::draw()
 		renderedText_1 = "You used the speed boost!";
 		renderedText_2 = "Speed is doubled for 10 seconds! Go, go, go!";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (17.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		text2_pos = { 1 / 2 * w + (17.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 		// light blue
 		text_colour = { 0.f, 1.f, 1.f };
 	}
@@ -606,7 +625,7 @@ void RenderSystem::draw()
 		renderedText_1 = "You gained an extra life!";
 		renderedText_2 = "";
 		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
 	else
 	{
