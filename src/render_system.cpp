@@ -20,6 +20,7 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 	RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
+	// Determine if minotaur should be drawn facing left or right
 	if (motion.velocity.x < 0) {
 		render_request.is_reflected = true;
 	} else if (motion.velocity.x > 0) {

@@ -1075,22 +1075,14 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	if (state == ProgramState::RUNNING) {
 	entt::entity player = registry.view<Player>().begin()[0];
-	Motion& motion = registry.get<Motion>(player);
+	Motion& motion	    = registry.get<Motion>(player);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
 			// Swing Attack
 			if (key == GLFW_KEY_SPACE) {
-				if (action == GLFW_PRESS && !registry.view<Attack>().contains(player))
-				{
-					registry.emplace<Attack>(player);
-					player_swing = true;
-				}
-
-				if (action == GLFW_RELEASE) {
-					registry.remove<Attack>(player);
-					player_swing = false;
-				}
+				if (action == GLFW_PRESS && !registry.view<Attack>().contains(player)) { registry.emplace<Attack>(player); }
+				if (action == GLFW_RELEASE)											   { registry.remove<Attack>(player);  }
 			}
 
 			// Movement

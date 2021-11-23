@@ -17,8 +17,7 @@ extern bool  do_pathfinding_movement	 = false;
 	   bool	 do_calculate_new_enemy_path = false;
 	   bool	 ai_debug					 = false; // set to true to print debug statements
 	   float DIST_THRESHOLD			     = 200.f; // distance threshold between enemy and player
-	   float swing_threshold			 = 100.f; // Enemy has to  be close enough to register as a hit
-	   float vertical_threshold			 = 60.f;  // Enemy can't be too far above or below player to register as a hit
+	   float swing_threshold			 = 200.f; // Enemy has to be close enough to register as a hit
 
 void AISystem::step()
 {
@@ -42,33 +41,40 @@ void AISystem::step()
 		{
 
 			// =========== Swinging Attack ===========
+			// If player is attacking
+			if (registry.view<Attack>().contains(player)) {
 
 			// If enemy is close to player for swinging...
-			if (within_threshold(player, entity, swing_threshold) && player_swing && abs(entity_motion.position.y - motion.position.y) < vertical_threshold ){
+				if (within_threshold(player, entity, swing_threshold)){
 
-				// If enemy is to the right of the player and the player is facing right
-   				if (entity_motion.position.x > motion.position.x && motion.velocity.x >= 0) {
-					registry.destroy(entity);
-					break;
-				}
+					RenderRequest &render_request = registry.get<RenderRequest>(player);
 
-				// If enemy is to the left of the player and the player is facing left
-				// Warning: Right now the render system renders the sprite as facing left if velocity.x < 0
-				else if (entity_motion.position.x < motion.position.x && motion.velocity.x < 0) {
-					registry.destroy(entity);
-					break;
-				}
+					// If enemy is to the right of the player and the player is facing right...
+   					if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
+						
+						// Destroy the enemy
+						registry.destroy(entity);
 
-				else if (entity_motion.position.y < motion.position.y && motion.velocity.y < 0) {
-					registry.destroy(entity);
-					break;
-				}
+						// Don't process any of the code below for the enemy
+						// because it's no longer in the registry
+						break;
+					}
 
-				else if (entity_motion.position.y > motion.position.y && motion.velocity.y > 0) {
-					registry.destroy(entity);
-					break;
+					// If enemy is to the left of the player and the player is facing left
+					else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
+						registry.destroy(entity);
+						break;
+					}
+
+					// If enemy is vertically close to the player, just destroy them
+					else if (abs(entity_motion.position.y - motion.position.y) < 100) {
+						registry.destroy(entity);
+						break;
+					}
 				}
 			}
+
+			// ========================================================
 
 			// If enemy is close to player for chasing...
 			if (within_threshold(player, entity, DIST_THRESHOLD)) {
