@@ -987,7 +987,7 @@ void WorldSystem::handle_collisions() {
 				entt::entity player = registry.view<Player>().begin()[0];
 				game_state.sound_requests.push_back({SoundEffects::CHICK_DIE});
 				std::cout << "Calories make you go brrrrr" << std::endl;
-				registry.emplace_or_replace<SpeedBoostTimer>(player);
+				registry.get<Motion>(player).velocity *= 2.5f;
 				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
 					Prey& p = registry.get<Prey>(*it);
 				}
