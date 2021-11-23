@@ -94,7 +94,7 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 	Motion motion = Motion();
 	Cutscene cutscene = Cutscene();
 	motion.angle = 0.f;
-	motion.velocity = {0,0 };
+	motion.velocity = {0,0};
 	motion.position = position;
 	motion.scale = mesh.original_size * 0.f * global_scaling_vector;
 	motion.mass = 0;

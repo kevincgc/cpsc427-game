@@ -47,8 +47,13 @@ float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 // Item-related
-std::vector<Item> inventory;
-Item current_item;
+std::map<ItemType, int> inventory = {
+	{ItemType::WALL_BREAKER, 0},
+	{ItemType::EXTRA_LIFE, 0},
+	{ItemType::TELEPORT, 0},
+	{ItemType::SPEED_BOOST, 0},
+};
+Item most_recent_collected_item;
 std::map<std::string, ItemType> item_to_enum = {
 	{"wall breaker", ItemType::WALL_BREAKER},
 	{"extra life", ItemType::EXTRA_LIFE},
@@ -56,7 +61,7 @@ std::map<std::string, ItemType> item_to_enum = {
 	{"speed boost", ItemType::SPEED_BOOST},
 };
 bool wall_breaker_active = false;
-ItemType most_recent_used_item = ItemType::NONE;
+ItemType most_recent_used_item;
 
 // For pathfinding feature
 bool do_generate_path = false;
@@ -811,8 +816,6 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 
-
-
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
@@ -933,7 +936,11 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
-	current_item = Item();
+	// reset inventory
+	for (auto& item : inventory) {
+		item.second = 0;
+	}
+	most_recent_collected_item = Item();
 	tips = Help();
 
 	// reset player flash timer
@@ -1026,20 +1033,23 @@ bool WorldSystem::is_over() const {
 }
 
 // Item functions
-void WorldSystem::use_wall_breaker(Item& item){
+void WorldSystem::use_wall_breaker(){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used wall breaker item! The player now has 20 seconds to click a breakable wall to break it!" << std::endl;
 	registry.emplace_or_replace<WallBreakerTimer>(player);
+	most_recent_used_item = ItemType::WALL_BREAKER;
+
 }
 
-void WorldSystem::add_extra_life(Item& item){
+void WorldSystem::add_extra_life(){
 	// TODO: pending addition of life system
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used extra life item!" << std::endl;
+	most_recent_used_item = ItemType::EXTRA_LIFE;
 
 }
 
-void WorldSystem::use_teleport(Item& item){
+void WorldSystem::use_teleport(){
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
 
@@ -1060,16 +1070,24 @@ void WorldSystem::use_teleport(Item& item){
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
 	player_motion.position = position;
-
+	most_recent_used_item = ItemType::TELEPORT;
 	game_state.sound_requests.push_back({SoundEffects::ITEM_TELEPORT});
 }
 
-void WorldSystem::use_speed_boost(Item& item){
+void WorldSystem::use_speed_boost(){
 	entt::entity player = registry.view<Player>().begin()[0];
 	std::cout << "Used speed boost item!" << std::endl;
 	registry.emplace_or_replace<SpeedBoostTimer>(player);
-
+	most_recent_used_item = ItemType::SPEED_BOOST;
 	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
+}
+
+
+void WorldSystem::postItemUse(entt::entity& player) {
+	registry.emplace_or_replace<TextTimer>(player);
+	registry.emplace_or_replace<AnimationTimer>(player);
+	tips = Help();
+	tips.used_item = 1;
 }
 
 // On key callback
@@ -1137,42 +1155,43 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			//	player_is_manually_moving = false;
 			//}
 
-			// Use Item
-			if (key == GLFW_KEY_I) {
-				if (!current_item.name.empty() && action == GLFW_PRESS) {
-					most_recent_used_item = item_to_enum[current_item.name];
-					switch (most_recent_used_item) {
-					case ItemType::WALL_BREAKER:
-						use_wall_breaker(current_item);
-						break;
-					case ItemType::EXTRA_LIFE:
-						add_extra_life(current_item);
-						break;
-					case ItemType::TELEPORT:
-						use_teleport(current_item);
-						break;
-					case ItemType::SPEED_BOOST:
-						use_speed_boost(current_item);
-						break;
-					default:
-						// unsupported item or NONE
-						assert(false);
-						break;
-					}
-					tips.basic_help = 0;
-					tips.picked_up_item = 0;
-					tips.item_info = 0;
-					tips.used_item = 1;
-					registry.emplace_or_replace<TextTimer>(player);
-					registry.emplace_or_replace<AnimationTimer>(player);
-					current_item = Item();
-				}
+			// Use Items
+			if (action == GLFW_PRESS && key == GLFW_KEY_1 && inventory[ItemType::WALL_BREAKER] > 0) {
+				use_wall_breaker();
+				inventory[ItemType::WALL_BREAKER]--;
+				postItemUse(player);
 			}
 
-			// Tell user about the item they are holding (toggle with T if they are holding an item)
-			if (!current_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
+			if (action == GLFW_PRESS && key == GLFW_KEY_2 && inventory[ItemType::TELEPORT] > 0) {
+				use_teleport();
+				inventory[ItemType::TELEPORT]--;
+				postItemUse(player);
+			}
+
+			if (action == GLFW_PRESS && key == GLFW_KEY_3 && inventory[ItemType::SPEED_BOOST] > 0) {
+				use_speed_boost();
+				inventory[ItemType::SPEED_BOOST]--;
+				postItemUse(player);
+			}
+
+			if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
+				add_extra_life();
+				inventory[ItemType::EXTRA_LIFE]--;
+				postItemUse(player);
+			}
+
+
+			// toggle show current inventory
+			if (key == GLFW_KEY_I && action == GLFW_PRESS) {
+				tips.show_inventory = !tips.show_inventory;
+				tips.basic_help = 0;
+			}
+
+			// Tell user about the item they just picked up (toggle with T if they are holding an item)
+			if (!most_recent_collected_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
 				tips.basic_help = 0;
 				tips.picked_up_item = 0;
+				tips.show_inventory = 0;
 				tips.item_info = !tips.item_info;
 			}
 
@@ -1186,6 +1205,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				// toggle H for basic help mode
 				if (key == GLFW_KEY_H) {
 					tips.basic_help = !tips.basic_help;
+					tips.show_inventory = 0;
 				}
 			}
 

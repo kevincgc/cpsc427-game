@@ -19,8 +19,8 @@
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
-extern std::vector<Item> inventory;
-extern Item current_item;
+extern std::map<ItemType, int> inventory;
+extern Item most_recent_collected_item;
 extern std::map<std::string, ItemType> item_to_enum;
 extern ItemType most_recent_used_item;
 
@@ -60,10 +60,11 @@ public:
 	static bool tile_is_walkable(MapTile tile);
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
-	void use_wall_breaker(Item& item);
-	void add_extra_life(Item& item);
-	void use_teleport(Item& item);
-	void use_speed_boost(Item& item);
+	void use_wall_breaker();
+	void add_extra_life();
+	void use_teleport();
+	void use_speed_boost();
+	void postItemUse(entt::entity& player);
 
 	// restart level
 	void restart_game();
