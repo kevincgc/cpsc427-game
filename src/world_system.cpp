@@ -1039,7 +1039,7 @@ void WorldSystem::use_teleport(Item& item){
 		}
 	}
 
-	int pos_ind = std::uniform_int_distribution<int>(0, teleportable_tiles.size() - 1)(rng);
+	int pos_ind = std::rand() % teleportable_tiles.size();
 	vec2 position = map_coords_to_position(teleportable_tiles[pos_ind]);
 	position += vec2(map_scale.x / 2, map_scale.y / 2);
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;

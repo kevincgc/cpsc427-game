@@ -129,26 +129,26 @@ struct DebugComponent
 };
 struct AnimationTimer
 {
-	float counter_ms = 1000;
+	float counter_ms = 1000.f;
 };
 
 // A timer that will be associated to dying minotaur
 struct DeathTimer
 {
-	float counter_ms = 1000;
+	float counter_ms = 1000.f;
 };
 
 struct WallBreakerTimer
 {
-	float counter_ms = 20000;
+	float counter_ms = 20000.f;
 };
 
 struct TextTimer {
-	float counter_ms = 3000;
+	float counter_ms = 5000.f;
 };
 
 struct SpeedBoostTimer {
-	float counter_ms = 10000;
+	float counter_ms = 10000.f;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
