@@ -653,7 +653,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Play audio files
 		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
 		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
-		else								{ game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
+		else if (cutscene_selection != 15)  { game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
 
 		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
