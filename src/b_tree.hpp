@@ -254,6 +254,7 @@ class MoveOneTile : public BTNode {
 	Direction d;
 	vec2 last_pos;
 	int cnt = 0;
+	int speed = 600;
 public:
 	MoveOneTile(Direction d) : d(d) {
 	}
@@ -285,7 +286,7 @@ public:
 	}
 
 	bool is_approx_eq(float f1, float f2) {
-		return abs(f1 - f2) < 75;
+		return abs(f1 - f2) < 130;
 	}
 
 	BTState process(entt::entity e) override {
@@ -316,16 +317,16 @@ public:
 		}
 		switch (d) {
 		case Direction::UP:
-			motion.velocity = { 0, -200 };
+			motion.velocity = { 0, -speed };
 			break;
 		case Direction::DOWN:
-			motion.velocity = { 0, 200 };
+			motion.velocity = { 0, speed };
 			break;
 		case Direction::LEFT:
-			motion.velocity = { -200, 0 };
+			motion.velocity = { -speed, 0 };
 			break;
 		case Direction::RIGHT:
-			motion.velocity = { 200, 0 };
+			motion.velocity = { speed, 0 };
 			break;
 		}
 		return BTState::Running;
@@ -448,6 +449,15 @@ class MoveToRandomTile : public BTNode {
 		return WorldSystem::is_within_bounds(coord) && WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(coord));
 	}
 
+	bool is_close(entt::entity e) {
+		entt::entity player_entity = registry.view<Player>().begin()[0];
+		Motion& player_motion = registry.get<Motion>(player_entity);
+		Motion& motion = registry.get<Motion>(e);
+		vec2 difference = motion.position - player_motion.position;
+		float distance = sqrt(dot(difference, difference));
+		return distance <= 300;
+	}
+
 public:
 	MoveToRandomTile(): child(nullptr) {
 	}
@@ -498,6 +508,11 @@ public:
 				child->init(e);
 			}
 		}
+
+		if (is_close(e)) {
+			return BTState::Failure;
+		}
+
 		if (current_tile == target_tile && child_state == BTState::Success) {
 			delete child;
 			child = nullptr;
@@ -509,7 +524,78 @@ public:
 			if ((player_is_manually_moving || do_pathfinding_movement) && state != ProgramState::PAUSED) {
 				delete child;
 				child = nullptr;
-				return BTState::Failure;
+				init(e);
+			}
+		}
+		return BTState::Running;
+	}
+};
+
+class MoveToTargetTile : public BTNode {
+	vec2 target_tile;
+	std::vector<vec2> path;
+	MoveOneTile* child;
+
+	bool is_valid_tile(vec2 coord) {
+		return WorldSystem::is_within_bounds(coord) && WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(coord));
+	}
+
+public:
+	MoveToTargetTile() : child(nullptr) {
+	}
+
+	void set_target(vec2 target) {
+		target_tile = target;
+	}
+
+	void init(entt::entity e) override {
+		vec2 current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
+		AStarSearch search;
+		path = search.get_path(target_tile, current_tile);
+	}
+
+	BTState process(entt::entity e) override {
+		vec2 current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
+		Motion& motion = registry.get<Motion>(e);
+		BTState child_state = child ? child->process(e) : BTState::Success;
+		if (child_state == BTState::Success && current_tile != target_tile && path.size() != 0) {
+			vec2 next_tile = path.back();
+			if (next_tile == current_tile) {
+				path.pop_back();
+				next_tile = path.back();
+			}
+			path.pop_back();
+			vec2 diff = next_tile - current_tile;
+			if (!child) {
+				child = new MoveOneTile(Direction::UP);
+			}
+			if (diff == vec2{ 1, 0 }) {
+				child->update_dir(Direction::RIGHT);
+				child->init(e);
+			}
+			else if (diff == vec2{ -1, 0 }) {
+				child->update_dir(Direction::LEFT);
+				child->init(e);
+			}
+			else if (diff == vec2{ 0, 1 }) {
+				child->update_dir(Direction::DOWN);
+				child->init(e);
+			}
+			else if (diff == vec2{ 0, -1 }) {
+				child->update_dir(Direction::UP);
+				child->init(e);
+			}
+		}
+		if (current_tile == target_tile && child_state == BTState::Success) {
+			delete child;
+			child = nullptr;
+			return BTState::Success;
+		}
+		if (child_state == BTState::Failure || (child_state == BTState::Success && current_tile != target_tile && path.size() == 0)) {
+			if ((player_is_manually_moving || do_pathfinding_movement) && state != ProgramState::PAUSED) {
+				delete child;
+				child = nullptr;
+				init(e);
 			}
 		}
 		return BTState::Running;
@@ -588,7 +674,7 @@ private:
 class Escape : public BTNode {
 	std::vector<vec2> path;
 	vec2 current_target;
-	MoveOneTile move;
+	MoveToTargetTile* move;
 	vec2 get_target_tile(entt::entity e) {
 		size_t max_size = game_state.level.map_tiles.size();
 		entt::entity player_entity = registry.view<Player>().begin()[0];
@@ -610,44 +696,49 @@ class Escape : public BTNode {
 		return { -1,-1 };
 	}
 
+	vec2 get_furthest_corner_tile(entt::entity e) {
+		size_t max_size = game_state.level.map_tiles.size();
+		entt::entity player_entity = registry.view<Player>().begin()[0];
+		Motion& player_motion = registry.get<Motion>(player_entity);
+		vec2 pos = WorldSystem::position_to_map_coords(player_motion.position);
+		bool is_x_greater = pos.x > max_size / 2.;
+		bool is_y_greater = pos.y > max_size / 2.;
+		int x = !is_x_greater ? max_size - 2 : 1;
+		int y = !is_y_greater ? max_size - 2 : 1;
+		std::vector<vec2> adj = {{ 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 },{ -1, -1 }, { 1, 1 }, { -1, 1 }, { 1, -1 }};
+		for (int i = 0; i < adj.size(); i++) {
+			vec2 coord = { x + adj[i][0], y + adj[i][1] };
+			if (!WorldSystem::is_within_bounds(coord))
+				continue;
+			if (WorldSystem::tile_is_walkable(WorldSystem::get_map_tile(coord))) {
+				return coord;
+			}
+		}
+		return { -1,-1 };
+	}
+
 public:
-	Escape() : move(Direction::LEFT){}
+	Escape(){}
 	void init(entt::entity e) override {
-		vec2 target_tile = get_target_tile(e);
-		vec2 starting_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
-		AStarSearch search;
-		path = search.get_path(target_tile, starting_tile);
-		current_target = { -1,-1 };
+		vec2 target_tile = get_furthest_corner_tile(e);
+		//printf("moving to %f, %f\n", target_tile.x, target_tile.y);
+		move = new MoveToTargetTile();
+		move->set_target(target_tile);
+		move->init(e);
 	}
 
 	BTState process(entt::entity e) override {
-		if (path.size() == 0) {
-			return BTState::Success;
+		BTState st = move->process(e);
+		if (st == BTState::Success) {
+			delete move;
+			move = nullptr;
 		}
-		vec2 current_tile = WorldSystem::position_to_map_coords(registry.get<Motion>(e).position);
-		if (current_target == vec2{ -1,-1 } || current_tile == current_target) {
-			current_target = path.back();
-			path.pop_back();
-			vec2 diff = current_target - current_tile;
-			if (diff[0] == 1 && diff[1] == 0) {
-				move = MoveOneTile(Direction::RIGHT);
-			}
-			else if (diff[0] == -1 && diff[1] == 0) {
-				move = MoveOneTile(Direction::LEFT);
-			}
-			else if (diff[0] == 0 && diff[1] == 1) {
-				move = MoveOneTile(Direction::DOWN);
-			}
-			else if (diff[0] == 0 && diff[1] == -1) {
-				move = MoveOneTile(Direction::UP);
-			}
-			else {
-				move = MoveOneTile(Direction::UP);
-				printf("Escape error\n");
-			}
+		if (st == BTState::Failure) {
+			delete move;
+			move = nullptr;
+			init(e);
 		}
-		move.process(e);
-		return BTState::Running;
+		return st;
 	}
 };
 
@@ -678,10 +769,10 @@ public:
 			select_random_dir = new BTRandomSelector{ std::vector<BTNode*>{&move_up,& move_down,& move_left,& move_right} };
 			//roam = new BTSequence{ std::vector<BTNode*>{check_dist,select_random_dir} };
 			roam = new BTSequence{ std::vector<BTNode*>{select_random_dir} };
-			//escape = new Escape();
-			//roam_or_escape = new BTSelector{ vector<BTNode*>{ roam,escape };
+			escape = new Escape();
 			move_random = new MoveToRandomTile();
-			root = new BTRepeat(move_random);
+			roam_or_escape = new BTSelector{ std::vector<BTNode*>{ move_random,escape } };
+			root = new BTRepeat(roam_or_escape);
 			root->init(e);
 			is_init = true;
 		}
@@ -693,7 +784,7 @@ public:
 		delete root;
 		//delete roam_or_escape;
 		delete check_dist;
-		//delete escape;
+		delete escape;
 		delete roam;
 		delete move_random;
 	}

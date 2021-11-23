@@ -983,6 +983,9 @@ void WorldSystem::handle_collisions() {
 			}
 			// Checking Player - Prey collisions
 			if (registry.view<Prey>().contains(entity_other)) {
+				entt::entity player = registry.view<Player>().begin()[0];
+				std::cout << "Calories make you go brrrrr" << std::endl;
+				registry.emplace_or_replace<SpeedBoostTimer>(player);
 				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
 					Prey& p = registry.get<Prey>(*it);
 				}

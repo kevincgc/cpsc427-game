@@ -221,14 +221,17 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 					tips.basic_help = 0;
 					return;
 				}
-        if (!((registry.view<Prey>().contains(entity) && other == player) ||
-					(registry.view<Prey>().contains(other) && entity == player))) {
+				if (!(registry.view<Prey>().contains(entity)||registry.view<Prey>().contains(other)) ||
+					(registry.view<Prey>().contains(entity) && registry.view<Prey>().contains(other))) {
 					impulseCollisionResolution(motion, motion_other);
 				}
 				registry.emplace_or_replace<Collision>(entity, other);
 
 				// TODO: Optimization needed for overlap handling/clipping
-				preventCollisionOverlap(other, entity);
+				if (!(registry.view<Prey>().contains(entity) || registry.view<Prey>().contains(other)) ||
+					(registry.view<Prey>().contains(entity) && registry.view<Prey>().contains(other))) {
+					preventCollisionOverlap(other, entity);
+				}
 			}
 		}
 	}
