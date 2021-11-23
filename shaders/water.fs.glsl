@@ -115,9 +115,9 @@ void main()
     vec4 col;
 	if (!initial_game && endGame) {
 		col = explode(p, mod(t, dur), blast);
-		col = mix(col, explode(p, mod(t - 0.05, dur), blast), 0.3);
-		col = mix(col, explode(p, mod(t - 0.10, dur), blast), 0.2);
-		col = mix(col, explode(p, mod(t - 0.15, dur), blast), 0.1);
+		col = mix(col, explode(p, mod(t - 0.1, dur), blast), 0.3);
+		col = mix(col, explode(p, mod(t - 0.2, dur), blast), 0.2);
+		col = mix(col, explode(p, mod(t - 0.3, dur), blast), 0.1);
 	} else {
 		col = texture(screen_texture, texcoord);
 	}
