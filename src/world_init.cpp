@@ -86,6 +86,8 @@ entt::entity createChick(RenderSystem* renderer, vec2 position)
 	registry.emplace<Prey>(e, prey);
 	ChickAI ai = ChickAI(e, prey.id);
 	chick_ai.push_back(ai);
+	return e;
+}
 entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
