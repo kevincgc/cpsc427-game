@@ -47,7 +47,12 @@ float spell_timer = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 // Item-related
-std::vector<Item> inventory;
+std::map<ItemType, int> inventory = {
+	{ItemType::WALL_BREAKER, 0},
+	{ItemType::EXTRA_LIFE, 0},
+	{ItemType::TELEPORT, 0},
+	{ItemType::SPEED_BOOST, 0},
+};
 Item current_item;
 std::map<std::string, ItemType> item_to_enum = {
 	{"wall breaker", ItemType::WALL_BREAKER},
@@ -921,6 +926,10 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+	// reset inventory
+	for (auto& item : inventory) {
+		item.second = 0;
+	}
 	current_item = Item();
 	tips = Help();
 

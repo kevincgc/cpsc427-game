@@ -207,12 +207,16 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 					// remove item from world
 					game_state.sound_requests.push_back({SoundEffects::PLAYER_ITEM});
 					if (ent_is_item) {
+						Item& item = items_registry.get<Item>(entity);
+						inventory[item_to_enum[item.name]]++;
 						current_item = items_registry.get<Item>(entity);
-						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						std::cout << "Picked up a " << item.name << "!" << std::endl;
 						registry.destroy(entity);
 					} else {
+						Item& item = items_registry.get<Item>(other);
+						inventory[item_to_enum[item.name]]++;
 						current_item = items_registry.get<Item>(other);
-						std::cout << "Picked up a " << current_item.name << "!" << std::endl;
+						std::cout << "Picked up a " << item.name << "!" << std::endl;
 						registry.destroy(other);
 					}
 					// Start timer for 3 second text tip

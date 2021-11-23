@@ -19,7 +19,7 @@
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;
-extern std::vector<Item> inventory;
+extern std::map<ItemType, int> inventory;
 extern Item current_item;
 extern std::map<std::string, ItemType> item_to_enum;
 extern ItemType most_recent_used_item;
