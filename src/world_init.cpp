@@ -71,7 +71,7 @@ entt::entity createChick(RenderSystem* renderer, vec2 position)
 	motion.angle = 0.f;
 	motion.velocity = { 0, 0 };
 	motion.position = position;
-	motion.scale = mesh.original_size * 25.f * global_scaling_vector;
+	motion.scale = mesh.original_size * 20.f * global_scaling_vector;
 	motion.mass = 50;
 	motion.coeff_rest = 0.9f;
 	const entt::entity e = registry.create();

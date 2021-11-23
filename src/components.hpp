@@ -16,6 +16,7 @@ enum class SoundEffects {
 	ITEM_BREAK_WALL,
 	ITEM_TELEPORT,
 	ITEM_SPEED_BOOST,
+	CHICK_DIE,
 
 	COUNT
 };
