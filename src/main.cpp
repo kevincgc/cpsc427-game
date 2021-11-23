@@ -29,7 +29,7 @@ extern "C" {
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
-	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win);
+	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time);
 
 	void drawCutscene_respawn(GLFWwindow* win, int* out);
 	void drawCutscene(GLFWwindow* win, int* out);
@@ -146,7 +146,28 @@ int main()
 		case ProgramState::GAME_OVER_WIN:
 		{
 			int selection = 0;
-			drawGameOverMenu(window, &selection, state == ProgramState::GAME_OVER_WIN);
+
+			if (state == ProgramState::GAME_OVER_WIN) {
+				std::vector<std::string> leaderboard = world.get_leaderboard();
+				auto size_send = min((int) leaderboard.size(), 10);
+
+				char **leaderboard_array = new char *[size_send];
+				for (uint i = 0; i < size_send; i++) {
+					auto len = strlen(leaderboard[i].c_str());
+					leaderboard_array[i] = new char[len + 1];
+					strncpy(leaderboard_array[i], leaderboard[i].c_str(), len + 1);
+				}
+
+				drawGameOverMenu(window, &selection, 1, size_send, leaderboard_array, world.get_player_time().c_str());
+
+				for (int i = 0; i < size_send; i++) {
+					delete[] leaderboard_array[i];
+				}
+				delete[] leaderboard_array;
+			} else {
+				drawGameOverMenu(window, &selection, 0, 0, nullptr, nullptr);
+			}
+
 			switch (selection) {
 			case 1:
 				state = ProgramState::RESET_GAME;

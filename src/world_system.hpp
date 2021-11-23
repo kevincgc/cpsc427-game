@@ -68,6 +68,9 @@ public:
 	// restart level
 	void restart_game();
 
+	std::vector<std::string> get_leaderboard();
+	std::string get_player_time();
+
 private:
 
 	// Input callback functions
@@ -106,4 +109,7 @@ private:
 	std::vector<std::vector<MapTile>> generateProceduralMaze(std::string method, int width, int height, vec2 &start_tile);
 
 	void process_entity_node(YAML::Node node, std::function<void(std::string, vec2)> spawn_callback);
+
+	double current_finish_time;
+	std::vector<std::string> current_leaderboard;
 };

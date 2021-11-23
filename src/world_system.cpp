@@ -301,6 +301,13 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	restart_game();
 }
 
+std::vector<std::string> WorldSystem::get_leaderboard() {
+	return current_leaderboard;
+}
+
+std::string WorldSystem::get_player_time() {
+	return "Your time: " + formatTime(current_finish_time);
+}
 
 // ************************************************************************************* step ***********************************************************
 // Update our game world
@@ -479,8 +486,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			initial_game = false;
 			do_pathfinding_movement = false;
 
-			double finish_time = game_time_ms;
-			std::cout << "Finished game in " << formatTime(finish_time) << "!" << std::endl;
+			current_finish_time = game_time_ms;
+			std::cout << "Finished game in " << formatTime(current_finish_time) << "!" << std::endl;
 
 			// For cutscenes
 			num_times_exit_reached++;
@@ -508,14 +515,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			std::vector<double> leaderboard_map = {};
 			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
 
-			leaderboard_map.push_back(finish_time);
+			leaderboard_map.push_back(current_finish_time);
 			std::sort(leaderboard_map.begin(), leaderboard_map.end());
 
+			current_leaderboard.clear();
 			std::cout << "LEADERBOARD:" << std::endl;
 			for (int i = 0; i < leaderboard_map.size(); i++) {
-				std::cout << "\t" << i + 1 << ". " << formatTime(leaderboard_map[i]);
-				if (leaderboard_map[i] == finish_time) std::cout << " <-- YOUR POSITION!";
-				std::cout << std::endl;
+				std::ostringstream str;
+				str << i + 1 << ". " << formatTime(leaderboard_map[i]);
+				if (leaderboard_map[i] == current_finish_time) str << " <-- YOUR POSITION!";
+				current_leaderboard.push_back(str.str());
+
+				std::cout << str.str() << std::endl;
 			}
 
 			leaderboard[game_state.level_id] = leaderboard_map;

@@ -231,15 +231,23 @@ void drawPauseMenu( GLFWwindow* win, int* out)
     glfwSwapBuffers(win);
 }
 
-void drawGameOverMenu( GLFWwindow* win, int* out, int player_win)
+void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time)
 {
     nk_glfw3_new_frame(&glfw);
     int res;
 
-    if (player_win) res = nk_begin(ctx, "You escaped!", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
-        NK_WINDOW_BORDER | NK_WINDOW_TITLE);
-    else res = nk_begin(ctx, "You died.", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y),
-        NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+    if (player_win) {
+        res = nk_begin(ctx, "You escaped!", nk_rect(400 * scale_x, 75 * scale_y, 425 * scale_x, 600 * scale_y), NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+        nk_layout_row_dynamic(ctx, 30 * scale_x, 1);
+        nk_label(ctx, player_time, NK_TEXT_ALIGN_LEFT);
+
+        nk_label(ctx, "LEADERBOARD", NK_TEXT_ALIGN_CENTERED);
+        for (int i = 0; i < leaderboard_size; i++) {
+            nk_label(ctx, leaderboard[i], NK_TEXT_ALIGN_LEFT);
+        }
+    } else {
+        res = nk_begin(ctx, "You died.", nk_rect(475 * scale_x, 200 * scale_y, 250 * scale_x, 400 * scale_y), NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+    }
 
     if (res)
     {
@@ -280,7 +288,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 	int max_cutscene_selection;
 	int min_cutscene_selection;
 
-	// Cutscene Window Dimensions	
+	// Cutscene Window Dimensions
 	float cut_x = width  * 33 / 100;
 	float cut_y = height * 69 / 100;
 	float cut_w = width  * 65 / 100;
@@ -365,11 +373,11 @@ void drawCutscene(GLFWwindow* win, int* out)
 		}
 
 		// ********** Death Dialogue **********
-		else if (*out == 101) { 
+		else if (*out == 101) {
 			// First death - speaker: minotaur
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
-			nk_label(ctx, "Minotaur: Yet I live?",	  NK_TEXT_ALIGN_LEFT); 
-			nk_label(ctx, "How can this be?", NK_TEXT_ALIGN_LEFT); 
+			nk_label(ctx, "Minotaur: Yet I live?",	  NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "How can this be?", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 102) {
@@ -398,7 +406,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 		else if (105 <= *out) {
 			// For now we will set anything above ____ as one of five randomly selected 'voicelines' of the minotaur
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
-			
+
 			if (!cutscene_chosen_text) {
 				int r = 105 + rand() % 5; // returns 105 + [0..4]
 				switch (r) {
@@ -435,7 +443,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 	// Because NK_WINDOW_NO_INPUT does not work, this is a hack
 	// to make sure the buttons and dialogue stays on top if
 	// someone clicks on the dialogue window
-	if (nk_window_is_active(ctx, "Cutscene_outer")) { 
+	if (nk_window_is_active(ctx, "Cutscene_outer")) {
 		nk_window_set_focus(ctx, "Cutscene");
 		nk_window_set_focus(ctx, "Prev Button/Window");
 		nk_window_set_focus(ctx, "Skip Button/Window");
