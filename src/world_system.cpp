@@ -150,8 +150,8 @@ std::string formatTime(float game_time_ms) {
 	int minutes = floor(seconds) / 60;
 	seconds = seconds - minutes * 60;
 	char buf[10] = {0};
-	sprintf_s(buf, 10, "%02d:%06.3f", minutes, seconds);
-
+	// sprintf_s(buf, 10, "%02d:%06.3f", minutes, seconds);
+	sprintf(buf, "%02d:%06.3f", minutes, seconds);
 	return std::string(buf);
 }
 
