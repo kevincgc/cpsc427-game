@@ -79,91 +79,96 @@ void AISystem::step()
 
 			// ========================================================
 
-			// If enemy is close to player for chasing...
-			if (within_threshold(player, entity, DIST_THRESHOLD)) {
-				vec2 direction_vector = motion.position - entity_motion.position;
-				entity_motion.velocity = direction_vector;
-			}
+			// If enemy...
+			if (registry.view<Enemy>().contains(entity)) {
 
-			// Enemy is not close to player
-			else {
-
-				// ========= Feature: Pathfinding (enemy maze navigation) =========
-
-				// If enemy is travelling diagonally (ex from chasing a player),
-				// randomly choose one or the other axis. This prevents the AI's
-				// anticipated trajectory into a diagonal tile.
-				if (entity_motion.velocity.x != 0 && entity_motion.velocity.y != 0) {
-					bool go_y = rand() % 2;
-					if (go_y) {
-						entity_motion.velocity.x = 0;
-						entity_motion.velocity.y = enemy_vel.y;
-					}
-					else {
-						entity_motion.velocity.x = enemy_vel.x;
-						entity_motion.velocity.y = 0;
-					}
+				// Is close enough for chasing
+				if (within_threshold(player, entity, DIST_THRESHOLD)) {
+					vec2 direction_vector = motion.position - entity_motion.position;
+					entity_motion.velocity = direction_vector;
 				}
 
-				// Get the world coords for the projected position
-				vec2 next_pos_world = { entity_motion.position.x + (entity_motion.velocity.x), entity_motion.position.y + (entity_motion.velocity.y) };
 
-				// Get the world length in px for boundary checks
-				vec2 world_length_px = { game_state.level.map_tiles.size() * map_scale.x, game_state.level.map_tiles.size() * map_scale.y };
+				// Not close enough for chasing
+				else {
 
-				// Will get vector access error out of bounds if we don't do the following check
-				// If the next coords are in-bounds...
-				if (next_pos_world.x >= -70 && next_pos_world.y >= 0 && next_pos_world.x <= world_length_px.x && next_pos_world.y <= world_length_px.y) {
-					vec2 next_pos_map = { (int)(next_pos_world.x / map_scale.x), (int)(next_pos_world.y / map_scale.y) };
-					vec2 curr_pos_map = { (int)(entity_motion.position.x / map_scale.x), (int)(entity_motion.position.y / map_scale.y) };
+					// ========= Feature: Pathfinding (enemy maze navigation) =========
 
-					// Get the current tile's world coords
-					vec2 tile_world_coord = { map_scale.x * curr_pos_map.x, map_scale.y * curr_pos_map.y };
-
-					// Check to prevent wall corner collision. See function for more details
-					bool in_safe_zone = safe_zone_check(entity_motion, tile_world_coord);
-
-					// If enemy is in the safe zone...
-					if (in_safe_zone) {
-
-						// Debugging
-						if (ai_debug) {
-							std::cout << "The current tile the enemy is on is:   [" << curr_pos_map.x << ", " << curr_pos_map.y << "]" << std::endl;
-							std::cout << "The next tile the enemy will touch is: [" << next_pos_map.x << ", " << next_pos_map.y << "]" << std::endl;
+					// If enemy is travelling diagonally (ex from chasing a player),
+					// randomly choose one or the other axis. This prevents the AI's
+					// anticipated trajectory into a diagonal tile.
+					if (entity_motion.velocity.x != 0 && entity_motion.velocity.y != 0) {
+						bool go_y = rand() % 2;
+						if (go_y) {
+							entity_motion.velocity.x = 0;
+							entity_motion.velocity.y = enemy_vel.y;
 						}
+						else {
+							entity_motion.velocity.x = enemy_vel.x;
+							entity_motion.velocity.y = 0;
+						}
+					}
 
-						// If the next tile the enemy is projected to travel to is not a free space (i.e. it'll hit a wall)...
-						// or if it's out of map bounds... (for now, hard coded to avoid [0][1]
-						if (game_state.level.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
-							(next_pos_map.x == 0 && next_pos_map.y == 1)) {
+					// Get the world coords for the projected position
+					vec2 next_pos_world = { entity_motion.position.x + (entity_motion.velocity.x), entity_motion.position.y + (entity_motion.velocity.y) };
 
-							// Get traversable adjacent map tiles
-							std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
+					// Get the world length in px for boundary checks
+					vec2 world_length_px = { game_state.level.map_tiles.size() * map_scale.x, game_state.level.map_tiles.size() * map_scale.y };
 
-							// Randomly select a node to travel down
-							vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
-							if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
+					// Will get vector access error out of bounds if we don't do the following check
+					// If the next coords are in-bounds...
+					if (next_pos_world.x >= -70 && next_pos_world.y >= 0 && next_pos_world.x <= world_length_px.x && next_pos_world.y <= world_length_px.y) {
+						vec2 next_pos_map = { (int)(next_pos_world.x / map_scale.x), (int)(next_pos_world.y / map_scale.y) };
+						vec2 curr_pos_map = { (int)(entity_motion.position.x / map_scale.x), (int)(entity_motion.position.y / map_scale.y) };
 
-							// Travel in that direction
-							// Travel right
-							if (random_node.x > curr_pos_map.x) {
-								entity_motion.velocity.x = enemy_vel.x;
-								entity_motion.velocity.y = 0;
+						// Get the current tile's world coords
+						vec2 tile_world_coord = { map_scale.x * curr_pos_map.x, map_scale.y * curr_pos_map.y };
+
+						// Check to prevent wall corner collision. See function for more details
+						bool in_safe_zone = safe_zone_check(entity_motion, tile_world_coord);
+
+						// If enemy is in the safe zone...
+						if (in_safe_zone) {
+
+							// Debugging
+							if (ai_debug) {
+								std::cout << "The current tile the enemy is on is:   [" << curr_pos_map.x << ", " << curr_pos_map.y << "]" << std::endl;
+								std::cout << "The next tile the enemy will touch is: [" << next_pos_map.x << ", " << next_pos_map.y << "]" << std::endl;
 							}
-							// Travel left
-							else if (random_node.x < curr_pos_map.x) {
-								entity_motion.velocity.x = -1 * enemy_vel.x;
-								entity_motion.velocity.y = 0;
-							}
-							// Travel down
-							if (random_node.y > curr_pos_map.y) {
-								entity_motion.velocity.y = enemy_vel.y;
-								entity_motion.velocity.x = 0;
-							}
-							// Travel up
-							else if (random_node.y < curr_pos_map.y) {
-								entity_motion.velocity.y = -1 * enemy_vel.y;
-								entity_motion.velocity.x = 0;
+
+							// If the next tile the enemy is projected to travel to is not a free space (i.e. it'll hit a wall)...
+							// or if it's out of map bounds... (for now, hard coded to avoid [0][1]
+							if (game_state.level.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
+								(next_pos_map.x == 0 && next_pos_map.y == 1)) {
+
+								// Get traversable adjacent map tiles
+								std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
+
+								// Randomly select a node to travel down
+								vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
+								if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
+
+								// Travel in that direction
+								// Travel right
+								if (random_node.x > curr_pos_map.x) {
+									entity_motion.velocity.x = enemy_vel.x;
+									entity_motion.velocity.y = 0;
+								}
+								// Travel left
+								else if (random_node.x < curr_pos_map.x) {
+									entity_motion.velocity.x = -1 * enemy_vel.x;
+									entity_motion.velocity.y = 0;
+								}
+								// Travel down
+								if (random_node.y > curr_pos_map.y) {
+									entity_motion.velocity.y = enemy_vel.y;
+									entity_motion.velocity.x = 0;
+								}
+								// Travel up
+								else if (random_node.y < curr_pos_map.y) {
+									entity_motion.velocity.y = -1 * enemy_vel.y;
+									entity_motion.velocity.x = 0;
+								}
 							}
 						}
 					}

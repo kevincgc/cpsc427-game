@@ -25,7 +25,10 @@ struct SoundEffectRequest
 	SoundEffects sound;
 };
 
-struct Player {};
+struct Player {
+	// Used by parallax to determine whether player has actually travelled
+	vec2 prev_pos; 
+};
 struct Enemy {};
 struct Friendly {};
 struct Prey {int id;};
@@ -186,12 +189,8 @@ enum Cutscene_enum {
 };
 struct Cutscene {};
 
-// Background
-struct Background {
-	vec2 bg_scale = { 0,0 };
-	vec2 bg_position = { 0,0 };
-	vec2 bg_velocity = { 0,0 };
-};
+// Background - so we can draw background elements first
+struct Background {};
 
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh

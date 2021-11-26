@@ -133,7 +133,7 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 	motion.angle	   = 0.f;
 	motion.velocity    = { 0,0 };
 	motion.position	   = { position.x * global_scaling_vector.x, position.y * global_scaling_vector.y };
-	motion.scale	   = mesh.original_size * 3000.f * global_scaling_vector;
+	//motion.scale	   = mesh.original_size * 3000.f * global_scaling_vector;
 	motion.mass		   = 0;
 	motion.coeff_rest  = 0;
 	motion.can_reflect = false;
@@ -145,9 +145,11 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 	switch (element) {
 		case 1:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE1;
+			motion.scale = mesh.original_size * 100.f * global_scaling_vector;
 			break;
 		case 2:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
+			motion.scale = mesh.original_size * 2000.f * global_scaling_vector;
 			break;
 		default:
 			break;

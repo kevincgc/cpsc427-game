@@ -49,46 +49,56 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 
 // returns true if successfull, false if it didn't set
 bool setMotionPosition(Motion& motion, vec2 nextpos) {
-	vec2 bounding_box = get_bounding_box(motion);
-	vec2 corners[] = {
-		// upper right
-		vec2(bounding_box.x / 2, -bounding_box.y / 2),
+	if (motion.can_collide) {
+		vec2 bounding_box = get_bounding_box(motion);
+		vec2 corners[] = {
+			// upper right
+			vec2(bounding_box.x / 2, -bounding_box.y / 2),
 
-		// upper left
-		vec2(-bounding_box.x / 2, -bounding_box.y / 2),
+			// upper left
+			vec2(-bounding_box.x / 2, -bounding_box.y / 2),
 
-		// lower left
-		vec2(-bounding_box.x / 2, bounding_box.y / 2),
+			// lower left
+			vec2(-bounding_box.x / 2, bounding_box.y / 2),
 
-		// lower right
-		vec2(bounding_box.x / 2, bounding_box.y / 2),
-	};
+			// lower right
+			vec2(bounding_box.x / 2, bounding_box.y / 2),
+		};
 
-	bool collision_x = false;
-	bool collision_y = false;
-	for (const auto corner : corners) {
-		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
-		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-		if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
-			collision_x = true;
+		bool collision_x = false;
+		bool collision_y = false;
+		for (const auto corner : corners) {
+			const vec2 test_point_x = WorldSystem::position_to_map_coords({ nextpos.x + corner.x, motion.position.y + corner.y });
+			const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
+			if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
+				collision_x = true;
+			}
+
+			const vec2 test_point_y = WorldSystem::position_to_map_coords({ motion.position.x + corner.x, nextpos.y + corner.y });
+			const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
+			if (!WorldSystem::tile_is_walkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
+				collision_y = true;
+			}
 		}
 
-		const vec2 test_point_y = WorldSystem::position_to_map_coords({motion.position.x + corner.x, nextpos.y + corner.y});
-		const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
-		if (!WorldSystem::tile_is_walkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
-			collision_y = true;
+		if (!collision_x) {
+			motion.position.x = nextpos.x;
 		}
+
+		if (!collision_y) {
+			motion.position.y = nextpos.y;
+		}
+
+		return !collision_x && !collision_y;
 	}
-
-	if (!collision_x) {
+	// For entities like the background stars that have motion but no collision
+	else {
 		motion.position.x = nextpos.x;
-	}
-
-	if (!collision_y) {
 		motion.position.y = nextpos.y;
 	}
 
-	return !collision_x && !collision_y;
+	return true;
+
 }
 
 // TODO: Optimization needed for overlap handling/clipping, weird behaviour occurring with certain collisions
@@ -147,13 +157,31 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		Motion& motion = registry.get<Motion>(entity);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
+		// If the entity is not the player...
 		if (!registry.view<Player>().contains(entity)) {
-			if (player_is_manually_moving || do_pathfinding_movement) {
-				setMotionPosition(motion, nextpos);
+			// If the entity is not the background either...
+			// (we only want the background to move if the
+			//  player can pass the setMotionPosition collision 
+			//  check)
+			if (!registry.view<Background>().contains(entity)) {
+				// Move the entity only if the player is moving
+				if (player_is_manually_moving || do_pathfinding_movement) {
+					setMotionPosition(motion, nextpos);
+				}
 			}
+
 		}
+		// If the entity is the player...
 		else {
-			setMotionPosition(motion, nextpos);
+
+			// If player is able to move (no collision)...
+			if (setMotionPosition(motion, nextpos)) {
+
+				// Move the background for parallax effect
+				Motion& bg_motion = registry.get<Motion>(background_space2_entity);
+				vec2 bg_nextpos   = bg_motion.position + bg_motion.velocity * step_seconds;
+				setMotionPosition(bg_motion, bg_nextpos);
+			}
 		}
 	}
 
