@@ -44,32 +44,35 @@ void AISystem::step()
 			// If player is attacking
 			if (registry.view<Attack>().contains(player)) {
 
-			// If enemy is close to player for swinging...
-				if (within_threshold(player, entity, swing_threshold)){
+				// If entity is attackable...
+				if (entity_motion.can_be_attacked) {
+					// If enemy is close to player for swinging...
+					if (within_threshold(player, entity, swing_threshold)) {
 
-					RenderRequest &render_request = registry.get<RenderRequest>(player);
+						RenderRequest &render_request = registry.get<RenderRequest>(player);
 
-					// If enemy is to the right of the player and the player is facing right...
-   					if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
-						
-						// Destroy the enemy
-						registry.destroy(entity);
+						// If enemy is to the right of the player and the player is facing right...
+						if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
 
-						// Don't process any of the code below for the enemy
-						// because it's no longer in the registry
-						break;
-					}
+							// Destroy the enemy
+							registry.destroy(entity);
 
-					// If enemy is to the left of the player and the player is facing left
-					else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
-						registry.destroy(entity);
-						break;
-					}
+							// Don't process any of the code below for the enemy
+							// because it's no longer in the registry
+							break;
+						}
 
-					// If enemy is vertically close to the player, just destroy them
-					else if (abs(entity_motion.position.y - motion.position.y) < 100) {
-						registry.destroy(entity);
-						break;
+						// If enemy is to the left of the player and the player is facing left
+						else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
+							registry.destroy(entity);
+							break;
+						}
+
+						// If enemy is vertically close to the player, just destroy them
+						else if (abs(entity_motion.position.y - motion.position.y) < 100) {
+							registry.destroy(entity);
+							break;
+						}
 					}
 				}
 			}

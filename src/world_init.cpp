@@ -1,4 +1,5 @@
 #include "world_init.hpp"
+#include <iostream>
 
 entt::entity createSpike(RenderSystem* renderer, vec2 position)
 {
@@ -116,10 +117,13 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
 
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is cutscene element " << element << std::endl;
+
 	return e;
 }
 
-entt::entity createBackground(RenderSystem* renderer, int element) {
+entt::entity createBackground(RenderSystem* renderer, vec2 position, int element) {
 	// Set up handles
 	Mesh& mesh			  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion		  = Motion();
@@ -128,11 +132,13 @@ entt::entity createBackground(RenderSystem* renderer, int element) {
 	// Set initial motion values
 	motion.angle	   = 0.f;
 	motion.velocity    = { 0,0 };
-	motion.position	   = { 900 * global_scaling_vector.x, 800 * global_scaling_vector.y };
+	motion.position	   = { position.x * global_scaling_vector.x, position.y * global_scaling_vector.y };
 	motion.scale	   = mesh.original_size * 3000.f * global_scaling_vector;
 	motion.mass		   = 0;
 	motion.coeff_rest  = 0;
+	motion.can_reflect = false;
 	motion.can_collide = false;
+	motion.can_be_attacked = false;
 
 	// Set texture_asset_id
 	TEXTURE_ASSET_ID texture_asset_id;
@@ -142,6 +148,7 @@ entt::entity createBackground(RenderSystem* renderer, int element) {
 			break;
 		case 2:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
+			break;
 		default:
 			break;
 	}
@@ -152,6 +159,9 @@ entt::entity createBackground(RenderSystem* renderer, int element) {
 	registry.emplace<Mesh*>		   (e, &mesh);
 	registry.emplace<Background>   (e, background);
 	registry.emplace<RenderRequest>(e, texture_asset_id, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE);
+
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is background element " << element << std::endl;
 
 	return e;
 }

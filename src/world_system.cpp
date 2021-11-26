@@ -89,6 +89,8 @@ entt::entity cutscene_drone_rtx_off_entity;
 // ********* For parallax feature *********
 entt::entity background_space1_entity;
 entt::entity background_space2_entity;
+entt::entity background_space3_entity;
+entt::entity background_space4_entity;
 // *****************************************
 
 // For attack
@@ -902,9 +904,10 @@ void WorldSystem::restart_game() {
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
 	// Create background entites
-	background_space1_entity		 = createBackground(renderer, 1);
-	background_space2_entity		 = createBackground(renderer, 2);
-
+	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
+	background_space2_entity		 = createBackground(renderer, { 900,800 }, 2);
+	background_space3_entity		 = createBackground(renderer, { 800,800 }, 2);
+	background_space4_entity		 = createBackground(renderer, { 700,800 }, 2);
 
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
