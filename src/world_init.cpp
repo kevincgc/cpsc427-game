@@ -119,6 +119,43 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 	return e;
 }
 
+entt::entity createBackground(RenderSystem* renderer, int element) {
+	// Set up handles
+	Mesh& mesh			  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion		  = Motion();
+	Background background = Background();
+
+	// Set initial motion values
+	motion.angle	   = 0.f;
+	motion.velocity    = { 0,0 };
+	motion.position	   = { 900 * global_scaling_vector.x, 800 * global_scaling_vector.y };
+	motion.scale	   = mesh.original_size * 3000.f * global_scaling_vector;
+	motion.mass		   = 0;
+	motion.coeff_rest  = 0;
+	motion.can_collide = false;
+
+	// Set texture_asset_id
+	TEXTURE_ASSET_ID texture_asset_id;
+	switch (element) {
+		case 1:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE1;
+			break;
+		case 2:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
+		default:
+			break;
+	}
+
+	// Create and emplace entity
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>	   (e, motion);
+	registry.emplace<Mesh*>		   (e, &mesh);
+	registry.emplace<Background>   (e, background);
+	registry.emplace<RenderRequest>(e, texture_asset_id, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE);
+
+	return e;
+}
+
 entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);

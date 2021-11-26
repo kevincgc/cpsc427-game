@@ -31,7 +31,6 @@ extern "C" {
 	void drawPauseMenu( GLFWwindow* win, int* out);
 	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time);
 
-	void drawCutscene_respawn(GLFWwindow* win, int* out);
 	void drawCutscene(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();

@@ -27,3 +27,4 @@ entt::entity createChick(RenderSystem* renderer, vec2 position);
 
 entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element);
 
+entt::entity createBackground(RenderSystem* renderer, int element);

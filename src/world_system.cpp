@@ -86,6 +86,9 @@ entt::entity cutscene_drone_sad_entity;
 entt::entity cutscene_drone_laughing_entity;
 entt::entity cutscene_minotaur_rtx_off_entity;
 entt::entity cutscene_drone_rtx_off_entity;
+// ********* For parallax feature *********
+entt::entity background_space1_entity;
+entt::entity background_space2_entity;
 // *****************************************
 
 // For attack
@@ -754,15 +757,17 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 
-	// delete old map, if one exists
+	// Delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
-	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
+	// ******** Generate new map *********
+	YAML::Node level_config		 = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 	const std::string level_name = level_config["name"].as<std::string>();
 	const std::string level_type = level_config["type"].as<std::string>();
 
 	fprintf(stderr, "Started loading level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
-	if (level_type == "premade") {
+
+	if		(level_type == "premade") {
 		// load map
 		fprintf(stderr, "Loading premade map\n");
 		std::ifstream file(levels_path(game_state.level_id + "/map.txt"));
@@ -805,10 +810,11 @@ void WorldSystem::restart_game() {
 		fprintf(stderr, "Loaded procedural map\n");
 	}
 	else assert(false); // unknown level type
+	// ***********************************
 
- // Remove all entities that we created
- // All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
+	// Remove all entities that we created
 	registry.clear();
+	chick_ai.clear();
 
 	// find spawnable tiles for both items and enemies
 	spawnable_tiles.clear();
@@ -840,7 +846,6 @@ void WorldSystem::restart_game() {
 			});
 	}
 
-	chick_ai.clear();
 	// create prey for this level
 	const YAML::Node prey = level_config["prey"];
 	if (prey) {
@@ -874,6 +879,7 @@ void WorldSystem::restart_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+	
 	// reset inventory
 	for (auto& item : inventory) {
 		item.second = 0;
@@ -895,11 +901,16 @@ void WorldSystem::restart_game() {
 	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
+	// Create background entites
+	background_space1_entity		 = createBackground(renderer, 1);
+	background_space2_entity		 = createBackground(renderer, 2);
+
+
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
 	player_is_manually_moving = false;
-
 	pressed_keys.clear();
+
 	game_time_ms = 0.f;
 }
 
