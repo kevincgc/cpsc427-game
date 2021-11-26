@@ -90,8 +90,6 @@ entt::entity cutscene_drone_rtx_off_entity;
 entt::entity background_space1_entity;
 entt::entity background_space2_entity;
 entt::entity background_space3_entity;
-entt::entity background_space4_entity;
-float bg_vel = 50.f;
 // *****************************************
 
 // For attack
@@ -904,10 +902,9 @@ void WorldSystem::restart_game() {
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
 	// Create background entites
-	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
+	background_space3_entity		 = createBackground(renderer, { 600,1100 }, 3);
 	background_space2_entity		 = createBackground(renderer, { 700,1200 }, 2);
-	//background_space3_entity		 = createBackground(renderer, { 700,1200 }, 2);
-	//background_space4_entity		 = createBackground(renderer, { 700,1200 }, 2);
+	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
 
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
@@ -1058,6 +1055,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	Player& p_player    = registry.get<Player>(player);
 	Motion& motion	    = registry.get<Motion>(player);
 	Motion& bg_2_motion = registry.get<Motion>(background_space2_entity);
+	Motion& bg_3_motion = registry.get<Motion>(background_space3_entity);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -1069,35 +1067,45 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 			// Movement
 			if (action != GLFW_REPEAT) {
+				// Parallax Settings
+				bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
+				bg_3_motion.velocity = { 0, 0 };
+				float bg_2_vel = 20.f;
+				float bg_3_vel = 40.f;
+
+
 				motion.velocity		 = { 0, 0 };
-				bg_2_motion.velocity = { 0, 0 };
 
 				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end()    || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
 					do_pathfinding_movement   = false;
 					player_is_manually_moving = true;
 					motion.velocity.y		  = -1 * player_vel.y;
-					bg_2_motion.velocity.y	  = bg_vel;
+					bg_2_motion.velocity.y	  = bg_2_vel;
+					bg_3_motion.velocity.y	  = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
 					do_pathfinding_movement   = false;
 					player_is_manually_moving = true;
 					motion.velocity.x		  = -1 * player_vel.x;
-					bg_2_motion.velocity.x    = bg_vel;
+					bg_2_motion.velocity.x    = bg_2_vel;
+					bg_3_motion.velocity.x    = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
 					do_pathfinding_movement   = false;
 					player_is_manually_moving = true;
 					motion.velocity.x		  = player_vel.x;
-					bg_2_motion.velocity.x    = -1 * bg_vel;
+					bg_2_motion.velocity.x    = -1 * bg_2_vel;
+					bg_3_motion.velocity.x    = -1 * bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
 					do_pathfinding_movement   = false;
 					player_is_manually_moving = true;
 					motion.velocity.y		  = player_vel.y;
-					bg_2_motion.velocity.y    = -1 * bg_vel;
+					bg_2_motion.velocity.y    = -1 * bg_2_vel;
+					bg_3_motion.velocity.y    = -1 * bg_3_vel;
 				}
 
 				if (pressed_keys.size() == 0) {

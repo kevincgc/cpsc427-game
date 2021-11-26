@@ -178,9 +178,13 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			if (setMotionPosition(motion, nextpos)) {
 
 				// Move the background for parallax effect
-				Motion& bg_motion = registry.get<Motion>(background_space2_entity);
-				vec2 bg_nextpos   = bg_motion.position + bg_motion.velocity * step_seconds;
-				setMotionPosition(bg_motion, bg_nextpos);
+				Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
+				vec2 bg_1_nextpos   = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
+				setMotionPosition(bg_motion_1, bg_1_nextpos);
+
+				Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
+				vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
+				setMotionPosition(bg_motion_2, bg_2_nextpos);
 			}
 		}
 	}

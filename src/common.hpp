@@ -104,6 +104,7 @@ extern entt::entity cutscene_drone_laughing_entity;
 extern entt::entity cutscene_minotaur_rtx_off_entity;
 extern entt::entity cutscene_drone_rtx_off_entity;
 extern entt::entity background_space2_entity;
+extern entt::entity background_space3_entity;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;
