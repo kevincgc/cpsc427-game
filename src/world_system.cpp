@@ -27,23 +27,17 @@ using Clock = std::chrono::high_resolution_clock;
 // Game configuration
 int MAX_DRONES;
 int MAX_SPIKES;
-const size_t TURTLE_DELAY_MS = 2000 * 3;
-const size_t FISH_DELAY_MS = 5000 * 3;
-const size_t ITEM_DELAY_MS = 3000 * 3;
 vec2 WorldSystem::camera = { 0, 0 };
 vec2 player_vel = { 300.f, 300.f };
-vec2 enemy_vel = { 100.f, 100.f };
+vec2 enemy_vel  = { 100.f, 100.f };
 vec2 default_player_vel = { 300.f, 300.f };
 int death_count = 0;
-
-// My Settings
 auto t = Clock::now();
-
-bool flag_right = false;
-bool flag_left = false;
-bool flag_fast = false;
-bool active_spell = false;
-float spell_timer = 6000.f;
+bool  flag_right   = false;
+bool  flag_left    = false;
+bool  flag_fast    = false;
+bool  active_spell = false;
+float spell_timer  = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
 
 // Item-related
@@ -63,39 +57,36 @@ std::map<std::string, ItemType> item_to_enum = {
 bool wall_breaker_active = false;
 ItemType most_recent_used_item;
 
-// For pathfinding feature
+// ******** For pathfinding feature ******* 
 bool do_generate_path = false;
 vec2 path_target_map_pos;
 vec2 starting_map_pos;
 vec2 ending_map_pos;
-
-// For cutscene feature
-bool rtx_on = true;
-bool do_cutscene_1 = true;
-bool cutscene_1_frame_2 = false;
-bool cutscene_1_frame_1 = false;
-bool cutscene_1_frame_0 = true;
-bool cutscene_reached_exit = false;
-int cutscene_selection = 1; // 1 = game start (see menu.c for more info)
-int cutscene_speaker = 1;
-int num_times_exit_reached = 0;
-
-
-entt::entity cutscene_minotaur_entity;
-entt::entity cutscene_drone_entity;
-entt::entity cutscene_drone_sad_entity;
-entt::entity cutscene_drone_laughing_entity;
-entt::entity cutscene_minotaur_rtx_off_entity;
-entt::entity cutscene_drone_rtx_off_entity;
-
+// ********* For cutscene feature *********
 enum cutscene_speaker {
 	SPEAKER_MINOTAUR		 = 1,
 	SPEAKER_DRONE			 = 2,
 	SPEAKER_DRONE_SAD		 = 3,
 	SPEAKER_DRONE_LAUGHING   = 4,
 	SPEAKER_MINOTAUR_RTX_OFF = 5,
-	SPEAKER_DRONE_RTX_OFF    = 6
+	SPEAKER_DRONE_RTX_OFF	 = 6
 };
+bool cutscene_reached_exit   = false;
+bool cutscene_1_frame_0      = true;
+bool cutscene_1_frame_1      = false;
+bool cutscene_1_frame_2      = false;
+bool do_cutscene_1			 = true;
+bool rtx_on					 = true;
+int  num_times_exit_reached  = 0;
+int  cutscene_selection      = 1; // 1 = game start (see menu.c for more info)
+int  cutscene_speaker        = SPEAKER_MINOTAUR;
+entt::entity cutscene_minotaur_entity;
+entt::entity cutscene_drone_entity;
+entt::entity cutscene_drone_sad_entity;
+entt::entity cutscene_drone_laughing_entity;
+entt::entity cutscene_minotaur_rtx_off_entity;
+entt::entity cutscene_drone_rtx_off_entity;
+// *****************************************
 
 // For attack
 bool player_swing = false;
@@ -104,6 +95,7 @@ bool player_swing = false;
 bool player_is_manually_moving = false;
 static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
+// For gestures
 std::queue<std::string> gesture_queue;
 std::vector <vec2> gesture_coords_left;
 std::vector <vec2> gesture_coords_right;
@@ -126,14 +118,6 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 			 {"active", "false"},
 		}
 	},
-	//{2, {
-	//		{"name", "slowdown"},
-	//		{"speed", "slow"},
-	//		{"combo_1", "gesture_LMB_down"},
-	//		{"combo_2", "gesture_RMB_down"},
-	//		{"active", "false"}
-	//	}
-	//},
 	{3, {
 			{"name", "invincibility"},
 			{"speed", "none"},
@@ -143,8 +127,6 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 		}
 	}
 };
-
-// Access mouse_spell helper functions
 Mouse_spell mouse_spell;
 
 //Debugging
@@ -460,25 +442,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
-	// Temporary for crossplay playability: Handle enemy respawn
-	// Problems: spawns in walls, spawns on player
-	//if (registry.size<Enemy>() < MAX_DRONES + MAX_SPIKES) {
-
-	//	entt::entity entity;
-	//	int pos_ind = std::uniform_int_distribution<int>(0, spawnable_tiles.size() - 1)(rng);
-	//	vec2 position = map_coords_to_position(spawnable_tiles[pos_ind]);
-	//	position += vec2(map_scale / 2, map_scale / 2); // to spawn in the middle of the tile
-	//	spawnable_tiles.erase(spawnable_tiles.begin() + pos_ind);
-
-	//	entity = createSpike(renderer, position);
-
-	//	// TODO this should be controlled by AI, not an initial velocity
-	//	Motion& motion = registry.get<Motion>(entity);
-	//	motion.mass = 200;
-	//	motion.coeff_rest = 0.9f;
-	//	motion.velocity = vec2(-100.f, 0.f);
-	//}
-
 	// check if player has won
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
@@ -544,31 +507,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			outfile.close();
 		}
 
-		// **ORIG START**
-		//registry.emplace<EndGame>(player_minotaur);
-		//state = ProgramState::GAME_OVER_WIN;
-		//Mix_PlayChannel(-1, tada_sound, 0);
-		//initial_game = false;
-		//do_pathfinding_movement = false;
-
-		// restart_game();
-
-		// if (!registry.view<EndGame>().contains(player_minotaur)) {
-		// 	registry.emplace<EndGame>(player_minotaur);
-		// 	Mix_PlayChannel(-1, tada_sound, 0);
-		// 	initial_game = false;
-		// 	do_pathfinding_movement = false;
-		// }
-
-		// if (registry.view<EndGame>().size() == 0) {
-		// 	state = ProgramState::GAME_OVER_WIN;
-		// 	// Mix_PlayChannel(-1, tada_sound, 0);
-		// 	// game_start_time = (float)(glfwGetTime()); // record game start time
-		// 	// initial_game = false;
-		// 	restart_game();
-		// 	// do_pathfinding_movement = false;
-		// }
-
 	}
 
 	// ************************************ Cutscenes ************************************************
@@ -618,29 +556,29 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		if (rtx_on) {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
 				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale = { scale_x, scale_y };
+				cutscene_minotaur_motion.scale    = { scale_x, scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
 				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_motion.scale = { scale_x,scale_y };
+				cutscene_drone_motion.scale    = { scale_x,scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
 				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
+				cutscene_drone_sad_motion.scale    = { scale_x,scale_y };
 			}
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
 				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
+				cutscene_drone_laughing_motion.scale    = { scale_x,scale_y };
 			}
 		}
 		else {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
 				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
+				cutscene_minotaur_rtx_off_motion.scale    = { scale_x,scale_y };
 			}
 			else {
 				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
+				cutscene_drone_rtx_off_motion.scale    = { scale_x,scale_y };
 			}
 		}
 	}
@@ -1081,7 +1019,6 @@ void WorldSystem::use_speed_boost(){
 	most_recent_used_item = ItemType::SPEED_BOOST;
 	game_state.sound_requests.push_back({SoundEffects::ITEM_SPEED_BOOST});
 }
-
 
 void WorldSystem::postItemUse(entt::entity& player) {
 	registry.emplace_or_replace<TextTimer>(player);
