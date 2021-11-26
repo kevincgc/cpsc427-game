@@ -1,25 +1,5 @@
 #include "world_init.hpp"
-
-// entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
-// {
-// 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
-// 	Motion motion = Motion();
-// 	motion.position = pos;
-// 	motion.angle = 0.f;
-// 	motion.velocity = { 0.f, 0.f };
-// 	motion.scale = mesh.original_size * 75.f;
-// 	motion.scale.x *= 1.5;
-
-// 	const entt::entity e = registry.create();
-// 	registry.emplace<Player>(e);
-// 	registry.emplace<Motion>(e, motion);
-// 	registry.emplace<Mesh*>(e, &mesh);
-// 	registry.emplace<RenderRequest>(e,
-// 			TEXTURE_ASSET_ID::MINOTAUR, // TEXTURE_COUNT indicates that no texture is needed
-// 			EFFECT_ASSET_ID::SALMON, // TEXTURED
-// 			GEOMETRY_BUFFER_ID::SALMON);
-// 	return e;
-// }
+#include <iostream>
 
 entt::entity createSpike(RenderSystem* renderer, vec2 position)
 {
@@ -64,6 +44,7 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 
 	return e;
 }
+
 entt::entity createChick(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
@@ -88,6 +69,7 @@ entt::entity createChick(RenderSystem* renderer, vec2 position)
 	chick_ai.push_back(ai);
 	return e;
 }
+
 entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
@@ -135,10 +117,60 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
 
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is cutscene element " << element << std::endl;
+
 	return e;
 }
 
-// New Entities
+entt::entity createBackground(RenderSystem* renderer, vec2 position, int element) {
+	// Set up handles
+	Mesh& mesh			  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion		  = Motion();
+	Background background = Background();
+
+	// Set initial motion values
+	motion.angle	   = 0.f;
+	motion.velocity    = { 0,0 };
+	motion.position	   = { position.x * global_scaling_vector.x, position.y * global_scaling_vector.y };
+	//motion.scale	   = mesh.original_size * 3000.f * global_scaling_vector;
+	motion.mass		   = 0;
+	motion.coeff_rest  = 0;
+	motion.can_reflect = false;
+	motion.can_collide = false;
+	motion.can_be_attacked = false;
+
+	// Set texture_asset_id
+	TEXTURE_ASSET_ID texture_asset_id;
+	switch (element) {
+		case 1:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE1;
+			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
+			break;
+		case 2:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
+			motion.scale = mesh.original_size * 2500.f * global_scaling_vector;
+			break;
+		case 3:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
+			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
+			break;
+		default:
+			break;
+	}
+
+	// Create and emplace entity
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>	   (e, motion);
+	registry.emplace<Mesh*>		   (e, &mesh);
+	registry.emplace<Background>   (e, background);
+	registry.emplace<RenderRequest>(e, texture_asset_id, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE);
+
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is background element " << element << std::endl;
+
+	return e;
+}
 
 entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 {
@@ -227,7 +259,6 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 
 	return e;
 }
-
 
 entt::entity createTraps(RenderSystem* renderer, vec2 pos)
 {
