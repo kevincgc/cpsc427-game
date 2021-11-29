@@ -194,7 +194,7 @@ entt::entity createHUD(RenderSystem* renderer, vec2 position, int element) {
 	// Set texture_asset_id
 	TEXTURE_ASSET_ID texture_asset_id;
 	switch (element) {
-	case 1:
+	case 1: // Heart
 		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
 		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
 		break;

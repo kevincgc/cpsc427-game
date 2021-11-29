@@ -32,6 +32,7 @@ vec2 player_vel = { 300.f, 300.f };
 vec2 enemy_vel  = { 100.f, 100.f };
 vec2 default_player_vel = { 300.f, 300.f };
 int death_count = 0;
+int player_health = 3;
 auto t = Clock::now();
 bool  flag_right   = false;
 bool  flag_left    = false;
@@ -90,17 +91,20 @@ entt::entity cutscene_drone_rtx_off_entity;
 entt::entity background_space1_entity;
 entt::entity background_space2_entity;
 entt::entity background_space3_entity;
-// ********* For HUD **********************
+// ********* For HUD feature **************
 entt::entity hud_heart_1_entity;
 entt::entity hud_heart_2_entity;
 entt::entity hud_heart_3_entity;
 vec2 heart_1_adj = {-500 * global_scaling_vector.x, -300 * global_scaling_vector.y};
+vec2 heart_2_adj = {-400 * global_scaling_vector.x, -300 * global_scaling_vector.y};
+vec2 heart_3_adj = {-300 * global_scaling_vector.x, -300 * global_scaling_vector.y};
 
-// For attack
-bool player_swing = false;
-
-// For enemy moving when player moves
+// Player flags
+bool player_swing			   = false;
+bool player_can_lose_health    = true;
+bool player_marked_for_death   = false;
 bool player_is_manually_moving = false;
+
 static std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 // For gestures
@@ -343,29 +347,37 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	float min_counter_ms = 3000.f;
+	std::cout << "Death timer has " << registry.view<DeathTimer>().size() << " entities." << std::endl;
 	for (entt::entity entity : registry.view<DeathTimer>()) {
-		// progress timer
-		DeathTimer& counter = registry.get<DeathTimer>(entity);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		if (counter.counter_ms < min_counter_ms) {
-			min_counter_ms = counter.counter_ms;
-		}
+		// Progress Death Timer
+		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
+		death_counter.counter_ms -= elapsed_ms_since_last_update;
 
-		// restart the game once the death timer expired
-		if (counter.counter_ms < 0) {
-			registry.remove<DeathTimer>(entity);
-			cutscene_1_frame_0 = true;
+		if (death_counter.counter_ms < min_counter_ms) { min_counter_ms = death_counter.counter_ms; }
 
-			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
-			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
-			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
-			cutscene_selection = 100 + death_count;
+		// If death timer expires...
+		if (death_counter.counter_ms < 0) {
+			// End invulnerability and remove player from DeathTimer component
+			registry.remove<DeathTimer>(entity); 
+			player_can_lose_health = true;
 
-			state = ProgramState::GAME_OVER_DEAD;
+			// Restart the game if the player is marked for death
+			if (player_marked_for_death) {
+				cutscene_1_frame_0 = true;
+				if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+				else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+				else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
+				cutscene_selection = 100 + death_count;
 
-			return true;
+				state = ProgramState::GAME_OVER_DEAD;
+				player_marked_for_death = false;
+
+				return true;
+			}
 		}
 	}
+
+
 
 	for (entt::entity entity : registry.view<EndGame>()) {
 		// progress timer
@@ -515,108 +527,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	}
 
-	// ************************************ Cutscenes ************************************************
-	// This is pretty much a hack to get around some issues with drawing images
-	// Because of bufferswap in nuklear, we have to make sure two successive
-	// frames have the speaker drawn, hence the flags. (Three successive frames
-	// are required on load to give the maze walls time to draw/be colored in,
-	// hence three flags frame_0, frame_1, and frame_2)
 
-	// Gate 1
-	if (cutscene_1_frame_0) {
-		// Set the switches
-		cutscene_1_frame_0 = false;
-		cutscene_1_frame_1 = true;
-
-	}
-
-	// Gate 2
-	else if (cutscene_1_frame_1) {
-		// Set the switches
-		cutscene_1_frame_2 = true;
-		cutscene_1_frame_1 = false;
-
-		// ***** Set up the variables *****
-		entt::entity player						= registry.view<Player>().begin()[0];
-		Motion& motion							= registry.get<Motion>(player);
-
-		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
-
-		cutscene_minotaur_entity				= registry.view<Cutscene>().begin()[2];
-		cutscene_drone_entity					= registry.view<Cutscene>().begin()[5];
-		cutscene_drone_sad_entity				= registry.view<Cutscene>().begin()[4];
-		cutscene_drone_laughing_entity			= registry.view<Cutscene>().begin()[3];
-		cutscene_minotaur_rtx_off_entity		= registry.view<Cutscene>().begin()[1];
-		cutscene_drone_rtx_off_entity			= registry.view<Cutscene>().begin()[0];
-
-		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
-		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
-		Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
-		Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
-		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
-		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
-
-		// Determine which image to show and scale it up
-		float scale_x = 900.f * global_scaling_vector.x;
-		float scale_y = 800.f * global_scaling_vector.y;
-		if (rtx_on) {
-			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
-				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale    = { scale_x, scale_y };
-			}
-			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
-				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_motion.scale    = { scale_x,scale_y };
-			}
-			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
-				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_sad_motion.scale    = { scale_x,scale_y };
-			}
-			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
-				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_laughing_motion.scale    = { scale_x,scale_y };
-			}
-		}
-		else {
-			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
-				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_rtx_off_motion.scale    = { scale_x,scale_y };
-			}
-			else {
-				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_rtx_off_motion.scale    = { scale_x,scale_y };
-			}
-		}
-	}
-
-	// Gate 3
-	else if (cutscene_1_frame_2) {
-		// Reset switch
-		cutscene_1_frame_2 = false;
-		
-		// Play audio files
-		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
-		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
-		else if (cutscene_selection != 15)  { game_state.sound_requests.push_back({SoundEffects::HORSE_SNORT}); }
-
-		// Set state to cutscene
-		state = ProgramState::CUTSCENE1;
-	}
-
-	// ************* HUD *******************
-	// Handle HUD position
-
-	entt::entity hud_player    = registry.view<Player>().begin()[0];
-	Motion& hud_player_motion  = registry.get<Motion>(hud_player);
-	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
-
-	hud_heart_1_motion.position = { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
-
-	//for (entt::entity entity : registry.view<Motion>()) {
-	//	Motion& hud_entity_motion = registry.get<Motion>(entity);
-	//}
-
-
+	do_cutscene();
+	do_HUD();
+	
 
 	return true;
 }
@@ -917,16 +831,21 @@ void WorldSystem::restart_game() {
 	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
-	// ************* Order is important ***************
+	// ************* Order is important for layers ***************
 
 	// Create HUD entities
 	hud_heart_1_entity = createHUD(renderer, { minotaur_position.x + heart_1_adj.x, minotaur_position.y + heart_1_adj.y }, 1);
+	hud_heart_2_entity = createHUD(renderer, { minotaur_position.x + heart_2_adj.x, minotaur_position.y + heart_2_adj.y }, 1);
+	hud_heart_3_entity = createHUD(renderer, { minotaur_position.x + heart_3_adj.x, minotaur_position.y + heart_3_adj.y }, 1);
 	// Create background entites
 	background_space3_entity		 = createBackground(renderer, { 600,1100 }, 3);
 	background_space2_entity		 = createBackground(renderer, { 700,1200 }, 2);
 	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
 
-	// ************************************************
+	// ***********************************************************
+
+	// Reset player life to 3
+	player_health = 3;
 
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
@@ -938,9 +857,11 @@ void WorldSystem::restart_game() {
 
 // Compute collisions between entities
 void WorldSystem::handle_collisions() {
+
 	// Loop over all collisions detected by the physics system
 	auto collisions = registry.view<Collision>();
 	for (entt::entity entity : collisions) {
+
 		// The entity and its collider
 		entt::entity entity_other = collisions.get<Collision>(entity).other;
 
@@ -948,13 +869,18 @@ void WorldSystem::handle_collisions() {
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
-			if (registry.view<Enemy>().contains(entity_other)) {
-				// initiate death unless already dying
-				if (!registry.view<DeathTimer>().contains(entity) && spellbook[3]["active"] == "false") {
-					// Scream, reset timer, and make the salmon sink
-					Motion& m = registry.get<Motion>(entity);
-					registry.emplace<DeathTimer>(entity);
-					game_state.sound_requests.push_back({SoundEffects::PLAYER_DEAD});
+			if (registry.view<Enemy>().contains(entity_other) && player_can_lose_health) {
+				
+				game_state.sound_requests.push_back({ SoundEffects::PLAYER_DEAD }); // Scream
+				registry.emplace<DeathTimer>(entity);							    // Start a death timer (an invulnerability cooldown)
+				player_can_lose_health = false;										// Set invulnerability
+				player_health--;													// Reduce player health by one
+
+				if (player_health < 1) {
+
+					player_marked_for_death = true;									// Mark player for death
+
+					// Render colour
 					Colour& c = registry.get<Colour>(entity);
 					c.colour = vec3(0.27, 0.27, 0.27);
 
@@ -962,14 +888,11 @@ void WorldSystem::handle_collisions() {
 					death_count++;
 					std::cout << "Death count is: " << death_count << std::endl;
 
-					// Reset player speed/movement to 0
-					m.velocity.x = 0;
-					m.velocity.y = 0;
-
 					// Set movement flags to false so enemies won't move upon reset
 					do_pathfinding_movement = false;
 					player_is_manually_moving = false;
 				}
+
 			}
 			// Checking Player - Prey collisions
 			if (registry.view<Prey>().contains(entity_other)) {
@@ -1073,11 +996,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	} // not GLFW_REPEAT
 
 	if (state == ProgramState::RUNNING) {
-	entt::entity player = registry.view<Player>().begin()[0];
-	Player& p_player    = registry.get<Player>(player);
-	Motion& motion	    = registry.get<Motion>(player);
-	Motion& bg_2_motion = registry.get<Motion>(background_space2_entity);
-	Motion& bg_3_motion = registry.get<Motion>(background_space3_entity);
+	entt::entity player		   = registry.view<Player>().begin()[0];
+	Player& p_player		   = registry.get<Player>(player);
+	Motion& motion			   = registry.get<Motion>(player);
+	Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
+	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);
 	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
@@ -1356,4 +1279,134 @@ MapTile WorldSystem::get_map_tile(vec2 map_coords) {
 	if (WorldSystem::is_within_bounds(map_coords)) return game_state.level.map_tiles[(int)(map_coords.y)][(int)(map_coords.x)];
 
 	return MapTile::FREE_SPACE; // out of bounds
+}
+
+// Cutscenes
+void WorldSystem::do_cutscene() {
+	// This is pretty much a hack to get around some issues with drawing images
+	// Because of bufferswap in nuklear, we have to make sure two successive
+	// frames have the speaker drawn, hence the flags. (Three successive frames
+	// are required on load to give the maze walls time to draw/be colored in,
+	// hence three flags frame_0, frame_1, and frame_2)
+
+	// Gate 1
+	if (cutscene_1_frame_0) {
+		// Set the switches
+		cutscene_1_frame_0 = false;
+		cutscene_1_frame_1 = true;
+
+	}
+
+	// Gate 2
+	else if (cutscene_1_frame_1) {
+		// Set the switches
+		cutscene_1_frame_2 = true;
+		cutscene_1_frame_1 = false;
+
+		// ***** Set up the variables *****
+		entt::entity player = registry.view<Player>().begin()[0];
+		Motion& motion = registry.get<Motion>(player);
+
+		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
+
+		cutscene_minotaur_entity = registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity = registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity = registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity = registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_rtx_off_entity = registry.view<Cutscene>().begin()[1];
+		cutscene_drone_rtx_off_entity = registry.view<Cutscene>().begin()[0];
+
+		Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_drone_sad_motion = registry.get<Motion>(cutscene_drone_sad_entity);
+		Motion& cutscene_drone_laughing_motion = registry.get<Motion>(cutscene_drone_laughing_entity);
+		Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
+		Motion& cutscene_drone_rtx_off_motion = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+
+		// Determine which image to show and scale it up
+		float scale_x = 900.f * global_scaling_vector.x;
+		float scale_y = 800.f * global_scaling_vector.y;
+		if (rtx_on) {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale = { scale_x, scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
+				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
+				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
+			}
+			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
+				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
+			}
+		}
+		else {
+			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
+				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+			else {
+				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
+			}
+		}
+	}
+
+	// Gate 3
+	else if (cutscene_1_frame_2) {
+		// Reset switch
+		cutscene_1_frame_2 = false;
+
+		// Play audio files
+		if (cutscene_selection == 102) { game_state.sound_requests.push_back({ SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY }); }
+		else if (cutscene_selection == 10) { game_state.sound_requests.push_back({ SoundEffects::DRONE_STUPID_BOY }); }
+		else if (cutscene_selection != 15) { game_state.sound_requests.push_back({ SoundEffects::HORSE_SNORT }); }
+
+		// Set state to cutscene
+		state = ProgramState::CUTSCENE1;
+	}
+}
+
+// HUD
+void WorldSystem::do_HUD() {
+	// Handle HUD
+
+	entt::entity hud_player = registry.view<Player>().begin()[0];
+	Motion& hud_player_motion = registry.get<Motion>(hud_player);
+	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
+	Motion& hud_heart_2_motion = registry.get<Motion>(hud_heart_2_entity);
+	Motion& hud_heart_3_motion = registry.get<Motion>(hud_heart_3_entity);
+
+	// **** Hearts ****
+	// Step 1: Update how many hearts there should be
+	vec2 heart_scale = { 50.f * global_scaling_vector.x, 50.f * global_scaling_vector.y };
+	if (player_health == 3) {
+		hud_heart_1_motion.scale = heart_scale;
+		hud_heart_2_motion.scale = heart_scale;
+		hud_heart_3_motion.scale = heart_scale;
+	}
+	else if (player_health == 2) {
+		hud_heart_1_motion.scale = heart_scale;
+		hud_heart_2_motion.scale = heart_scale;
+		hud_heart_3_motion.scale = { 0,0 };
+	}
+	else if (player_health == 1) {
+		hud_heart_1_motion.scale = heart_scale;
+		hud_heart_2_motion.scale = { 0,0 };
+		hud_heart_3_motion.scale = { 0,0 };
+	}
+	else if (player_health < 1) {
+		hud_heart_1_motion.scale = { 0,0 };
+		hud_heart_2_motion.scale = { 0,0 };
+		hud_heart_3_motion.scale = { 0,0 };
+	}
+
+	// Step 2: Update heart positions on screen
+	hud_heart_1_motion.position = { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
+	hud_heart_2_motion.position = { hud_player_motion.position.x + heart_2_adj.x, hud_player_motion.position.y + heart_2_adj.y };
+	hud_heart_3_motion.position = { hud_player_motion.position.x + heart_3_adj.x, hud_player_motion.position.y + heart_3_adj.y };
 }
