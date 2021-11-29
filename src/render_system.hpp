@@ -53,7 +53,10 @@ class RenderSystem {
 		textures_path("background_space1.png"), // https://wallpaperaccess.com/4k-space#google_vignette
 		textures_path("background_space2.png"), // https://pngtree.com/free-png-vectors/white-stars
 		textures_path("heart.png"), //
-		textures_path("hud_background.png")
+		textures_path("hud_background.png"),
+		textures_path("no_hammer.png"),
+		textures_path("no_teleport.png"),
+		textures_path("no_speedboost.png")
 	};
 
 

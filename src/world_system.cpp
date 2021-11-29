@@ -99,6 +99,11 @@ entt::entity hud_bg_entity;
 entt::entity hud_hammer_entity;
 entt::entity hud_teleport_entity;
 entt::entity hud_speedboost_entity;
+entt::entity hud_no_hammer_entity;
+entt::entity hud_no_teleport_entity;
+entt::entity hud_no_speedboost_entity;
+int speed_counter = 0;
+int wallbreaker_counter = 0;
 
 
 // Player flags
@@ -439,6 +444,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (!registry.view<SpeedBoostTimer>().empty()) {
 		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
 		counter.counter_ms -= elapsed_ms_since_last_update;
+		speed_counter = counter.counter_ms; // capture speed_counter for HUD countdown
 		if (counter.counter_ms < 0) {
 			registry.remove<SpeedBoostTimer>(player_minotaur);
 		}
@@ -447,6 +453,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (!registry.view<WallBreakerTimer>().empty()) {
 		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
 		counter.counter_ms -= elapsed_ms_since_last_update;
+		wallbreaker_counter = counter.counter_ms; // capture wallbreaker_counter for HUD countdown
 		if (counter.counter_ms < 0) {
 			registry.remove<WallBreakerTimer>(player_minotaur);
 		}
@@ -825,28 +832,31 @@ void WorldSystem::restart_game() {
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
 	// Create cutscene entities
-	cutscene_drone_entity			 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE);
-	cutscene_drone_sad_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_SAD);
-	cutscene_drone_laughing_entity   = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_LAUGHING);
-	cutscene_minotaur_entity		 = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR);
-	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
-	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
+	cutscene_drone_entity			 = createCutscene(renderer, Cutscene_enum::DRONE		   );
+	cutscene_drone_sad_entity		 = createCutscene(renderer, Cutscene_enum::DRONE_SAD	   );
+	cutscene_drone_laughing_entity   = createCutscene(renderer, Cutscene_enum::DRONE_LAUGHING  );
+	cutscene_minotaur_entity		 = createCutscene(renderer, Cutscene_enum::MINOTAUR		   );
+	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, Cutscene_enum::MINOTAUR_RTX_OFF);
+	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, Cutscene_enum::DRONE_RTX_OFF   );
 
 	// ************* Order is important for correct layering ***************
 
 	// Create HUD entities
-	hud_heart_1_entity	  = createHUD(renderer, 1);
-	hud_heart_2_entity	  = createHUD(renderer, 1);
-	hud_heart_3_entity	  = createHUD(renderer, 1);
-	hud_hammer_entity	  = createHUD(renderer, 3);
-	hud_teleport_entity	  = createHUD(renderer, 4);
-	hud_speedboost_entity = createHUD(renderer, 5);
-	hud_bg_entity		  = createHUD(renderer, 2);
+	hud_heart_1_entity	     = createHUD(renderer, 1);
+	hud_heart_2_entity	     = createHUD(renderer, 1);
+	hud_heart_3_entity	     = createHUD(renderer, 1);
+	hud_no_hammer_entity     = createHUD(renderer, 6);
+	hud_no_teleport_entity   = createHUD(renderer, 7);
+	hud_no_speedboost_entity = createHUD(renderer, 8);
+	hud_hammer_entity	     = createHUD(renderer, 3);
+	hud_teleport_entity	     = createHUD(renderer, 4);
+	hud_speedboost_entity    = createHUD(renderer, 5);
+	hud_bg_entity			 = createHUD(renderer, 2);
 
 	// Create background entites
 	background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
 	background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
-	background_space1_entity = createBackground(renderer, { 900,800 }, 1);
+	background_space1_entity = createBackground(renderer, { 900,800  }, 1);
 	
 
 	// ***********************************************************
@@ -1197,10 +1207,12 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 				// Clicked a wall
 				else {
 					std::cout << "Clicked a wall!" << std::endl;
+
+					// ==== Feature: Items ==== 
 					if (registry.view<WallBreakerTimer>().contains(player) && get_map_tile(target_map_pos) == MapTile::BREAKABLE_WALL) {
-						// do attack or stab animation, maybe turn red?
 						game_state.level.map_tiles[(int)(target_map_pos.y)][(int)(target_map_pos.x)] = MapTile::FREE_SPACE;
 						game_state.sound_requests.push_back({SoundEffects::ITEM_BREAK_WALL});
+						wallbreaker_counter = 0;
 						registry.erase<WallBreakerTimer>(player);
 					}
 				}
@@ -1373,21 +1385,23 @@ void WorldSystem::do_cutscene() {
 
 // HUD
 void WorldSystem::do_HUD() {
-	// Handle HUD
-
-	entt::entity hud_player			= registry.view<Player>().begin()[0];
-	Motion& hud_player_motion		= registry.get<Motion>(hud_player);
-	Motion& hud_heart_1_motion		= registry.get<Motion>(hud_heart_1_entity);
-	Motion& hud_heart_2_motion		= registry.get<Motion>(hud_heart_2_entity);
-	Motion& hud_heart_3_motion		= registry.get<Motion>(hud_heart_3_entity);
-	Motion& hud_bg_motion			= registry.get<Motion>(hud_bg_entity);
-	Motion& hud_hammer_motion		= registry.get<Motion>(hud_hammer_entity);
-	Motion& hud_teleport_motion		= registry.get<Motion>(hud_teleport_entity);
-	Motion& hud_speedboost_motion	= registry.get<Motion>(hud_speedboost_entity);
+	entt::entity hud_player			  = registry.view<Player>().begin()[0];
+	Motion& hud_player_motion		  = registry.get<Motion>(hud_player);
+	Motion& hud_heart_1_motion		  = registry.get<Motion>(hud_heart_1_entity);
+	Motion& hud_heart_2_motion		  = registry.get<Motion>(hud_heart_2_entity);
+	Motion& hud_heart_3_motion		  = registry.get<Motion>(hud_heart_3_entity);
+	Motion& hud_bg_motion			  = registry.get<Motion>(hud_bg_entity);
+	Motion& hud_hammer_motion		  = registry.get<Motion>(hud_hammer_entity);
+	Motion& hud_teleport_motion		  = registry.get<Motion>(hud_teleport_entity);
+	Motion& hud_speedboost_motion	  = registry.get<Motion>(hud_speedboost_entity);
+	Motion& hud_no_hammer_motion	  = registry.get<Motion>(hud_no_hammer_entity);
+	Motion& hud_no_teleport_motion	  = registry.get<Motion>(hud_no_teleport_entity);
+	Motion& hud_no_speedboost_motion  = registry.get<Motion>(hud_no_speedboost_entity);
 
 	// **** Hearts ****
-	// Step 1: Update how many hearts there should be
+	// Update how many hearts there should be
 	vec2 heart_scale = { 50.f * global_scaling_vector.x, 50.f * global_scaling_vector.y };
+	vec2 item_scale  = { 50.f * global_scaling_vector.x, 50.f * global_scaling_vector.y };
 	if (player_health == 3) {
 		hud_heart_1_motion.scale = heart_scale;
 		hud_heart_2_motion.scale = heart_scale;
@@ -1405,7 +1419,7 @@ void WorldSystem::do_HUD() {
 		hud_heart_2_motion.scale = { 0,0 };
 		hud_heart_3_motion.scale = { 0,0 };
 	}
-	// Step 2: Update heart positions on screen
+	// Update heart positions on screen
 	vec2 heart_1_adj = { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
 	vec2 heart_2_adj = { -window_width_px / 3								 , -window_height_px / 2.2 * global_scaling_vector.y };
 	vec2 heart_3_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
@@ -1418,20 +1432,49 @@ void WorldSystem::do_HUD() {
 	hud_bg_motion.position = { hud_player_motion.position.x - window_width_px/3, hud_player_motion.position.y - window_height_px/2.5 };
 
 	// **** Items ****
-	// Update what items should be displayed
+	// Update what items should be displayed and their positions
+	vec2 hammer_adj			= { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 teleport_adj		= { -window_width_px / 3								, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 speedboost_adj		= { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 hud_hammer_pos		= { hud_player_motion.position.x + hammer_adj.x         , hud_player_motion.position.y + hammer_adj.y       };
+	vec2 hud_teleport_pos	= { hud_player_motion.position.x + teleport_adj.x       , hud_player_motion.position.y + teleport_adj.y     };
+	vec2 hud_speedboost_pos = { hud_player_motion.position.x + speedboost_adj.x     , hud_player_motion.position.y + speedboost_adj.y   };
 
-	// Update item positions on screen
-	vec2 hammer_adj		= { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.7 * global_scaling_vector.y };
-	vec2 teleport_adj	= { -window_width_px / 3								, -window_height_px / 2.7 * global_scaling_vector.y };
-	vec2 speedboost_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.7 * global_scaling_vector.y };
-	hud_hammer_motion.position	   = { hud_player_motion.position.x + hammer_adj.x    , hud_player_motion.position.y + hammer_adj.y     };
-	hud_teleport_motion.position   = { hud_player_motion.position.x + teleport_adj.x  , hud_player_motion.position.y + teleport_adj.y   };
-	hud_speedboost_motion.position = { hud_player_motion.position.x + speedboost_adj.x, hud_player_motion.position.y + speedboost_adj.y };
+	// Hammer
+	if (inventory[ItemType::WALL_BREAKER] == 0) {
+		hud_hammer_motion.scale		      = { 0,0 };
+		hud_no_hammer_motion.scale        = item_scale;
+		hud_no_hammer_motion.position     = hud_hammer_pos;
+	}
+	else if (inventory[ItemType::WALL_BREAKER] > 0) {
+		hud_hammer_motion.scale		      = item_scale;
+		hud_hammer_motion.position	      = hud_hammer_pos;
+		hud_no_hammer_motion.scale	      = { 0,0 };
+	}
 
+	// Teleport
+	if (inventory[ItemType::TELEPORT] == 0) {
+		hud_teleport_motion.scale	      = { 0,0 };
+		hud_no_teleport_motion.scale	  = item_scale;
+		hud_no_teleport_motion.position   = hud_teleport_pos;
+	}
+	else if (inventory[ItemType::TELEPORT] > 0) {
+		hud_teleport_motion.scale	      = item_scale;
+		hud_teleport_motion.position      = hud_teleport_pos;
+		hud_no_teleport_motion.scale      = { 0,0 };
+	}
+	
+	// Speed boost
+	if (inventory[ItemType::SPEED_BOOST] == 0) {
+		hud_speedboost_motion.scale		  = { 0,0 };
+		hud_no_speedboost_motion.scale    = item_scale;
+		hud_no_speedboost_motion.position = hud_speedboost_pos;
+	}
+	else if (inventory[ItemType::SPEED_BOOST] > 0) {
+		hud_speedboost_motion.scale		  = item_scale;
+		hud_speedboost_motion.position	  = hud_speedboost_pos;
+		hud_no_speedboost_motion.scale    = { 0,0 };
+	}
 
-
-
-	// Debug
-	//std::cout << "Viewable range " << camera.x << ", " << camera.y << "width: " << camera.x + window_width_px << ", height: " << camera.y + window_height_px << std::endl;
-	//std::cout << "Heart 1 position" << hud_heart_1_motion.position.x << ", " << hud_heart_1_motion.position.y << std::endl;
+	// Rest of the text handling is done in render_system.cpp's draw() function
 }

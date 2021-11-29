@@ -2,6 +2,7 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include <iostream>
+#include <string>
 
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
@@ -650,20 +651,49 @@ void RenderSystem::draw()
 	drawText(renderedText_1, text1_pos, { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 
-	// ***** HUD ******
-	// Draw text for hotkey
+	// **************** Feature: HUD ****************
 	vec3 white_text = { 255.f, 255.f, 255.f };
-	vec2 text_hotkey_scale = { 1.f * global_scaling_vector.x, -1.5f * global_scaling_vector.y };
-	vec2 text_hotkey1_pos = { 1 / 2 * w + (6.5 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
-	vec2 text_hotkey2_pos = { 1 / 2 * w + (13 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
-	vec2 text_hotkey3_pos = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
+
+	// Draw text for hotkey
+	vec2 text_hotkey1_pos	  = { 1 / 2 * w + (6.5  * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey2_pos	  = { 1 / 2 * w + (13   * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey3_pos	  = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey_scale	  = {			   1.f  * global_scaling_vector.x,               -1.5f * global_scaling_vector.y };
 	std::string text_hotkey_1 = "1";
 	std::string text_hotkey_2 = "2";
 	std::string text_hotkey_3 = "3";
-
 	drawText(text_hotkey_1, text_hotkey1_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_2, text_hotkey2_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_3, text_hotkey3_pos, text_hotkey_scale, projection_2D, white_text);
+
+	// Draw text for item count
+	vec2 hammer_count_pos		 = { 1 / 2 * w + (8.5  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 teleport_count_pos		 = { 1 / 2 * w + (15   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 speedboost_count_pos    = { 1 / 2 * w + (21.5 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 item_count_scale		 = {              0.8  * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
+	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
+	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
+	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
+	drawText(hammer_count,     hammer_count_pos,     item_count_scale, projection_2D, white_text);
+	drawText(teleport_count,   teleport_count_pos,   item_count_scale, projection_2D, white_text);
+	drawText(speedboost_count, speedboost_count_pos, item_count_scale, projection_2D, white_text);
+
+	// Draw text for speedboost remaining active time
+	if (speed_counter > 0) {
+		vec2 text_speed_timer_pos	 = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
+		vec2 text_timer_scale		 = {			   0.8 * global_scaling_vector.x,				-1.3 * global_scaling_vector.y };
+		std::string text_speed_timer = std::to_string(speed_counter/1000) + "s";
+		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
+	}
+
+	// Draw text for hammer remaining usage time
+	if (wallbreaker_counter > 0) {
+		vec2 text_speed_timer_pos    = { 1 / 2 * w + (6.5 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
+		vec2 text_timer_scale	     = {			   0.8 * global_scaling_vector.x,			   -1.3 * global_scaling_vector.y };
+		std::string text_speed_timer = std::to_string(wallbreaker_counter / 1000) + "s";
+		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
+	}
+	// ************************************************
 
 	// Truely render to the screen
 	drawToScreen();
