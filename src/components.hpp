@@ -26,7 +26,7 @@ struct SoundEffectRequest
 };
 
 struct Player {
-	// Used by parallax to determine whether player has actually travelled
+	// Used by hud to determine whether player has actually travelled
 	vec2 prev_pos; 
 };
 struct Enemy {};
@@ -36,6 +36,7 @@ struct Prey {int id;};
 // All data relevant to the shape and motion of entities
 struct Motion {
 	vec2 position = { 0, 0 };
+	vec2 prev_pos = { 0, 0 };
 	float angle = 0.0f;
 	vec2 velocity = { 0, 0 };
 	vec2 scale = { 10, 10 };
@@ -192,6 +193,9 @@ struct Cutscene {};
 // Background - so we can draw background elements first
 struct Background {};
 
+// HUD - so we can draw HUD elements in between world and cutscene
+struct HUD {};
+
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
 {
@@ -258,6 +262,7 @@ enum class TEXTURE_ASSET_ID {
 	CUTSCENE_DRONE_RTX_OFF,
 	BACKGROUND_SPACE1,
 	BACKGROUND_SPACE2,
+	HUD_HEART,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

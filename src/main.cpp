@@ -113,11 +113,13 @@ int main()
 
 		case ProgramState::RUNNING:
 		{
+
 			world.step(elapsed_ms);
 			ai.step();
 			physics.step(elapsed_ms, window_width_px, window_height_px);
 			world.handle_collisions();
 			renderer.draw();
+
 			break;
 		}
 		case ProgramState::PAUSED:

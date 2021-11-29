@@ -90,7 +90,11 @@ entt::entity cutscene_drone_rtx_off_entity;
 entt::entity background_space1_entity;
 entt::entity background_space2_entity;
 entt::entity background_space3_entity;
-// *****************************************
+// ********* For HUD **********************
+entt::entity hud_heart_1_entity;
+entt::entity hud_heart_2_entity;
+entt::entity hud_heart_3_entity;
+vec2 heart_1_adj = {-500 * global_scaling_vector.x, -300 * global_scaling_vector.y};
 
 // For attack
 bool player_swing = false;
@@ -327,10 +331,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Removing out of screen motion entities (excluding: cutscene and backgroundentities)
+	// Removing out of screen motion entities (excluding: cutscene, background, and hud entities)
 	auto motions = registry.view<Motion>();
 	for (auto entity : motions) {
-		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity)) {
+		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
 			Motion& motion = motions.get<Motion>(entity);
 			if (motion.position.x + abs(motion.scale.x) < 0.f) {
 				registry.destroy(entity);
@@ -589,7 +593,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	else if (cutscene_1_frame_2) {
 		// Reset switch
 		cutscene_1_frame_2 = false;
-
+		
 		// Play audio files
 		if		(cutscene_selection == 102) { game_state.sound_requests.push_back({SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY}); }
 		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({SoundEffects::DRONE_STUPID_BOY}); }
@@ -599,7 +603,19 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		state = ProgramState::CUTSCENE1;
 	}
 
-	// ************************************ Parallax ************************************************
+	// ************* HUD *******************
+	// Handle HUD position
+
+	entt::entity hud_player    = registry.view<Player>().begin()[0];
+	Motion& hud_player_motion  = registry.get<Motion>(hud_player);
+	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
+
+	hud_heart_1_motion.position = { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
+
+	//for (entt::entity entity : registry.view<Motion>()) {
+	//	Motion& hud_entity_motion = registry.get<Motion>(entity);
+	//}
+
 
 
 	return true;
@@ -901,10 +917,16 @@ void WorldSystem::restart_game() {
 	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
+	// ************* Order is important ***************
+
+	// Create HUD entities
+	hud_heart_1_entity = createHUD(renderer, { minotaur_position.x + heart_1_adj.x, minotaur_position.y + heart_1_adj.y }, 1);
 	// Create background entites
 	background_space3_entity		 = createBackground(renderer, { 600,1100 }, 3);
 	background_space2_entity		 = createBackground(renderer, { 700,1200 }, 2);
 	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
+
+	// ************************************************
 
 	// To prevent enemies from moving before player moves
 	do_pathfinding_movement   = false;
@@ -1056,6 +1078,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	Motion& motion	    = registry.get<Motion>(player);
 	Motion& bg_2_motion = registry.get<Motion>(background_space2_entity);
 	Motion& bg_3_motion = registry.get<Motion>(background_space3_entity);
+	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
 		if (!registry.view<DeathTimer>().contains(player)) {
 
@@ -1073,44 +1096,47 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				float bg_2_vel = 20.f;
 				float bg_3_vel = 40.f;
 
+				hud_heart_1_motion.velocity = { 0,0 };
+				motion.velocity				= { 0, 0 };
 
-				motion.velocity		 = { 0, 0 };
 
 				if (pressed_keys.find(GLFW_KEY_UP) != pressed_keys.end()    || pressed_keys.find(GLFW_KEY_W) != pressed_keys.end()) {
-					do_pathfinding_movement   = false;
-					player_is_manually_moving = true;
-					motion.velocity.y		  = -1 * player_vel.y;
-					bg_2_motion.velocity.y	  = bg_2_vel;
-					bg_3_motion.velocity.y	  = bg_3_vel;
+					do_pathfinding_movement       = false;
+					player_is_manually_moving     = true;
+					motion.velocity.y		      = -1 * player_vel.y;
+					//hud_heart_1_motion.velocity.y = -1 * player_vel.y;
+					bg_2_motion.velocity.y	      = bg_2_vel;
+					bg_3_motion.velocity.y	      = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
-					do_pathfinding_movement   = false;
-					player_is_manually_moving = true;
-					motion.velocity.x		  = -1 * player_vel.x;
-					bg_2_motion.velocity.x    = bg_2_vel;
-					bg_3_motion.velocity.x    = bg_3_vel;
+					do_pathfinding_movement       = false;
+					player_is_manually_moving     = true;
+					motion.velocity.x		      = -1 * player_vel.x;
+					//hud_heart_1_motion.velocity.x = -1 * player_vel.x;
+					bg_2_motion.velocity.x        = bg_2_vel;
+					bg_3_motion.velocity.x        = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
-					do_pathfinding_movement   = false;
-					player_is_manually_moving = true;
-					motion.velocity.x		  = player_vel.x;
-					bg_2_motion.velocity.x    = -1 * bg_2_vel;
-					bg_3_motion.velocity.x    = -1 * bg_3_vel;
+					do_pathfinding_movement       = false;
+					player_is_manually_moving     = true;
+					motion.velocity.x		      = player_vel.x;
+					//hud_heart_1_motion.velocity.x = player_vel.x;
+					bg_2_motion.velocity.x        = -1 * bg_2_vel;
+					bg_3_motion.velocity.x        = -1 * bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
-					do_pathfinding_movement   = false;
-					player_is_manually_moving = true;
-					motion.velocity.y		  = player_vel.y;
-					bg_2_motion.velocity.y    = -1 * bg_2_vel;
-					bg_3_motion.velocity.y    = -1 * bg_3_vel;
+					do_pathfinding_movement       = false;
+					player_is_manually_moving     = true;
+					motion.velocity.y		      = player_vel.y;
+					//hud_heart_1_motion.velocity.y = player_vel.y;
+					bg_2_motion.velocity.y        = -1 * bg_2_vel;
+					bg_3_motion.velocity.y        = -1 * bg_3_vel;
 				}
 
-				if (pressed_keys.size() == 0) {
-					player_is_manually_moving = false;
-				}
+				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
 			}
 
 			// Use Items

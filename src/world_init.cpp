@@ -155,6 +155,9 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
 			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
 			break;
+		case 10:
+			texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+			motion.scale = mesh.original_size * 100.f * global_scaling_vector;
 		default:
 			break;
 	}
@@ -168,6 +171,46 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 
 	// Debug
 	std::cout << "Entity [" << (int)e << "] is background element " << element << std::endl;
+
+	return e;
+}
+
+entt::entity createHUD(RenderSystem* renderer, vec2 position, int element) {
+	// Set up handles
+	Mesh& mesh	  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion = Motion();
+	HUD hud		  = HUD();
+
+	// Set initial motion values
+	motion.angle		   = 0.f;
+	motion.velocity		   = { 0,0 };
+	motion.position		   = { position.x * global_scaling_vector.x, position.y * global_scaling_vector.y };
+	motion.mass			   = 0;
+	motion.coeff_rest      = 0;
+	motion.can_reflect     = false;
+	motion.can_collide     = false;
+	motion.can_be_attacked = false;
+
+	// Set texture_asset_id
+	TEXTURE_ASSET_ID texture_asset_id;
+	switch (element) {
+	case 1:
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	default:
+		break;
+	}
+
+	// Create and emplace entity
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<HUD>(e, hud);
+	registry.emplace<RenderRequest>(e, texture_asset_id, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE);
+
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is hud element " << element << std::endl;
 
 	return e;
 }

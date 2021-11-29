@@ -496,14 +496,15 @@ void RenderSystem::draw()
 	// 1. Background sprites
 	// 2. Map tiles
 	// 3. Sprites
-	// 4. Cutscene sprites
+	// 4. HUD sprites
+	// 5. Cutscene sprites
 
-	// Background Sprites
+	// 1. Background Sprites
 	for (entt::entity entity : registry.view<Background>()) {
 		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
 	}
 
-	// Map Tiles
+	// 2. Map Tiles
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
@@ -511,19 +512,24 @@ void RenderSystem::draw()
 		}
 	}
 
-	// Minotaur/Enemies/Items
+	// 3. Minotaur/Enemies/Items
 	for (entt::entity entity : registry.view<RenderRequest>())
 	{
 		// Only render the motion entities...
 		if (!registry.view<Motion>().contains(entity)) continue;
 
-		// Don't render background or cutscene entities
-		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity)) { 
+		// Don't render background or cutscene or HUD entities
+		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
 			drawTexturedMesh(entity, projection_2D); 
 		}
 	}
 
-	// Cutscene Sprites
+	// 4. HUD Sprites
+	for (entt::entity entity : registry.view <HUD>()) {
+		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
+	}
+
+	// 5. Cutscene Sprites
 	for (entt::entity entity : registry.view <Cutscene>()) {
 		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
 	}

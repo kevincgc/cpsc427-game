@@ -51,7 +51,8 @@ class RenderSystem {
 		textures_path("cutscene_minotaur_rtx_off.png"),
 		textures_path("cutscene_drone_rtx_off.png"),
 		textures_path("background_space1.png"), // https://wallpaperaccess.com/4k-space#google_vignette
-		textures_path("background_space2.png") // https://pngtree.com/free-png-vectors/white-stars
+		textures_path("background_space2.png"), // https://pngtree.com/free-png-vectors/white-stars
+		textures_path("heart.png") //
 	};
 
 
