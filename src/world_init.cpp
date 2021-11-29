@@ -175,7 +175,7 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 	return e;
 }
 
-entt::entity createHUD(RenderSystem* renderer, vec2 position, int element) {
+entt::entity createHUD(RenderSystem* renderer, int element) {
 	// Set up handles
 	Mesh& mesh	  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
@@ -184,7 +184,7 @@ entt::entity createHUD(RenderSystem* renderer, vec2 position, int element) {
 	// Set initial motion values
 	motion.angle		   = 0.f;
 	motion.velocity		   = { 0,0 };
-	motion.position		   = { position.x * global_scaling_vector.x, position.y * global_scaling_vector.y };
+	motion.position		   = { 0,0 };
 	motion.mass			   = 0;
 	motion.coeff_rest      = 0;
 	motion.can_reflect     = false;
@@ -196,6 +196,23 @@ entt::entity createHUD(RenderSystem* renderer, vec2 position, int element) {
 	switch (element) {
 	case 1: // Heart
 		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 2: // Background
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_BACKGROUND;
+		motion.scale.x = mesh.original_size.x * 400.f * global_scaling_vector.x;
+		motion.scale.y = mesh.original_size.y * 200.f * global_scaling_vector.y;
+		break;
+	case 3: // Hammer
+		texture_asset_id = TEXTURE_ASSET_ID::WALL_BREAKER;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 4: // Teleport
+		texture_asset_id = TEXTURE_ASSET_ID::TELEPORT;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 5: // Speed
+		texture_asset_id = TEXTURE_ASSET_ID::SPEED_BOOST;
 		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
 		break;
 	default:

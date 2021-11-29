@@ -95,9 +95,11 @@ entt::entity background_space3_entity;
 entt::entity hud_heart_1_entity;
 entt::entity hud_heart_2_entity;
 entt::entity hud_heart_3_entity;
-vec2 heart_1_adj = {-500 * global_scaling_vector.x, -300 * global_scaling_vector.y};
-vec2 heart_2_adj = {-400 * global_scaling_vector.x, -300 * global_scaling_vector.y};
-vec2 heart_3_adj = {-300 * global_scaling_vector.x, -300 * global_scaling_vector.y};
+entt::entity hud_bg_entity;
+entt::entity hud_hammer_entity;
+entt::entity hud_teleport_entity;
+entt::entity hud_speedboost_entity;
+
 
 // Player flags
 bool player_swing			   = false;
@@ -347,7 +349,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	}
 
 	float min_counter_ms = 3000.f;
-	std::cout << "Death timer has " << registry.view<DeathTimer>().size() << " entities." << std::endl;
 	for (entt::entity entity : registry.view<DeathTimer>()) {
 		// Progress Death Timer
 		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
@@ -831,16 +832,22 @@ void WorldSystem::restart_game() {
 	cutscene_minotaur_rtx_off_entity = createCutscene(renderer, { 0,0 }, Cutscene_enum::MINOTAUR_RTX_OFF);
 	cutscene_drone_rtx_off_entity	 = createCutscene(renderer, { 0,0 }, Cutscene_enum::DRONE_RTX_OFF);
 
-	// ************* Order is important for layers ***************
+	// ************* Order is important for correct layering ***************
 
 	// Create HUD entities
-	hud_heart_1_entity = createHUD(renderer, { minotaur_position.x + heart_1_adj.x, minotaur_position.y + heart_1_adj.y }, 1);
-	hud_heart_2_entity = createHUD(renderer, { minotaur_position.x + heart_2_adj.x, minotaur_position.y + heart_2_adj.y }, 1);
-	hud_heart_3_entity = createHUD(renderer, { minotaur_position.x + heart_3_adj.x, minotaur_position.y + heart_3_adj.y }, 1);
+	hud_heart_1_entity	  = createHUD(renderer, 1);
+	hud_heart_2_entity	  = createHUD(renderer, 1);
+	hud_heart_3_entity	  = createHUD(renderer, 1);
+	hud_hammer_entity	  = createHUD(renderer, 3);
+	hud_teleport_entity	  = createHUD(renderer, 4);
+	hud_speedboost_entity = createHUD(renderer, 5);
+	hud_bg_entity		  = createHUD(renderer, 2);
+
 	// Create background entites
-	background_space3_entity		 = createBackground(renderer, { 600,1100 }, 3);
-	background_space2_entity		 = createBackground(renderer, { 700,1200 }, 2);
-	background_space1_entity		 = createBackground(renderer, { 900,800 }, 1);
+	background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
+	background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
+	background_space1_entity = createBackground(renderer, { 900,800 }, 1);
+	
 
 	// ***********************************************************
 
@@ -1305,54 +1312,47 @@ void WorldSystem::do_cutscene() {
 
 		// ***** Set up the variables *****
 		entt::entity player = registry.view<Player>().begin()[0];
-		Motion& motion = registry.get<Motion>(player);
+		Motion& motion		= registry.get<Motion>(player);
 
 		// These variables are used in main as well, to set the scales to 0 after the cutscene ends
 
-		cutscene_minotaur_entity = registry.view<Cutscene>().begin()[2];
-		cutscene_drone_entity = registry.view<Cutscene>().begin()[5];
-		cutscene_drone_sad_entity = registry.view<Cutscene>().begin()[4];
-		cutscene_drone_laughing_entity = registry.view<Cutscene>().begin()[3];
+		cutscene_minotaur_entity		 = registry.view<Cutscene>().begin()[2];
+		cutscene_drone_entity			 = registry.view<Cutscene>().begin()[5];
+		cutscene_drone_sad_entity		 = registry.view<Cutscene>().begin()[4];
+		cutscene_drone_laughing_entity	 = registry.view<Cutscene>().begin()[3];
 		cutscene_minotaur_rtx_off_entity = registry.view<Cutscene>().begin()[1];
-		cutscene_drone_rtx_off_entity = registry.view<Cutscene>().begin()[0];
+		cutscene_drone_rtx_off_entity	 = registry.view<Cutscene>().begin()[0];
 
-		Motion& cutscene_drone_motion = registry.get<Motion>(cutscene_drone_entity);
-		Motion& cutscene_drone_sad_motion = registry.get<Motion>(cutscene_drone_sad_entity);
-		Motion& cutscene_drone_laughing_motion = registry.get<Motion>(cutscene_drone_laughing_entity);
-		Motion& cutscene_minotaur_motion = registry.get<Motion>(cutscene_minotaur_entity);
+		Motion& cutscene_drone_motion			 = registry.get<Motion>(cutscene_drone_entity);
+		Motion& cutscene_drone_sad_motion		 = registry.get<Motion>(cutscene_drone_sad_entity);
+		Motion& cutscene_drone_laughing_motion	 = registry.get<Motion>(cutscene_drone_laughing_entity);
+		Motion& cutscene_minotaur_motion		 = registry.get<Motion>(cutscene_minotaur_entity);
 		Motion& cutscene_minotaur_rtx_off_motion = registry.get<Motion>(cutscene_minotaur_rtx_off_entity);
-		Motion& cutscene_drone_rtx_off_motion = registry.get<Motion>(cutscene_drone_rtx_off_entity);
+		Motion& cutscene_drone_rtx_off_motion	 = registry.get<Motion>(cutscene_drone_rtx_off_entity);
 
 		// Determine which image to show and scale it up
 		float scale_x = 900.f * global_scaling_vector.x;
 		float scale_y = 800.f * global_scaling_vector.y;
 		if (rtx_on) {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
-				cutscene_minotaur_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_motion.scale = { scale_x, scale_y };
-			}
+				cutscene_minotaur_motion.position		  = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
+				cutscene_minotaur_motion.scale			  = { scale_x, scale_y }; }
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE) {
-				cutscene_drone_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_motion.scale = { scale_x,scale_y };
-			}
+				cutscene_drone_motion.position            = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_motion.scale	              = { scale_x,scale_y }; }
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_SAD) {
-				cutscene_drone_sad_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_sad_motion.scale = { scale_x,scale_y };
-			}
+				cutscene_drone_sad_motion.position		  = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_sad_motion.scale			  = { scale_x,scale_y }; }
 			else if (cutscene_speaker == cutscene_speaker::SPEAKER_DRONE_LAUGHING) {
-				cutscene_drone_laughing_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_laughing_motion.scale = { scale_x,scale_y };
-			}
-		}
+				cutscene_drone_laughing_motion.position	  = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_laughing_motion.scale	  = { scale_x,scale_y }; } }
 		else {
 			if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR) {
 				cutscene_minotaur_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 7 };
-				cutscene_minotaur_rtx_off_motion.scale = { scale_x,scale_y };
-			}
+				cutscene_minotaur_rtx_off_motion.scale    = { scale_x,scale_y }; }
 			else {
-				cutscene_drone_rtx_off_motion.position = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
-				cutscene_drone_rtx_off_motion.scale = { scale_x,scale_y };
-			}
+				cutscene_drone_rtx_off_motion.position    = { motion.position.x - window_width_px / 4, motion.position.y + window_height_px / 10 };
+				cutscene_drone_rtx_off_motion.scale       = { scale_x,scale_y }; }
 		}
 	}
 
@@ -1362,7 +1362,7 @@ void WorldSystem::do_cutscene() {
 		cutscene_1_frame_2 = false;
 
 		// Play audio files
-		if (cutscene_selection == 102) { game_state.sound_requests.push_back({ SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY }); }
+		if     (cutscene_selection == 102) { game_state.sound_requests.push_back({ SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY }); }
 		else if (cutscene_selection == 10) { game_state.sound_requests.push_back({ SoundEffects::DRONE_STUPID_BOY }); }
 		else if (cutscene_selection != 15) { game_state.sound_requests.push_back({ SoundEffects::HORSE_SNORT }); }
 
@@ -1375,11 +1375,15 @@ void WorldSystem::do_cutscene() {
 void WorldSystem::do_HUD() {
 	// Handle HUD
 
-	entt::entity hud_player = registry.view<Player>().begin()[0];
-	Motion& hud_player_motion = registry.get<Motion>(hud_player);
-	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
-	Motion& hud_heart_2_motion = registry.get<Motion>(hud_heart_2_entity);
-	Motion& hud_heart_3_motion = registry.get<Motion>(hud_heart_3_entity);
+	entt::entity hud_player			= registry.view<Player>().begin()[0];
+	Motion& hud_player_motion		= registry.get<Motion>(hud_player);
+	Motion& hud_heart_1_motion		= registry.get<Motion>(hud_heart_1_entity);
+	Motion& hud_heart_2_motion		= registry.get<Motion>(hud_heart_2_entity);
+	Motion& hud_heart_3_motion		= registry.get<Motion>(hud_heart_3_entity);
+	Motion& hud_bg_motion			= registry.get<Motion>(hud_bg_entity);
+	Motion& hud_hammer_motion		= registry.get<Motion>(hud_hammer_entity);
+	Motion& hud_teleport_motion		= registry.get<Motion>(hud_teleport_entity);
+	Motion& hud_speedboost_motion	= registry.get<Motion>(hud_speedboost_entity);
 
 	// **** Hearts ****
 	// Step 1: Update how many hearts there should be
@@ -1387,26 +1391,47 @@ void WorldSystem::do_HUD() {
 	if (player_health == 3) {
 		hud_heart_1_motion.scale = heart_scale;
 		hud_heart_2_motion.scale = heart_scale;
-		hud_heart_3_motion.scale = heart_scale;
-	}
+		hud_heart_3_motion.scale = heart_scale; }
 	else if (player_health == 2) {
 		hud_heart_1_motion.scale = heart_scale;
 		hud_heart_2_motion.scale = heart_scale;
-		hud_heart_3_motion.scale = { 0,0 };
-	}
+		hud_heart_3_motion.scale = { 0,0 }; }
 	else if (player_health == 1) {
 		hud_heart_1_motion.scale = heart_scale;
 		hud_heart_2_motion.scale = { 0,0 };
-		hud_heart_3_motion.scale = { 0,0 };
-	}
+		hud_heart_3_motion.scale = { 0,0 }; }
 	else if (player_health < 1) {
 		hud_heart_1_motion.scale = { 0,0 };
 		hud_heart_2_motion.scale = { 0,0 };
 		hud_heart_3_motion.scale = { 0,0 };
 	}
-
 	// Step 2: Update heart positions on screen
-	hud_heart_1_motion.position = { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
-	hud_heart_2_motion.position = { hud_player_motion.position.x + heart_2_adj.x, hud_player_motion.position.y + heart_2_adj.y };
-	hud_heart_3_motion.position = { hud_player_motion.position.x + heart_3_adj.x, hud_player_motion.position.y + heart_3_adj.y };
+	vec2 heart_1_adj = { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
+	vec2 heart_2_adj = { -window_width_px / 3								 , -window_height_px / 2.2 * global_scaling_vector.y };
+	vec2 heart_3_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
+	hud_heart_1_motion.position =   { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
+	hud_heart_2_motion.position =   { hud_player_motion.position.x + heart_2_adj.x, hud_player_motion.position.y + heart_2_adj.y };
+	hud_heart_3_motion.position =   { hud_player_motion.position.x + heart_3_adj.x, hud_player_motion.position.y + heart_3_adj.y };
+
+	// **** HUD Background ****
+	// Update HUD background position
+	hud_bg_motion.position = { hud_player_motion.position.x - window_width_px/3, hud_player_motion.position.y - window_height_px/2.5 };
+
+	// **** Items ****
+	// Update what items should be displayed
+
+	// Update item positions on screen
+	vec2 hammer_adj		= { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.7 * global_scaling_vector.y };
+	vec2 teleport_adj	= { -window_width_px / 3								, -window_height_px / 2.7 * global_scaling_vector.y };
+	vec2 speedboost_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.7 * global_scaling_vector.y };
+	hud_hammer_motion.position	   = { hud_player_motion.position.x + hammer_adj.x    , hud_player_motion.position.y + hammer_adj.y     };
+	hud_teleport_motion.position   = { hud_player_motion.position.x + teleport_adj.x  , hud_player_motion.position.y + teleport_adj.y   };
+	hud_speedboost_motion.position = { hud_player_motion.position.x + speedboost_adj.x, hud_player_motion.position.y + speedboost_adj.y };
+
+
+
+
+	// Debug
+	//std::cout << "Viewable range " << camera.x << ", " << camera.y << "width: " << camera.x + window_width_px << ", height: " << camera.y + window_height_px << std::endl;
+	//std::cout << "Heart 1 position" << hud_heart_1_motion.position.x << ", " << hud_heart_1_motion.position.y << std::endl;
 }

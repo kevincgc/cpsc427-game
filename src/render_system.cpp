@@ -650,6 +650,21 @@ void RenderSystem::draw()
 	drawText(renderedText_1, text1_pos, { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 
+	// ***** HUD ******
+	// Draw text for hotkey
+	vec3 white_text = { 255.f, 255.f, 255.f };
+	vec2 text_hotkey_scale = { 1.f * global_scaling_vector.x, -1.5f * global_scaling_vector.y };
+	vec2 text_hotkey1_pos = { 1 / 2 * w + (6.5 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
+	vec2 text_hotkey2_pos = { 1 / 2 * w + (13 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
+	vec2 text_hotkey3_pos = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 160.f * global_scaling_vector.y };
+	std::string text_hotkey_1 = "1";
+	std::string text_hotkey_2 = "2";
+	std::string text_hotkey_3 = "3";
+
+	drawText(text_hotkey_1, text_hotkey1_pos, text_hotkey_scale, projection_2D, white_text);
+	drawText(text_hotkey_2, text_hotkey2_pos, text_hotkey_scale, projection_2D, white_text);
+	drawText(text_hotkey_3, text_hotkey3_pos, text_hotkey_scale, projection_2D, white_text);
+
 	// Truely render to the screen
 	drawToScreen();
 

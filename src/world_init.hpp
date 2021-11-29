@@ -29,4 +29,4 @@ entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum
 
 entt::entity createBackground(RenderSystem* renderer, vec2 position, int element);
 
-entt::entity createHUD(RenderSystem* renderer, vec2 position, int element);
+entt::entity createHUD(RenderSystem* renderer, int element);
