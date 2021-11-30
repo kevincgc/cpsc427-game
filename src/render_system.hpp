@@ -56,7 +56,8 @@ class RenderSystem {
 		textures_path("hud_background.png"),
 		textures_path("no_hammer.png"),
 		textures_path("no_teleport.png"),
-		textures_path("no_speedboost.png")
+		textures_path("no_speedboost.png"),
+		textures_path("no_heart.png")
 	};
 
 
@@ -136,9 +137,6 @@ private:
 	float pixel_size;
 	std::string renderedText_1;
 	std::string renderedText_2;
-
-	// Text for HUD
-
 
 	// Screen texture handles
 	GLuint frame_buffer;

@@ -227,6 +227,14 @@ entt::entity createHUD(RenderSystem* renderer, int element) {
 		texture_asset_id = TEXTURE_ASSET_ID::NO_SPEEDBOOST;
 		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
 		break;
+	case 9: // Heart
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 10: // No Heart
+		texture_asset_id = TEXTURE_ASSET_ID::NO_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
 	default:
 		break;
 	}

@@ -99,9 +99,12 @@ entt::entity hud_bg_entity;
 entt::entity hud_hammer_entity;
 entt::entity hud_teleport_entity;
 entt::entity hud_speedboost_entity;
+entt::entity hud_heart_entity;
 entt::entity hud_no_hammer_entity;
 entt::entity hud_no_teleport_entity;
 entt::entity hud_no_speedboost_entity;
+entt::entity hud_no_heart_entity;
+
 int speed_counter = 0;
 int wallbreaker_counter = 0;
 
@@ -848,9 +851,11 @@ void WorldSystem::restart_game() {
 	hud_no_hammer_entity     = createHUD(renderer, 6);
 	hud_no_teleport_entity   = createHUD(renderer, 7);
 	hud_no_speedboost_entity = createHUD(renderer, 8);
+	hud_no_heart_entity		 = createHUD(renderer, 10);
 	hud_hammer_entity	     = createHUD(renderer, 3);
 	hud_teleport_entity	     = createHUD(renderer, 4);
 	hud_speedboost_entity    = createHUD(renderer, 5);
+	hud_heart_entity	     = createHUD(renderer, 9);
 	hud_bg_entity			 = createHUD(renderer, 2);
 
 	// Create background entites
@@ -1394,9 +1399,11 @@ void WorldSystem::do_HUD() {
 	Motion& hud_hammer_motion		  = registry.get<Motion>(hud_hammer_entity);
 	Motion& hud_teleport_motion		  = registry.get<Motion>(hud_teleport_entity);
 	Motion& hud_speedboost_motion	  = registry.get<Motion>(hud_speedboost_entity);
+	Motion& hud_heart_motion		  = registry.get<Motion>(hud_heart_entity);
 	Motion& hud_no_hammer_motion	  = registry.get<Motion>(hud_no_hammer_entity);
 	Motion& hud_no_teleport_motion	  = registry.get<Motion>(hud_no_teleport_entity);
 	Motion& hud_no_speedboost_motion  = registry.get<Motion>(hud_no_speedboost_entity);
+	Motion& hud_no_heart_motion		  = registry.get<Motion>(hud_no_heart_entity);
 
 	// **** Hearts ****
 	// Update how many hearts there should be
@@ -1433,12 +1440,14 @@ void WorldSystem::do_HUD() {
 
 	// **** Items ****
 	// Update what items should be displayed and their positions
-	vec2 hammer_adj			= { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 teleport_adj		= { -window_width_px / 3								, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 speedboost_adj		= { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 hammer_adj			= { -window_width_px / 3 - 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 teleport_adj		= { -window_width_px / 3 - 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 speedboost_adj		= { -window_width_px / 3 + 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 hud_heart_adj		= { -window_width_px / 3 + 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
 	vec2 hud_hammer_pos		= { hud_player_motion.position.x + hammer_adj.x         , hud_player_motion.position.y + hammer_adj.y       };
 	vec2 hud_teleport_pos	= { hud_player_motion.position.x + teleport_adj.x       , hud_player_motion.position.y + teleport_adj.y     };
 	vec2 hud_speedboost_pos = { hud_player_motion.position.x + speedboost_adj.x     , hud_player_motion.position.y + speedboost_adj.y   };
+	vec2 hud_heart_pos      = { hud_player_motion.position.x + hud_heart_adj.x      , hud_player_motion.position.y + hud_heart_adj.y    };
 
 	// Hammer
 	if (inventory[ItemType::WALL_BREAKER] == 0) {
@@ -1474,6 +1483,18 @@ void WorldSystem::do_HUD() {
 		hud_speedboost_motion.scale		  = item_scale;
 		hud_speedboost_motion.position	  = hud_speedboost_pos;
 		hud_no_speedboost_motion.scale    = { 0,0 };
+	}
+
+	// Heart
+	if (inventory[ItemType::EXTRA_LIFE] == 0) {
+		hud_heart_motion.scale			  = { 0,0 };
+		hud_no_heart_motion.scale		  = item_scale;
+		hud_no_heart_motion.position	  = hud_heart_pos;
+	}
+	else if (inventory[ItemType::EXTRA_LIFE] > 0) {
+		hud_heart_motion.scale			  = item_scale;
+		hud_heart_motion.position		  = hud_heart_pos;
+		hud_no_heart_motion.scale		  = { 0,0 };
 	}
 
 	// Rest of the text handling is done in render_system.cpp's draw() function

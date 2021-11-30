@@ -655,32 +655,38 @@ void RenderSystem::draw()
 	vec3 white_text = { 255.f, 255.f, 255.f };
 
 	// Draw text for hotkey
-	vec2 text_hotkey1_pos	  = { 1 / 2 * w + (6.5  * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey2_pos	  = { 1 / 2 * w + (13   * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey3_pos	  = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey1_pos	  = { 1 / 2 * w + (3    * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey2_pos	  = { 1 / 2 * w + (9.5  * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey3_pos	  = { 1 / 2 * w + (16   * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
+	vec2 text_hotkey4_pos	  = { 1 / 2 * w + (23.1 * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
 	vec2 text_hotkey_scale	  = {			   1.f  * global_scaling_vector.x,               -1.5f * global_scaling_vector.y };
 	std::string text_hotkey_1 = "1";
 	std::string text_hotkey_2 = "2";
 	std::string text_hotkey_3 = "3";
+	std::string text_hotkey_4 = "4";
 	drawText(text_hotkey_1, text_hotkey1_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_2, text_hotkey2_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_3, text_hotkey3_pos, text_hotkey_scale, projection_2D, white_text);
+	drawText(text_hotkey_4, text_hotkey4_pos, text_hotkey_scale, projection_2D, white_text);
 
 	// Draw text for item count
-	vec2 hammer_count_pos		 = { 1 / 2 * w + (8.5  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 teleport_count_pos		 = { 1 / 2 * w + (15   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 speedboost_count_pos    = { 1 / 2 * w + (21.5 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 hammer_count_pos		 = { 1 / 2 * w + (3+2  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 teleport_count_pos		 = { 1 / 2 * w + (9.5+2   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 speedboost_count_pos    = { 1 / 2 * w + (16+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 heart_count_pos		 = { 1 / 2 * w + (23.1+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
 	vec2 item_count_scale		 = {              0.8  * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
 	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
 	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
 	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
+	std::string heart_count = "x" + std::to_string(inventory[ItemType::EXTRA_LIFE]);
 	drawText(hammer_count,     hammer_count_pos,     item_count_scale, projection_2D, white_text);
 	drawText(teleport_count,   teleport_count_pos,   item_count_scale, projection_2D, white_text);
 	drawText(speedboost_count, speedboost_count_pos, item_count_scale, projection_2D, white_text);
+	drawText(heart_count,	   heart_count_pos,		 item_count_scale, projection_2D, white_text);
 
 	// Draw text for speedboost remaining active time
 	if (speed_counter > 0) {
-		vec2 text_speed_timer_pos	 = { 1 / 2 * w + (19.5 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
+		vec2 text_speed_timer_pos	 = { 1 / 2 * w + (16 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
 		vec2 text_timer_scale		 = {			   0.8 * global_scaling_vector.x,				-1.3 * global_scaling_vector.y };
 		std::string text_speed_timer = std::to_string(speed_counter/1000) + "s";
 		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
@@ -688,8 +694,8 @@ void RenderSystem::draw()
 
 	// Draw text for hammer remaining usage time
 	if (wallbreaker_counter > 0) {
-		vec2 text_speed_timer_pos    = { 1 / 2 * w + (6.5 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
-		vec2 text_timer_scale	     = {			   0.8 * global_scaling_vector.x,			   -1.3 * global_scaling_vector.y };
+		vec2 text_speed_timer_pos    = { 1 / 2 * w + (3   * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
+		vec2 text_timer_scale	     = {			  0.8 * global_scaling_vector.x,			   -1.3 * global_scaling_vector.y };
 		std::string text_speed_timer = std::to_string(wallbreaker_counter / 1000) + "s";
 		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
 	}
