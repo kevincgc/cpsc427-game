@@ -70,14 +70,14 @@ entt::entity createChick(RenderSystem* renderer, vec2 position)
 	return e;
 }
 
-entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element)
+entt::entity createCutscene(RenderSystem* renderer, Cutscene_enum element)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	Motion motion = Motion();
 	Cutscene cutscene = Cutscene();
 	motion.angle = 0.f;
 	motion.velocity = {0,0};
-	motion.position = position;
+	motion.position = {0,0};
 	motion.scale = mesh.original_size * 0.f * global_scaling_vector;
 	motion.mass = 0;
 	motion.coeff_rest = 0;
@@ -155,6 +155,9 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
 			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
 			break;
+		case 10:
+			texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+			motion.scale = mesh.original_size * 100.f * global_scaling_vector;
 		default:
 			break;
 	}
@@ -168,6 +171,83 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 
 	// Debug
 	std::cout << "Entity [" << (int)e << "] is background element " << element << std::endl;
+
+	return e;
+}
+
+entt::entity createHUD(RenderSystem* renderer, int element) {
+	// Set up handles
+	Mesh& mesh	  = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Motion motion = Motion();
+	HUD hud		  = HUD();
+
+	// Set initial motion values
+	motion.angle		   = 0.f;
+	motion.velocity		   = { 0,0 };
+	motion.position		   = { 0,0 };
+	motion.mass			   = 0;
+	motion.coeff_rest      = 0;
+	motion.can_reflect     = false;
+	motion.can_collide     = false;
+	motion.can_be_attacked = false;
+
+	// Set texture_asset_id
+	TEXTURE_ASSET_ID texture_asset_id;
+	switch (element) {
+	case 1: // Heart
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 2: // Background
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_BACKGROUND;
+		motion.scale.x = mesh.original_size.x * 400.f * global_scaling_vector.x;
+		motion.scale.y = mesh.original_size.y * 200.f * global_scaling_vector.y;
+		break;
+	case 3: // Hammer
+		texture_asset_id = TEXTURE_ASSET_ID::WALL_BREAKER;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 4: // Teleport
+		texture_asset_id = TEXTURE_ASSET_ID::TELEPORT;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 5: // Speed
+		texture_asset_id = TEXTURE_ASSET_ID::SPEED_BOOST;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 6: // No Hammer
+		texture_asset_id = TEXTURE_ASSET_ID::NO_HAMMER;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 7: // No Teleport
+		texture_asset_id = TEXTURE_ASSET_ID::NO_TELEPORT;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 8: // No Speed
+		texture_asset_id = TEXTURE_ASSET_ID::NO_SPEEDBOOST;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 9: // Heart
+		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	case 10: // No Heart
+		texture_asset_id = TEXTURE_ASSET_ID::NO_HEART;
+		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+		break;
+	default:
+		break;
+	}
+
+	// Create and emplace entity
+	const entt::entity e = registry.create();
+	registry.emplace<Motion>(e, motion);
+	registry.emplace<Mesh*>(e, &mesh);
+	registry.emplace<HUD>(e, hud);
+	registry.emplace<RenderRequest>(e, texture_asset_id, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE);
+
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is hud element " << element << std::endl;
 
 	return e;
 }

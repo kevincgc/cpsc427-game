@@ -48,7 +48,7 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 }
 
 // returns true if successfull, false if it didn't set
-bool setMotionPosition(Motion& motion, vec2 nextpos) {
+bool setMotionPosition(Motion& motion, vec2 nextpos, bool is_player = false) {
 	if (motion.can_collide) {
 		vec2 bounding_box = get_bounding_box(motion);
 		vec2 corners[] = {
@@ -82,15 +82,18 @@ bool setMotionPosition(Motion& motion, vec2 nextpos) {
 		}
 
 		if (!collision_x) {
+			if (is_player) { motion.prev_pos.x = motion.position.x; }
 			motion.position.x = nextpos.x;
 		}
 
 		if (!collision_y) {
+			if (is_player) { motion.prev_pos.y = motion.position.y; }
 			motion.position.y = nextpos.y;
 		}
 
 		return !collision_x && !collision_y;
 	}
+	// Non-collidable objects
 	// For entities like the background stars that have motion but no collision
 	else {
 		motion.position.x = nextpos.x;
@@ -159,11 +162,11 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 
 		// If the entity is not the player...
 		if (!registry.view<Player>().contains(entity)) {
-			// If the entity is not the background either...
-			// (we only want the background to move if the
+			// If the entity is not the background or hud either...
+			// (we only want the background and hud to move if the
 			//  player can pass the setMotionPosition collision 
 			//  check)
-			if (!registry.view<Background>().contains(entity)) {
+			if (!registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
 				// Move the entity only if the player is moving
 				if (player_is_manually_moving || do_pathfinding_movement) {
 					setMotionPosition(motion, nextpos);
@@ -174,10 +177,13 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		// If the entity is the player...
 		else {
 
-			// If player is able to move (no collision)...
-			if (setMotionPosition(motion, nextpos)) {
+			// Attempt to move the player, and if player is able to move (no collision = return True)...
+			// Warning: If player is moving, ex rightwards in to a wall, setMotionPosition returns False
+			// as expected due to collision. However, if moving into a wall AND moving up along a hallway,
+			// setMotionPosition still returns false but player is still able to move up
+			if (setMotionPosition(motion, nextpos, true)) {
 
-				// Move the background for parallax effect
+				// Move only background 2 and 3 for parallax effect
 				Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
 				vec2 bg_1_nextpos   = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
 				setMotionPosition(bg_motion_1, bg_1_nextpos);
@@ -185,17 +191,17 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
 				vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
 				setMotionPosition(bg_motion_2, bg_2_nextpos);
+
+				// Move all elements of the HUD
+				for (entt::entity entity : registry.view<HUD>()) {
+					Motion& hud_entity_motion  = registry.get<Motion>(entity);
+					vec2    hud_entity_nextpos = hud_entity_motion.position + hud_entity_motion.velocity * step_seconds;
+					setMotionPosition(hud_entity_motion, hud_entity_nextpos);
+				}
 			}
+
 		}
 	}
-
-	// Move enemy
-	// If player is moving, move enemies too
-	//if (player_is_manually_moving || do_pathfinding_movement) {
-	//	for (int i = 1; i <= registry.size<Motion>; i++) {
-	//		Motion& enemy_motion = registry.get<Motion>.begin()[i];
-	//	}
-	//}
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
