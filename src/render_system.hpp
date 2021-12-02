@@ -30,6 +30,7 @@ class RenderSystem {
 	{
 		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::MINOTAUR, mesh_path("minotaur.obj")),
 		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::ENEMY, mesh_path("enemy.obj")),
+		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::DRONE, mesh_path("drone.obj")),
 		  // specify meshes of other assets here
 	};
 
@@ -59,18 +60,19 @@ class RenderSystem {
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
-	// 	enum class EFFECT_ASSET_ID {
-	// 	COLOURED	 = 0,
-	// 	PEBBLE		 = COLOURED + 1,
-	// 	TEXTURED	 = PEBBLE   + 1,
-	// 	WATER		 = TEXTURED + 1,
-	// 	MINOTAUR	 = WATER    + 1,
-	// 	TEXT		 = MINOTAUR + 1,
-	// 	ENEMY		 = MINOTAUR + 1,
-	// 	ITEM		 = ENEMY    + 1,
-	// 	TRAP		 = ITEM     + 1,
-	// 	EFFECT_COUNT = ENEMY     + 1
-	// };
+// enum class EFFECT_ASSET_ID {
+// 	COLOURED = 0,
+// 	PEBBLE = COLOURED + 1,
+// 	// SALMON = PEBBLE + 1, // remove salmon
+// 	TEXTURED = PEBBLE + 1,
+// 	WATER = TEXTURED + 1,
+// 	MINOTAUR = WATER + 1,
+// 	TEXT = MINOTAUR + 1,
+// 	ENEMY = TEXT + 1,
+// 	ITEM = ENEMY + 1,
+// 	TRAP = ITEM + 1,
+// 	EFFECT_COUNT = ENEMY + 1
+// };
 	const std::array<std::string, effect_count> effect_paths = { // correspond to EFFECT_ASSET_ID
 		shader_path("coloured"),
 		shader_path("pebble"),

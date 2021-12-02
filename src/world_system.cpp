@@ -930,7 +930,7 @@ void WorldSystem::handle_collisions() {
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
-			if (registry.view<Enemy>().contains(entity_other)) {
+			if (registry.view<Enemy>().contains(entity_other) && !registry.view<DeathTimer>().contains(entity_other)) {
 				// initiate death unless already dying
 				if (!registry.view<DeathTimer>().contains(entity) && spellbook[3]["active"] == "false") {
 					// Scream, reset timer, and make the salmon sink

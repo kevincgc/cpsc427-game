@@ -32,6 +32,7 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	motion.velocity = { -100.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
 	motion.position = position;
 	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
+	motion.scale.y *= -1;
 	motion.mass = 200;
 	motion.coeff_rest = 0.9f;
 	const entt::entity e = registry.create();
@@ -40,8 +41,8 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 	registry.emplace<Mesh*>(e, &mesh);
 	registry.emplace<RenderRequest>(e,
 		TEXTURE_ASSET_ID::DRONE,
-		EFFECT_ASSET_ID::TEXTURED,
-		GEOMETRY_BUFFER_ID::SPRITE);
+		EFFECT_ASSET_ID::ENEMY,
+		GEOMETRY_BUFFER_ID::DRONE);
 
 	return e;
 }
