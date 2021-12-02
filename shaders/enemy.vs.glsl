@@ -66,14 +66,13 @@ vec2 rand(vec2 v)
 }
 
 vec2 getDirection(vec2 uv) {
-	vec2 CENTER;
-	if (uv.x<0.5 && uv.y>0.5) CENTER = TOP_LEFT;
-	else if (uv.x>0.5 && uv.y>0.5) CENTER = TOP_RIGHT;
-	else if (uv.x<0.5 && uv.y<0.5) CENTER = BOTTOM_LEFT;
-	else  CENTER = BOTTOM_RIGHT;
+	vec2 CENTER = vec2(0, 0);
 	vec2 direction = CENTER - uv;
-	return direction ;
+	return direction/10;
 }
+
+
+
 vec3 explode(vec3 position, vec3 normal)
 {
     float magnitude = 2.0;
@@ -99,7 +98,11 @@ void main()
 		// distorted = distorted + getDirection(rand(in_position.xy))  * time * 0.02;
 
 		// explosion
-		distorted = explode(in_position, vec3(rand(in_position.xy), 0)).xy;
+		distorted = explode(in_position, vec3((in_position.xy+rand(in_position.xy))*0.5 , 0)).xy;
+		// clapse
+		// distorted +=   getDirection(distorted) * time;
+		// distorted.x += sin(distorted.x + distorted.y + time) * 0.5; 
+		// distorted.y += ( - distorted.y ) * 0.1*time;
 	}
 	// vpos = in_position.xy; // local coordinated before transform
 	vpos = distorted;
