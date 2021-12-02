@@ -29,6 +29,7 @@ class RenderSystem {
 	const std::vector < std::pair<GEOMETRY_BUFFER_ID, std::string>> mesh_paths =
 	{
 		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::MINOTAUR, mesh_path("minotaur.obj")),
+		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::ENEMY, mesh_path("enemy.obj")),
 		  // specify meshes of other assets here
 	};
 

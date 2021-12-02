@@ -363,19 +363,23 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			min_counter_ms = counter.counter_ms;
 		}
 
-		// restart the game once the death timer expired
+		// restart the game once the player's death timer expired
 		if (counter.counter_ms < 0) {
 			registry.remove<DeathTimer>(entity);
-			cutscene_1_frame_0 = true;
+			if (registry.view<Player>().contains(entity)) {
+				cutscene_1_frame_0 = true;
 
-			if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
-			else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
-			else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
-			cutscene_selection = 100 + death_count;
+				if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+				else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+				else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
+				cutscene_selection = 100 + death_count;
 
-			state = ProgramState::GAME_OVER_DEAD;
+				state = ProgramState::GAME_OVER_DEAD;
 
-			return true;
+				return true;
+			} else {
+				registry.destroy(entity);
+			}
 		}
 	}
 

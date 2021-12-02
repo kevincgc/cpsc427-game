@@ -164,45 +164,62 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		gl_has_errors();
 	}
 		else if (render_request.used_effect == EFFECT_ASSET_ID::ENEMY)
-	{
+			{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		GLint in_color_loc = glGetAttribLocation(program, "in_color");
 		gl_has_errors();
-		assert(in_texcoord_loc >= 0);
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(TexturedVertex), (void *)0);
+							  sizeof(ColoredVertex), (void *)0);
 		gl_has_errors();
 
-		float time_total = (float)(glfwGetTime()) - game_start_time;
-		GLuint time_uloc = glGetUniformLocation(program, "time");
-		glUniform1f(time_uloc, time_total);
-
-		GLuint dead_uloc = glGetUniformLocation(program, "dead");
-		if (registry.view<DeathTimer>().contains(entity)) {
-			glUniform1i(dead_uloc, true);
-		} else {
-			glUniform1i(dead_uloc, false);
-		}
-
-
-		glEnableVertexAttribArray(in_texcoord_loc);
-		glVertexAttribPointer(
-			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-			(void *)sizeof(
-				vec3)); // note the stride to skip the preceeding vertex position
-		// Enabling and binding texture to slot 0
-		glActiveTexture(GL_TEXTURE0);
+		glEnableVertexAttribArray(in_color_loc);
+		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
+							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 
-		assert(registry.view<RenderRequest>().contains(entity));
-		GLuint texture_id =
-			texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
 
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-		gl_has_errors();
 	}
+	// {
+	// 	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	// 	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	// 	gl_has_errors();
+	// 	assert(in_texcoord_loc >= 0);
+
+	// 	glEnableVertexAttribArray(in_position_loc);
+	// 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+	// 						  sizeof(TexturedVertex), (void *)0);
+	// 	gl_has_errors();
+
+	// 	float time_total = (float)(glfwGetTime()) - game_start_time;
+	// 	GLuint time_uloc = glGetUniformLocation(program, "time");
+	// 	glUniform1f(time_uloc, time_total);
+
+	// 	GLuint dead_uloc = glGetUniformLocation(program, "dead");
+	// 	if (registry.view<DeathTimer>().contains(entity)) {
+	// 		glUniform1i(dead_uloc, true);
+	// 	} else {
+	// 		glUniform1i(dead_uloc, false);
+	// 	}
+
+
+	// 	glEnableVertexAttribArray(in_texcoord_loc);
+	// 	glVertexAttribPointer(
+	// 		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+	// 		(void *)sizeof(
+	// 			vec3)); // note the stride to skip the preceeding vertex position
+	// 	// Enabling and binding texture to slot 0
+	// 	glActiveTexture(GL_TEXTURE0);
+	// 	gl_has_errors();
+
+	// 	assert(registry.view<RenderRequest>().contains(entity));
+	// 	GLuint texture_id =
+	// 		texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
+
+	// 	glBindTexture(GL_TEXTURE_2D, texture_id);
+	// 	gl_has_errors();
+	// }
 	else
 	{
 		assert(false && "Type of render request not supported");
