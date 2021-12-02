@@ -172,14 +172,24 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)0);
+	  
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_color_loc);
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
+		float time_total = (float)(glfwGetTime()) - game_start_time;
+		GLuint time_uloc = glGetUniformLocation(program, "time");
+		glUniform1f(time_uloc, time_total);
 
-
+		GLuint dead_uloc = glGetUniformLocation(program, "dead");
+		if (registry.view<DeathTimer>().contains(entity)) {
+			glUniform1i(dead_uloc, true);
+		} else {
+			glUniform1i(dead_uloc, false);
+		}
+		gl_has_errors();
 	}
 	// {
 	// 	GLint in_position_loc = glGetAttribLocation(program, "in_position");
