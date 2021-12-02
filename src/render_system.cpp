@@ -183,6 +183,12 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		float time_total = (float)(glfwGetTime()) - game_start_time;
 		GLuint time_uloc = glGetUniformLocation(program, "time");
 		glUniform1f(time_uloc, time_total);
+ 
+ 		// random seed to ensure same entity would have the same effect
+		srand (int (entity)); 
+		int random = rand() % 4;
+		GLuint random_loc = glGetUniformLocation(program, "randomInt");
+		glUniform1i(random_loc, random);
 
 		GLuint dead_uloc = glGetUniformLocation(program, "dead");
 		if (registry.view<DeathTimer>().contains(entity)) {
