@@ -25,6 +25,8 @@ entt::entity createTrap(RenderSystem* renderer, vec2 position);
 
 entt::entity createChick(RenderSystem* renderer, vec2 position);
 
-entt::entity createCutscene(RenderSystem* renderer, vec2 position, Cutscene_enum element);
+entt::entity createCutscene(RenderSystem* renderer, Cutscene_enum element);
 
 entt::entity createBackground(RenderSystem* renderer, vec2 position, int element);
+
+entt::entity createHUD(RenderSystem* renderer, int element);
