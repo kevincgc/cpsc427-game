@@ -20,14 +20,14 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 	RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
-	// Determine if minotaur should be drawn facing left or right
-	if (motion.velocity.x < 0) {
-		render_request.is_reflected = true;
-	} else if (motion.velocity.x > 0) {
-		render_request.is_reflected = false;
-	} // if zero keep last
+	// Determine if entity should be drawn facing left or right
+	if (motion.can_reflect) {
+		if		(motion.velocity.x < 0) { render_request.is_reflected = true;  } 
+		else if (motion.velocity.x > 0) { render_request.is_reflected = false; } 
+	}
+	// if zero keep last
 
-	if (render_request.is_reflected) transform.reflect();
+	if (render_request.is_reflected) { transform.reflect(); }
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -352,7 +352,6 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	gl_has_errors();
 }
 
-
 /* tutorial reference :
 / https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
 void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, const mat3& projection, vec3 text_colour)
@@ -550,6 +549,18 @@ void RenderSystem::draw()
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
 
+	// Drawing order
+	// 1. Background sprites
+	// 2. Map tiles
+	// 3. Sprites
+	// 4. Cutscene sprites
+
+	// Background Sprites
+	for (entt::entity entity : registry.view<Background>()) {
+		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
+	}
+
+	// Map Tiles
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
@@ -557,28 +568,24 @@ void RenderSystem::draw()
 		}
 	}
 
-	// Draw all textured meshes that have a position and size component
+	// Minotaur/Enemies/Items
 	for (entt::entity entity : registry.view<RenderRequest>())
 	{
-		if (!registry.view<Motion>().contains(entity))
-			continue;
-		// Note, its not very efficient to access elements indirectly via the entity
-		// albeit iterating through all Sprites in sequence. A good point to optimize
+		// Only render the motion entities...
+		if (!registry.view<Motion>().contains(entity)) continue;
 
-		// Render the sprites first
-		if (!registry.view<Cutscene>().contains(entity)) {
-			drawTexturedMesh(entity, projection_2D);
+		// Don't render background or cutscene entities
+		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity)) { 
+			drawTexturedMesh(entity, projection_2D); 
 		}
+	}
 
+	// Cutscene Sprites
+	for (entt::entity entity : registry.view <Cutscene>()) {
+		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
-	// Render the cutscene images last so they'll be on top of the sprites
-	for (entt::entity entity : registry.view <Cutscene>()) {
-		if (registry.view<RenderRequest>().contains(entity)) {
-			drawTexturedMesh(entity, projection_2D);
-		}
-	}
 
 	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
@@ -720,7 +727,6 @@ mat3 RenderSystem::createProjectionMatrix()
 	float ty = -(top + bottom) / (top - bottom);
 	return {{sx, 0.f, 0.f}, {0.f, sy, 0.f}, {tx, ty, 1.f}};
 }
-
 
 mat3 RenderSystem::createProjectionMatrixforText()
 {

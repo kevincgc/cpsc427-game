@@ -40,7 +40,7 @@ class RenderSystem {
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
-    textures_path("prey.png"),
+		textures_path("prey.png"),
 		textures_path("hammer.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("heart.png"),
 		textures_path("teleport.png"),  // <div>Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon">berkahicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
@@ -50,7 +50,9 @@ class RenderSystem {
 		textures_path("cutscene_drone_sad.png"),
 		textures_path("cutscene_drone_laughing.png"),
 		textures_path("cutscene_minotaur_rtx_off.png"),
-		textures_path("cutscene_drone_rtx_off.png")
+		textures_path("cutscene_drone_rtx_off.png"),
+		textures_path("background_space1.png"), // https://wallpaperaccess.com/4k-space#google_vignette
+		textures_path("background_space2.png") // https://pngtree.com/free-png-vectors/white-stars
 	};
 
 

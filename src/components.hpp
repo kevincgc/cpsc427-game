@@ -5,7 +5,6 @@
 #include "../ext/stb_image/stb_image.h"
 #include <entt.hpp>
 
-// map tiles
 enum class SoundEffects {
 	PLAYER_DEAD = 0,
 	PLAYER_ITEM,
@@ -17,7 +16,6 @@ enum class SoundEffects {
 	ITEM_TELEPORT,
 	ITEM_SPEED_BOOST,
 	CHICK_DIE,
-
 	COUNT
 };
 const int sound_effect_count = (int)SoundEffects::COUNT;
@@ -27,26 +25,13 @@ struct SoundEffectRequest
 	SoundEffects sound;
 };
 
-// Player component
-struct Player
-{
-
+struct Player {
+	// Used by parallax to determine whether player has actually travelled
+	vec2 prev_pos; 
 };
-
-struct Enemy
-{
-
-};
-
-struct Friendly
-{
-
-};
-
-struct Prey
-{
-	int id;
-};
+struct Enemy {};
+struct Friendly {};
+struct Prey {int id;};
 
 // All data relevant to the shape and motion of entities
 struct Motion {
@@ -57,6 +42,8 @@ struct Motion {
 	float mass = 50.0f;
 	float coeff_rest = 0.8f;
 	bool can_collide = true;
+	bool can_reflect = true;
+	bool can_be_attacked = true;
 };
 
 // Stucture to store collision information
@@ -135,8 +122,7 @@ struct AnimationTimer
 };
 
 // A timer that will be associated to dying minotaur
-struct DeathTimer
-{
+struct DeathTimer {
 	float counter_ms = 1000.f;
 };
 
@@ -201,9 +187,10 @@ enum Cutscene_enum {
 	MINOTAUR_RTX_OFF = 6,
 	DRONE_RTX_OFF = 7
 };
-struct Cutscene {
+struct Cutscene {};
 
-};
+// Background - so we can draw background elements first
+struct Background {};
 
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
@@ -269,6 +256,8 @@ enum class TEXTURE_ASSET_ID {
 	CUTSCENE_DRONE_LAUGHING,
 	CUTSCENE_MINOTAUR_RTX_OFF,
 	CUTSCENE_DRONE_RTX_OFF,
+	BACKGROUND_SPACE1,
+	BACKGROUND_SPACE2,
 	TEXTURE_COUNT
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
