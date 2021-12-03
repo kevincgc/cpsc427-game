@@ -1,0 +1,12 @@
+name: Tutorial
+type: premade
+enemies:
+    spikes: 0
+    drones: 0
+prey: 
+    chick: 0
+items:
+    wall breaker: 0
+    speed boost: 0
+    extra life: 0
+    teleporter: 0

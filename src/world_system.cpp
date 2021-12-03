@@ -108,6 +108,8 @@ entt::entity hud_no_heart_entity;
 int speed_counter = 0;
 int wallbreaker_counter = 0;
 
+// Tutorial flags
+
 
 // Player flags
 bool player_swing			   = false;
@@ -337,7 +339,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Updating window title with points
 	std::stringstream title_ss;
-
 	title_ss << "Elapsed time: " << formatTime(game_time_ms);
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
@@ -345,68 +346,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
 
-	// Removing out of screen motion entities (excluding: cutscene, background, and hud entities)
-	auto motions = registry.view<Motion>();
-	for (auto entity : motions) {
-		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
-			Motion& motion = motions.get<Motion>(entity);
-			if (motion.position.x + abs(motion.scale.x) < 0.f) {
-				registry.destroy(entity);
-			}
-		}
-	}
-
-	float min_counter_ms = 3000.f;
-	for (entt::entity entity : registry.view<DeathTimer>()) {
-		// Progress Death Timer
-		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
-		death_counter.counter_ms -= elapsed_ms_since_last_update;
-
-		if (death_counter.counter_ms < min_counter_ms) { min_counter_ms = death_counter.counter_ms; }
-
-		// If death timer expires...
-		if (death_counter.counter_ms < 0) {
-			// End invulnerability and remove player from DeathTimer component
-			registry.remove<DeathTimer>(entity); 
-			player_can_lose_health = true;
-
-			// Restart the game if the player is marked for death
-			if (player_marked_for_death) {
-				cutscene_1_frame_0 = true;
-				if		(death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
-				else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
-				else					   { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
-				cutscene_selection = 100 + death_count;
-
-				state = ProgramState::GAME_OVER_DEAD;
-				player_marked_for_death = false;
-
-				return true;
-			}
-		}
-	}
-
-
-
-	for (entt::entity entity : registry.view<EndGame>()) {
-		// progress timer
-		EndGame& counter = registry.get<EndGame>(entity);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		// if (counter.counter_ms < min_counter_ms) {
-		// 	min_counter_ms = counter.counter_ms;
-		// }
-
-		// restart the game once the death timer expired
-		if (counter.counter_ms < 0) {
-			registry.remove<EndGame>(entity);
-			cutscene_reached_exit = true;
-			cutscene_1_frame_0 = true;
-			state = ProgramState::GAME_OVER_WIN;
-			return true;
-		}
-	}
-
-	// Temporary implementation: General timer for spell duration. Later implementation will have spell-specific timers
+	if (do_death_and_endgame(elapsed_ms_since_last_update)) { return true; }
+	
 	// Deactivate spells based on time
 	for (auto& spell : spellbook) {
 		if (spell.second["active"] == "true") { active_spell = true; }
@@ -420,127 +361,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 	}
-
-	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) {
-		player_vel = default_player_vel * 2.f;
-	}
-
+	// Change player speed
+	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) { player_vel = default_player_vel * 2.f; }
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
 
-	// progress timers
-	flash_timer -= elapsed_ms_since_last_update;
-	if (flash_timer <= 0) {
-		registry.remove<Flash>(player_minotaur);
-	}
-
-	// TODO: abstract out helper given a component to advance timers
-	if (!registry.view<TextTimer>().empty()) {
-		TextTimer &counter = registry.get<TextTimer>(player_minotaur);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		if (counter.counter_ms < 0) {
-			registry.remove<TextTimer>(player_minotaur);
-			most_recent_used_item = ItemType::NONE;
-		}
-	}
-
-	if (!registry.view<SpeedBoostTimer>().empty()) {
-		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		speed_counter = counter.counter_ms; // capture speed_counter for HUD countdown
-		if (counter.counter_ms < 0) {
-			registry.remove<SpeedBoostTimer>(player_minotaur);
-		}
-	}
-
-	if (!registry.view<WallBreakerTimer>().empty()) {
-		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		wallbreaker_counter = counter.counter_ms; // capture wallbreaker_counter for HUD countdown
-		if (counter.counter_ms < 0) {
-			registry.remove<WallBreakerTimer>(player_minotaur);
-		}
-	}
-
-	if (!registry.view<AnimationTimer>().empty()) {
-		AnimationTimer& counter = registry.get<AnimationTimer>(player_minotaur);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		if (counter.counter_ms < 0) {
-			registry.remove<AnimationTimer>(player_minotaur);
-			tips.used_item = 0;
-		}
-	}
-
-	// check if player has won
-	Motion& player_motion = registry.get<Motion>(player_minotaur);
-	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-	// check if player has won
-	if (tile == MapTile::EXIT) {
-
-		// player has found the exit!
-		if (!registry.view<EndGame>().contains(player_minotaur)) {
-			registry.emplace<EndGame>(player_minotaur);
-			game_state.sound_requests.push_back({SoundEffects::TADA});
-			initial_game = false;
-			do_pathfinding_movement = false;
-
-			current_finish_time = game_time_ms;
-			std::cout << "Finished game in " << formatTime(current_finish_time) << "!" << std::endl;
-
-			// For cutscenes
-			num_times_exit_reached++;
-
-			if (num_times_exit_reached == 1) {
-				cutscene_selection = 10;
-				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
-			}
-			else if (num_times_exit_reached > 1) {
-				cutscene_selection = 15;
-				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
-			}
-
-			// For leaderboard
-			std::string path = data_path() + "/leaderboard.yaml";
-			std::ifstream file(path);
-			if (!file.good()) {
-				std::ofstream outfile(path);
-				outfile.close();
-			}
-			file.close();
-
-			YAML::Node leaderboard = YAML::LoadFile(path);
-
-			std::vector<double> leaderboard_map = {};
-			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
-
-			leaderboard_map.push_back(current_finish_time);
-			std::sort(leaderboard_map.begin(), leaderboard_map.end());
-
-			current_leaderboard.clear();
-			std::cout << "LEADERBOARD:" << std::endl;
-			for (int i = 0; i < leaderboard_map.size(); i++) {
-				std::ostringstream str;
-				str << i + 1 << ". " << formatTime(leaderboard_map[i]);
-				if (leaderboard_map[i] == current_finish_time) str << " <-- YOUR POSITION!";
-				current_leaderboard.push_back(str.str());
-
-				std::cout << str.str() << std::endl;
-			}
-
-			leaderboard[game_state.level_id] = leaderboard_map;
-
-			std::ofstream outfile(path);
-			YAML::Emitter out;
-			out << leaderboard;
-			outfile << out.c_str();
-			outfile.close();
-		}
-
-	}
-
-
+	do_timers(elapsed_ms_since_last_update);
+	do_exit(); // check if player has won
 	do_cutscene();
 	do_HUD();
+	do_cleanup();
 	
 
 	return true;
@@ -1498,4 +1328,184 @@ void WorldSystem::do_HUD() {
 	}
 
 	// Rest of the text handling is done in render_system.cpp's draw() function
+}
+
+// Item and Flashing Timers
+void WorldSystem::do_timers(float elapsed_ms_since_last_update) {
+
+	// Minotaur Flash
+	flash_timer -= elapsed_ms_since_last_update;
+	if (flash_timer <= 0) {
+		registry.remove<Flash>(player_minotaur);
+	}
+
+	// Text
+	if (!registry.view<TextTimer>().empty()) {
+		TextTimer &counter = registry.get<TextTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<TextTimer>(player_minotaur);
+			most_recent_used_item = ItemType::NONE;
+		}
+	}
+
+	// Speed Boost
+	if (!registry.view<SpeedBoostTimer>().empty()) {
+		SpeedBoostTimer& counter = registry.get<SpeedBoostTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		speed_counter = counter.counter_ms; // capture speed_counter for HUD countdown
+		if (counter.counter_ms < 0) {
+			registry.remove<SpeedBoostTimer>(player_minotaur);
+		}
+	}
+
+	// Wall Breaker
+	if (!registry.view<WallBreakerTimer>().empty()) {
+		WallBreakerTimer& counter = registry.get<WallBreakerTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		wallbreaker_counter = counter.counter_ms; // capture wallbreaker_counter for HUD countdown
+		if (counter.counter_ms < 0) {
+			registry.remove<WallBreakerTimer>(player_minotaur);
+		}
+	}
+
+	// Animation
+	if (!registry.view<AnimationTimer>().empty()) {
+		AnimationTimer& counter = registry.get<AnimationTimer>(player_minotaur);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+		if (counter.counter_ms < 0) {
+			registry.remove<AnimationTimer>(player_minotaur);
+			tips.used_item = 0;
+		}
+	}
+}
+
+// Handle Reaching Exit
+void WorldSystem::do_exit() {
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
+	if (tile == MapTile::EXIT) {
+		// player has found the exit!
+		if (!registry.view<EndGame>().contains(player_minotaur)) {
+			registry.emplace<EndGame>(player_minotaur);
+			game_state.sound_requests.push_back({ SoundEffects::TADA });
+			initial_game = false;
+			do_pathfinding_movement = false;
+
+			current_finish_time = game_time_ms;
+			std::cout << "Finished game in " << formatTime(current_finish_time) << "!" << std::endl;
+
+			// For cutscenes
+			num_times_exit_reached++;
+
+			if (num_times_exit_reached == 1) {
+				cutscene_selection = 10;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+			}
+			else if (num_times_exit_reached > 1) {
+				cutscene_selection = 15;
+				cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD;
+			}
+
+			// For leaderboard
+			std::string path = data_path() + "/leaderboard.yaml";
+			std::ifstream file(path);
+			if (!file.good()) {
+				std::ofstream outfile(path);
+				outfile.close();
+			}
+			file.close();
+
+			YAML::Node leaderboard = YAML::LoadFile(path);
+
+			std::vector<double> leaderboard_map = {};
+			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
+
+			leaderboard_map.push_back(current_finish_time);
+			std::sort(leaderboard_map.begin(), leaderboard_map.end());
+
+			current_leaderboard.clear();
+			std::cout << "LEADERBOARD:" << std::endl;
+			for (int i = 0; i < leaderboard_map.size(); i++) {
+				std::ostringstream str;
+				str << i + 1 << ". " << formatTime(leaderboard_map[i]);
+				if (leaderboard_map[i] == current_finish_time) str << " <-- YOUR POSITION!";
+				current_leaderboard.push_back(str.str());
+
+				std::cout << str.str() << std::endl;
+			}
+
+			leaderboard[game_state.level_id] = leaderboard_map;
+
+			std::ofstream outfile(path);
+			YAML::Emitter out;
+			out << leaderboard;
+			outfile << out.c_str();
+			outfile.close();
+		}
+	}
+}
+
+// Handle Death and Endgame
+bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
+	float min_counter_ms = 3000.f;
+	for (entt::entity entity : registry.view<DeathTimer>()) {
+		// Progress Death Timer
+		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
+		death_counter.counter_ms -= elapsed_ms_since_last_update;
+
+		if (death_counter.counter_ms < min_counter_ms) { min_counter_ms = death_counter.counter_ms; }
+
+		// If death timer expires...
+		if (death_counter.counter_ms < 0) {
+			// End invulnerability and remove player from DeathTimer component
+			registry.remove<DeathTimer>(entity);
+			player_can_lose_health = true;
+
+			// Restart the game if the player is marked for death
+			if (player_marked_for_death) {
+				cutscene_1_frame_0 = true;
+				if (death_count == 2) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_LAUGHING; }
+				else if (death_count == 4) { cutscene_speaker = cutscene_speaker::SPEAKER_DRONE_SAD; }
+				else { cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR; }
+				cutscene_selection = 100 + death_count;
+
+				state = ProgramState::GAME_OVER_DEAD;
+				player_marked_for_death = false;
+
+				return true;
+			}
+		}
+	}
+
+	for (entt::entity entity : registry.view<EndGame>()) {
+		// progress timer
+		EndGame& counter = registry.get<EndGame>(entity);
+		counter.counter_ms -= elapsed_ms_since_last_update;
+
+		// restart the game once the death timer expired
+		if (counter.counter_ms < 0) {
+			registry.remove<EndGame>(entity);
+			cutscene_reached_exit = true;
+			cutscene_1_frame_0 = true;
+			state = ProgramState::GAME_OVER_WIN;
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+// Remove Off-screen Entities
+void WorldSystem::do_cleanup() {
+	// Removing out of screen motion entities (excluding: cutscene, background, and hud entities)
+	auto motions = registry.view<Motion>();
+	for (auto entity : motions) {
+		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
+			Motion& motion = motions.get<Motion>(entity);
+			if (motion.position.x + abs(motion.scale.x) < 0.f) {
+				registry.destroy(entity);
+			}
+		}
+	}
 }
