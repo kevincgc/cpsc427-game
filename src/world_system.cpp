@@ -77,6 +77,7 @@ bool cutscene_1_frame_0      = true;
 bool cutscene_1_frame_1      = false;
 bool cutscene_1_frame_2      = false;
 bool do_cutscene_1			 = true;
+bool in_a_cutscene			 = false;
 bool rtx_on					 = true;
 int  num_times_exit_reached  = 0;
 int  cutscene_selection      = 1; // 1 = game start (see menu.c for more info)
@@ -104,11 +105,27 @@ entt::entity hud_no_hammer_entity;
 entt::entity hud_no_teleport_entity;
 entt::entity hud_no_speedboost_entity;
 entt::entity hud_no_heart_entity;
-
+// ********* For Tutorial feature **************
+std::vector<entt::entity> tutorial_enemy_entities;
+entt::entity daedalus_entity;
+entt::entity drone1_ent;
+entt::entity drone2_ent;
+entt::entity spike1_ent;
+entt::entity spike2_ent;
+bool initial_spawned = false;
+bool played_in_cell_cutscene = false;
+bool noted_enemy_movement = false;
+bool noted_floor = false;
+bool interrupted = false;
+bool spawned_daedalus = false;
+bool daedalus_reached_player = false;
+bool do_interrupt_cutscene = false;
+bool finished_interruption = false;
+bool phase_2 = false;
 int speed_counter = 0;
 int wallbreaker_counter = 0;
-
-// Tutorial flags
+bool p2_spawned_enemies = false;
+bool removed_daedalus = false;
 
 
 // Player flags
@@ -365,7 +382,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) { player_vel = default_player_vel * 2.f; }
 	// Temporary implementation: Handle speed-up spell: Player moves faster
 	player_vel = spellbook[1]["active"] == "true" ? default_player_vel * 2.5f : default_player_vel;
-
+	if (game_state.level_id == "tutorial") { 
+		do_tutorial(elapsed_ms_since_last_update); 
+	}
 	do_timers(elapsed_ms_since_last_update);
 	do_exit(); // check if player has won
 	do_cutscene();
@@ -705,6 +724,17 @@ void WorldSystem::restart_game() {
 	pressed_keys.clear();
 
 	game_time_ms = 0.f;
+
+	if (game_state.level_id == "tutorial") {
+		// Reset tutorial
+		initial_spawned = false;
+		played_in_cell_cutscene = false;
+		noted_enemy_movement = false;
+		noted_floor = false;
+		interrupted = false;
+		spawned_daedalus = false;
+		do_interrupt_cutscene = false;
+	}
 }
 
 // Compute collisions between entities
@@ -855,7 +885,7 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);
 	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
-		if (!registry.view<DeathTimer>().contains(player)) {
+		if (!registry.view<DeathTimer>().contains(player) && !in_a_cutscene) {
 
 			// Swing Attack
 			if (key == GLFW_KEY_SPACE) {
@@ -997,7 +1027,7 @@ void WorldSystem::on_mouse_button(int button, int action, int mods) {
 	//		It's only made longer with lag.
 
 	// Capture press position
-	if (state == ProgramState::RUNNING) {
+	if (state == ProgramState::RUNNING && !in_a_cutscene) {
 		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) { glfwGetCursorPos(window, &x_pos_press, &y_pos_press); }
 		if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
 
@@ -1508,4 +1538,185 @@ void WorldSystem::do_cleanup() {
 			}
 		}
 	}
+}
+
+// Handle Tutorial
+void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
+
+	// Get player position
+	entt::entity player = registry.view<Player>().begin()[0];
+	Motion& motion = registry.get<Motion>(player);
+	vec2 map_pos = position_to_map_coords(motion.position);
+
+	// Spawn initial entities
+	if (!initial_spawned) {
+		initial_spawned = true;
+
+		// Spawn Hammer and Prisoners
+		vec2 hammer_position = map_coords_to_position({ 1,5 });
+		vec2 speed_position = map_coords_to_position({ 7,3 });
+		vec2 chick_position = map_coords_to_position({ 1,1 });
+		vec2 drone_position = map_coords_to_position({ 4,1 });
+		vec2 spike_position = map_coords_to_position({ 4,5 });
+		hammer_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		speed_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		spike_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		drone_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		chick_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		createItem(renderer, hammer_position, "wall breaker");
+		createItem(renderer, speed_position, "speed boost");
+		createSpike(renderer, spike_position);
+		createDrone(renderer, drone_position);
+		createChick(renderer, chick_position);
+	}
+
+	// Cutscene: In Cell
+	if (!played_in_cell_cutscene) {
+		played_in_cell_cutscene = true;
+		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+		cutscene_selection = 200;
+		cutscene_1_frame_0 = true;
+	}
+
+	// Cutscene: Note enemy movement
+	vec2 movement_and_speed_trigger_pos = { 5,3 };
+	if (map_pos == movement_and_speed_trigger_pos) {
+		if (!noted_enemy_movement) {
+			noted_enemy_movement = true;
+			player_is_manually_moving = false;
+			do_pathfinding_movement = false;
+			motion.velocity = { 0,0 };
+			cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+			cutscene_selection = 205;
+			cutscene_1_frame_0 = true;
+		}
+	}
+
+	//Debug
+	//std::cout << map_pos.x << ", " << map_pos.y << std::endl;
+
+	// Cutscene: Note Floor
+	vec2 floor_trigger_pos = { 19,3 };
+	if (map_pos == floor_trigger_pos) {
+		if (!noted_floor) {
+			noted_floor = true;
+			player_is_manually_moving = false;
+			do_pathfinding_movement = false;
+			motion.velocity = { 0,0 };
+			cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+			cutscene_selection = 210;
+			cutscene_1_frame_0 = true;
+		}
+	}
+
+	// Cutscene: Interrupt
+	vec2 interrupt_trigger_pos = { 24, 3 };
+	if (map_pos == interrupt_trigger_pos && !finished_interruption) {
+		if (!interrupted) {
+			interrupted = true;
+			in_a_cutscene = true;
+			motion.velocity = { 0,0 };
+			cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+			cutscene_selection = 215;
+			cutscene_1_frame_0 = true;
+		}
+
+	}
+
+	// Spawn Daedalus and move towards player
+	if (interrupted && !spawned_daedalus) {
+		spawned_daedalus = true;
+		vec2 daedalus_position = map_coords_to_position({ 19,3 });
+		daedalus_position += vec2(map_scale.x / 2, map_scale.y / 2);
+		daedalus_entity = createDrone(renderer, daedalus_position);
+	}
+	if (interrupted && !do_interrupt_cutscene) {
+		Motion& daedalus_motion = registry.get<Motion>(daedalus_entity);
+		vec2 daedalus_map_pos = position_to_map_coords(daedalus_motion.position);
+		// Turn player
+		if (motion.velocity.x < 0) { motion.velocity.x = 0; }
+		vec2 turn_player_trigger_pos = { 20,3 };
+		if (daedalus_map_pos == turn_player_trigger_pos) { motion.velocity.x = -0.1; }
+		// Stop Daedalus
+		vec2 daedalus_stop_moving_trigger_pos = { 22,3 };
+		if (daedalus_map_pos == daedalus_stop_moving_trigger_pos) {
+			daedalus_motion.velocity.x = 0;
+			do_interrupt_cutscene = true;
+		}
+		else {
+			daedalus_motion.velocity.x = 100;
+		}
+	}
+
+	if (interrupted && do_interrupt_cutscene) {
+		do_interrupt_cutscene = false;
+		interrupted = false;
+		finished_interruption = true;
+		in_a_cutscene = false;
+		// Start cutscene
+		cutscene_speaker = cutscene_speaker::SPEAKER_DRONE;
+		cutscene_selection = 216;
+		cutscene_1_frame_0 = true;
+
+		Motion& daedalus_motion = registry.get<Motion>(daedalus_entity);
+		daedalus_motion.velocity.x = -300;
+
+		// Set flag for next stage
+		phase_2 = true;
+
+	}
+
+	if (phase_2 && !removed_daedalus) {
+		Motion& daedalus_motion = registry.get<Motion>(daedalus_entity);
+		float remove_trigger_x_coord = 2850.f;
+		if (daedalus_motion.position.x <= remove_trigger_x_coord) {
+			//registry.destroy(daedalus_entity);
+			removed_daedalus = true;
+			player_is_manually_moving = false;
+			do_pathfinding_movement = false;
+		}
+	}
+	
+	// Spawn the goons
+	if (phase_2 && !p2_spawned_enemies) {
+		p2_spawned_enemies = true;
+		vec2		 pos;
+		entt::entity ent;
+		for (int i = 0; i < 4; i++) {
+			switch (i) {
+				case 0: pos = { 20,1 }; break;
+				case 1: pos = { 19,2 }; break;
+				case 2: pos = { 19,4 }; break;
+				case 3: pos = { 20,5 }; break;
+			}
+			pos  = map_coords_to_position(pos);
+			pos += vec2(map_scale.x / 2, map_scale.y / 2);
+			ent  = createDrone(renderer, pos);
+			tutorial_enemy_entities.push_back(ent);
+		}
+	}
+
+	// Set drones on player
+	if (phase_2 && p2_spawned_enemies) {
+		for (entt::entity entity : tutorial_enemy_entities) {
+			if (registry.view<Motion>().contains(entity)) {
+				Motion& entity_motion = registry.get<Motion>(entity);
+				if (!removed_daedalus) { entity_motion.velocity = { 0,0   }; }
+				else				   { entity_motion.velocity = { 200,0 }; }
+			}
+		}
+	}
+
+	// TODO:
+	//	- Spacebar to attack
+	//  - Drop teleporter
+	//		- "So that's how he appeared behind me"
+	//  - Use teleporter
+	//		- Doesn't work properly on me
+	//		- Seems to teleport me randomly in the labyrinth
+	//		- Guess I better get started
+
+
+
+
 }

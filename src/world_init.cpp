@@ -20,6 +20,9 @@ entt::entity createSpike(RenderSystem* renderer, vec2 position)
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
 
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is spike with starting pos " << position.x << ", " << position.y << std::endl;
+
 	return e;
 }
 
@@ -41,6 +44,9 @@ entt::entity createDrone(RenderSystem* renderer, vec2 position)
 		TEXTURE_ASSET_ID::DRONE,
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE);
+
+	// Debug
+	std::cout << "Entity [" << (int)e << "] is drone with starting pos " << position.x << ", " << position.y << std::endl;
 
 	return e;
 }

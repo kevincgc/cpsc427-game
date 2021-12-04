@@ -141,6 +141,7 @@ void AISystem::step()
 							if (game_state.level.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
 								(next_pos_map.x == 0 && next_pos_map.y == 1)) {
 
+								std::cout << "Entity " << int(entity) << std::endl;
 								// Get traversable adjacent map tiles
 								std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
 
