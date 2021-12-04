@@ -96,6 +96,11 @@ struct GameState
 {
 	std::string level_id = "procedural1";
 	LoadedLevel level;
+	int level_phase = 0;
+
+	bool has_next = false;
+
+	bool cheat_finish = false;
 
 	std::vector<SoundEffectRequest> sound_requests;
 };

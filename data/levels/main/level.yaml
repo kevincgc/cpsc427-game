@@ -1,19 +1,19 @@
 name: Procedural Map 1
 type: procedural
 procedural_options:
-    size: [13, 13]
+    size: [7, 7]
     method: binarytree
 
 progression:
     phase_multiply:
-        procedural_size: 2
+        procedural_size: 1.2
         enemies: 2
         prey: 2
         items: 2
 
 enemies:
-    spikes: 2
-    drones: 3
+    spikes: 1
+    drones: 2
 prey:
     chick: 3
 items:

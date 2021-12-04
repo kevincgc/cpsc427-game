@@ -21,6 +21,16 @@ items:
 procedural_options:
     size: [11, 11]          # REQUIRED | size of the map [x, y]. Must be odd and > 5
     method: binarytree      # REQUIRED | method for procedural generation. 'binarytree'|'recursive'
+
+# OPTIONAL. If defined will define how the level progresses to the next. If not, will just restart.
+progression:
+    next_level: testing2    # OPTIONAL | if defined will override all else and load the other map
+    phase_multiply:         # OPTIONAL | will multiply the quantity defined for the next level phase
+        procedural_size: 2  # OPTIONAL | multiplies the procedural map size by this factor
+        enemies: 2          # OPTIONAL | multiplies the enemy count by this factor
+        prey: 2             # OPTIONAL | multiplies the prey count by this factor
+        items: 2            # OPTIONAL | multiplies the item count by this factor
+
 ```
 
 If the level is of `type` `'premade'` then a map.txt is needed in the same directory.
