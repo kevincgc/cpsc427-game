@@ -348,6 +348,27 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 	return e;
 }
 
+entt::entity createLine(vec2 position, vec2 scale)
+{
+	const entt::entity e = registry.create();
+
+	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
+	registry.emplace<RenderRequest>(e,
+		 TEXTURE_ASSET_ID::TEXTURE_COUNT,
+		 EFFECT_ASSET_ID::PEBBLE,
+		 GEOMETRY_BUFFER_ID::DEBUG_LINE);
+
+	// Create motion
+	Motion& motion = registry.emplace<Motion>(e);
+	motion.angle = 0.f;
+	motion.velocity = { 0, 0 };
+	motion.position = position;
+	motion.scale = scale;
+
+	registry.emplace<DebugComponent>(e);
+	return e;
+}
+
 entt::entity createTraps(RenderSystem* renderer, vec2 pos)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
