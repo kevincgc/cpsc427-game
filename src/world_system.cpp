@@ -136,7 +136,7 @@ bool player_can_lose_health    = true;
 bool player_marked_for_death   = false;
 bool player_is_manually_moving = false;
 
-static std::map<int, bool> pressed_keys = std::map<int, bool>();
+std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 // For gestures
 std::queue<std::string> gesture_queue;
@@ -1426,8 +1426,6 @@ void WorldSystem::do_timers(float elapsed_ms_since_last_update) {
 void WorldSystem::do_exit() {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-
-	std::cout << "Tile: " << tile << std::endl;
 
 	// If player has the key ("extra_life") and reaches the exit tile...
 	if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] > 0) {

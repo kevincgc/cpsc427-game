@@ -130,6 +130,7 @@ int main()
 			case 1:
 				renderer.reinit(window_width_px, window_height_px, window);
 				state = ProgramState::RUNNING;
+				
 				break;
 			case 2:
 				state = ProgramState::RESET_GAME;
@@ -202,6 +203,11 @@ int main()
 				cutscene_minotaur_motion.scale = { 0,0 };
 				cutscene_drone_motion.scale = { 0,0 };
 				renderer.reinit(window_width_px, window_height_px, window);
+				
+				// Keep player from persistently moving post-cutscene
+				motion.velocity = { 0,0 };
+				pressed_keys.clear();
+
 				state = ProgramState::RUNNING;
 
 				cutscene_minotaur_motion.scale		   = { 0,0 };

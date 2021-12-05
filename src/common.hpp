@@ -97,6 +97,7 @@ extern bool  do_generate_path;
 extern bool  player_swing;
 extern bool  player_is_manually_moving;
 extern bool  in_a_cutscene;
+extern std::map<int, bool> pressed_keys;
 
 extern entt::entity cutscene_minotaur_entity;
 extern entt::entity cutscene_drone_entity;
