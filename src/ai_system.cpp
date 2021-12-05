@@ -44,8 +44,8 @@ void AISystem::step()
 			// If player is attacking
 			if (registry.view<Attack>().contains(player)) {
 
-				// If entity is attackable...
-				if (entity_motion.can_be_attacked) {
+				// If entity is attackable and not a cutscene entity...
+				if (entity_motion.can_be_attacked && !registry.view<Cutscene>().contains(entity)) {
 					// If enemy is close to player for swinging...
 					if (within_threshold(player, entity, swing_threshold)) {
 
@@ -55,6 +55,7 @@ void AISystem::step()
 						if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
 
 							// Destroy the enemy
+							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
 							registry.destroy(entity);
 
 							// Don't process any of the code below for the enemy
@@ -64,12 +65,14 @@ void AISystem::step()
 
 						// If enemy is to the left of the player and the player is facing left
 						else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
+							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
 							registry.destroy(entity);
 							break;
 						}
 
 						// If enemy is vertically close to the player, just destroy them
 						else if (abs(entity_motion.position.y - motion.position.y) < 100) {
+							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
 							registry.destroy(entity);
 							break;
 						}
@@ -141,7 +144,6 @@ void AISystem::step()
 							if (game_state.level.map_tiles[next_pos_map.y][next_pos_map.x] != FREE_SPACE ||
 								(next_pos_map.x == 0 && next_pos_map.y == 1)) {
 
-								std::cout << "Entity " << int(entity) << std::endl;
 								// Get traversable adjacent map tiles
 								std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
 
