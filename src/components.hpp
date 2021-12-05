@@ -15,7 +15,7 @@ enum class SoundEffects {
 	ITEM_BREAK_WALL,
 	ITEM_TELEPORT,
 	ITEM_SPEED_BOOST,
-	// CHICK_DIE,
+	CHICK_DIE,
 	COUNT
 };
 const int sound_effect_count = (int)SoundEffects::COUNT;
