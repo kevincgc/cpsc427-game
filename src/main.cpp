@@ -77,6 +77,7 @@ int main()
 			if (selection == 1 && !has_completed_init) {
 				renderer.init(window_width_px, window_height_px, window);
 				world.init(&renderer);
+				world.restart_game();
 				has_completed_init = true;
 				initial_game = true;
 				game_start_time = (float)(glfwGetTime());
@@ -88,6 +89,23 @@ int main()
 			else if (selection == 2) {
 				initOptionsMenu();
 				state = ProgramState::OPTIONS;
+			}
+			else if (selection == 3) {
+				if (has_completed_init) {
+					renderer.reinit(window_width_px, window_height_px, window);
+					world.load_game();
+					initial_game = true;
+					game_start_time = (float)(glfwGetTime());
+					state = ProgramState::RUNNING;
+				} else {
+					renderer.init(window_width_px, window_height_px, window);
+					world.init(&renderer);
+					world.load_game();
+					has_completed_init = true;
+					initial_game = true;
+					game_start_time = (float)(glfwGetTime());
+					state = ProgramState::RUNNING;
+				}
 			}
 			else if (selection == -1) {
 				state = ProgramState::EXIT;
@@ -126,15 +144,18 @@ int main()
 			int selection = 0;
 			drawPauseMenu(window, &selection);
 			switch (selection) {
-			case 1:
-				renderer.reinit(window_width_px, window_height_px, window);
-				state = ProgramState::RUNNING;
-				break;
 			case 2:
 				state = ProgramState::RESET_GAME;
 				break;
 			case 3:
 				state = ProgramState::MAIN_MENU;
+				break;
+			case 4:
+				world.save_game();
+				// onto case 1
+			case 1:
+				renderer.reinit(window_width_px, window_height_px, window);
+				state = ProgramState::RUNNING;
 				break;
 			case -1:
 				state = ProgramState::EXIT;
@@ -159,9 +180,9 @@ int main()
 				}
 
 				int progression = 1;
-				if (game_state.level_phase > 0) {
+				if (game_state.level.phase > 0) {
 					progression = 3;
-				} else if (game_state.has_next) {
+				} else if (game_state.level.has_next) {
 					progression = 2;
 				}
 

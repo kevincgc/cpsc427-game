@@ -89,6 +89,8 @@ struct LoadedLevel
 {
 	std::vector<std::vector<MapTile>> map_tiles;
 	vec2 start_position;
+	int phase = 0;
+	bool has_next = false;
 };
 
 // Global Game State
@@ -96,9 +98,6 @@ struct GameState
 {
 	std::string level_id = "main";
 	LoadedLevel level;
-	int level_phase = 0;
-
-	bool has_next = false;
 	bool win_condition = false;
 
 	bool cheat_finish = false;

@@ -124,6 +124,11 @@ void drawMainMenu( GLFWwindow* win, int *out)
             *out = 1;
         }
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+        if (nk_button_label(ctx, "LOAD GAME")) {
+            fprintf(stdout, "Load game selected\n");
+            *out = 3;
+        }
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "OPTIONS")) {
             fprintf(stdout, "Options Menu\n");
             *out = 2;
@@ -209,6 +214,11 @@ void drawPauseMenu( GLFWwindow* win, int* out)
         if (nk_button_label(ctx, "RESUME GAME")) {
             fprintf(stdout, "Starting Game\n");
             *out = 1;
+        }
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+        if (nk_button_label(ctx, "SAVE GAME")) {
+            fprintf(stdout, "Save Game Selected\n");
+            *out = 4;
         }
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "RESTART GAME")) {

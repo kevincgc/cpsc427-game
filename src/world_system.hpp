@@ -69,12 +69,16 @@ public:
 	// restart level
 	void restart_game();
 
+	void save_game();
+	void load_game();
+
 	std::vector<std::string> get_leaderboard();
 	std::string get_player_time();
 	std::string get_level_info();
 
 private:
 
+	void start_game();
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
