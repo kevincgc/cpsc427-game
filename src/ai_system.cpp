@@ -50,34 +50,32 @@ void AISystem::step()
 					if (within_threshold(player, entity, swing_threshold)) {
 
 						RenderRequest &render_request = registry.get<RenderRequest>(player);
+					// If enemy is to the right of the player and the player is facing right...
+   					if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
+						
+						// Destroy the enemy
+						// registry.destroy(entity);
+						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
+						// Don't process any of the code below for the enemy
+						// because it's no longer in the registry
+						break;
+					}
 
-						// If enemy is to the right of the player and the player is facing right...
-						if (entity_motion.position.x >= motion.position.x && !render_request.is_reflected) {
+					// If enemy is to the left of the player and the player is facing left
+					else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
+						// registry.destroy(entity);
+						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
+						break;
+					}
 
-							// Destroy the enemy
-							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
-							registry.destroy(entity);
-
-							// Don't process any of the code below for the enemy
-							// because it's no longer in the registry
-							break;
-						}
-
-						// If enemy is to the left of the player and the player is facing left
-						else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
-							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
-							registry.destroy(entity);
-							break;
-						}
-
-						// If enemy is vertically close to the player, just destroy them
-						else if (abs(entity_motion.position.y - motion.position.y) < 100) {
-							std::cout << "Destroyed entity " << int(entity) << " via attack" << std::endl;
-							registry.destroy(entity);
-							break;
-						}
+					// If enemy is vertically close to the player, just destroy them
+					else if (abs(entity_motion.position.y - motion.position.y) < 100) {
+						// registry.destroy(entity);
+						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
+						break;
 					}
 				}
+			}
 			}
 
 			// ========================================================
