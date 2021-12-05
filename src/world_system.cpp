@@ -382,10 +382,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				player_marked_for_death = false;
 
 				return true;
+			} 
+			if (!registry.view<Player>().contains(entity)) {
+				registry.destroy(entity);
 			}
 		}
 	}
-
 
 
 	for (entt::entity entity : registry.view<EndGame>()) {
@@ -891,7 +893,7 @@ void WorldSystem::handle_collisions() {
 		if (registry.view<Player>().contains(entity)) {
 
 			// Checking Player - Enemy collisions
-			if (registry.view<Enemy>().contains(entity_other) && player_can_lose_health) {
+			if (registry.view<Enemy>().contains(entity_other) && player_can_lose_health && !registry.view<DeathTimer>().contains(entity_other) ) {
 				
 				game_state.sound_requests.push_back({ SoundEffects::PLAYER_DEAD }); // Scream
 				registry.emplace<DeathTimer>(entity);							    // Start a death timer (an invulnerability cooldown)

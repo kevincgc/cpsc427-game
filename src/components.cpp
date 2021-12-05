@@ -35,7 +35,7 @@ bool Mesh::loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out
 		getchar();
 		return false;
 	}
-
+	
 	while (1) {
 		char lineHeader[128];
 		// read the first word of the line
@@ -45,9 +45,11 @@ bool Mesh::loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out
 
 		if (strcmp(lineHeader, "v") == 0) {
 			ColoredVertex vertex;
-			fscanf(file, "%f %f %f %f %f %f\n", &vertex.position.x, &vertex.position.y, &vertex.position.z,
+			int matches = fscanf(file, "%f %f %f %f %f %f\n", &vertex.position.x, &vertex.position.y, &vertex.position.z,
 				                                &vertex.color.x, &vertex.color.y, &vertex.color.z);
+			if (matches == 3) vertex.color = { 1,1,1 };
 			out_vertices.push_back(vertex);
+
 		}
 		else if (strcmp(lineHeader, "vt") == 0) {
 			glm::vec2 uv;
@@ -88,6 +90,7 @@ bool Mesh::loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out
 		}
 	}
 	fclose(file);
+	printf("Closed OBJ file %s...\n", obj_path.c_str());
 
 	// Compute bounds of the mesh
 	vec3 max_position = { -99999,-99999,-99999 };
@@ -105,6 +108,6 @@ bool Mesh::loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out
 	// Normalize mesh to range -0.5 ... 0.5
 	for (ColoredVertex& pos : out_vertices)
 		pos.position = ((pos.position - min_position) / size3d) - vec3(0.5f, 0.5f, 0.f);
-
+	printf("Loaded OBJ file %s...\n", obj_path.c_str());
 	return true;
 }

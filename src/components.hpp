@@ -196,7 +196,7 @@ struct Background {};
 // HUD - so we can draw HUD elements in between world and cutscene
 struct HUD {};
 
-// Mesh datastructure for storing vertex and index buffers
+// Mesh data structure for storing vertex and index buffers
 struct Mesh
 {
 	static bool loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out_vertices, std::vector<uint16_t>& out_vertex_indices, vec2& out_size);
@@ -273,30 +273,32 @@ enum class TEXTURE_ASSET_ID {
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
 enum class EFFECT_ASSET_ID {
-	COLOURED	 = 0,
-	PEBBLE		 = COLOURED + 1,
-	TEXTURED	 = PEBBLE   + 1,
-	WATER		 = TEXTURED + 1,
-	MINOTAUR	 = WATER    + 1,
-	TEXT		 = MINOTAUR + 1,
-	ENEMY		 = MINOTAUR + 1,
-	ITEM		 = ENEMY    + 1,
-	TRAP		 = ITEM     + 1,
-	EFFECT_COUNT = TEXT     + 1
+	COLOURED = 0,
+	PEBBLE = COLOURED + 1,
+	// SALMON = PEBBLE + 1, // remove salmon
+	TEXTURED = PEBBLE + 1,
+	WATER = TEXTURED + 1,
+	MINOTAUR = WATER + 1,
+	TEXT = MINOTAUR + 1,
+	ENEMY = TEXT + 1,
+	ITEM = ENEMY + 1,
+	TRAP = ITEM + 1,
+	EFFECT_COUNT = ENEMY + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
 enum class GEOMETRY_BUFFER_ID {
-	SALMON			= 0,
-	SPRITE			= SALMON		  + 1,
-	PEBBLE			= SPRITE		  + 1,
-	DEBUG_LINE		= PEBBLE		  + 1,
-	SCREEN_TRIANGLE = DEBUG_LINE      + 1,
-	MINOTAUR		= SCREEN_TRIANGLE + 1,
-	ENEMY			= MINOTAUR		  + 1,
-	ITEM			= ENEMY			  + 1,
-	TRAP			= ITEM		      + 1,
-	GEOMETRY_COUNT  = MINOTAUR        + 1
+	SALMON = 0,
+	SPRITE = SALMON + 1,
+	PEBBLE = SPRITE + 1,
+	DEBUG_LINE = PEBBLE + 1,
+	SCREEN_TRIANGLE = DEBUG_LINE + 1,
+	MINOTAUR = SCREEN_TRIANGLE + 1,
+	ENEMY = MINOTAUR + 1,
+	DRONE = ENEMY + 1,
+	ITEM = DRONE + 1,
+	TRAP = ITEM + 1,
+	GEOMETRY_COUNT = DRONE + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 
