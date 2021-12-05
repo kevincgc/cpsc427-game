@@ -43,7 +43,7 @@ class RenderSystem {
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
 		textures_path("prey.png"),
 		textures_path("hammer.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-		textures_path("heart.png"),
+		textures_path("key.png"),
 		textures_path("teleport.png"),  // <div>Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon">berkahicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("speedboost.png"),
 		textures_path("cutscene_minotaur.png"),
@@ -56,10 +56,11 @@ class RenderSystem {
 		textures_path("background_space2.png"), // https://pngtree.com/free-png-vectors/white-stars
 		textures_path("heart.png"), //
 		textures_path("hud_background.png"),
+		textures_path("key.png"), // https://pngtree.com/
 		textures_path("no_hammer.png"),
 		textures_path("no_teleport.png"),
 		textures_path("no_speedboost.png"),
-		textures_path("no_heart.png")
+		textures_path("no_key.png")
 	};
 
 
