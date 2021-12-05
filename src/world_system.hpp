@@ -65,10 +65,6 @@ public:
 	void use_teleport();
 	void use_speed_boost();
 	void postItemUse(entt::entity& player);
-	// Cutscenes
-	void do_cutscene();
-	// HUD
-	void do_HUD();
 
 	// restart level
 	void restart_game();
