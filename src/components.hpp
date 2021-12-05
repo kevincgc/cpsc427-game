@@ -15,7 +15,7 @@ enum class SoundEffects {
 	ITEM_BREAK_WALL,
 	ITEM_TELEPORT,
 	ITEM_SPEED_BOOST,
-	CHICK_DIE,
+	// CHICK_DIE,
 	COUNT
 };
 const int sound_effect_count = (int)SoundEffects::COUNT;
@@ -196,7 +196,7 @@ struct Background {};
 // HUD - so we can draw HUD elements in between world and cutscene
 struct HUD {};
 
-// Mesh datastructure for storing vertex and index buffers
+// Mesh data structure for storing vertex and index buffers
 struct Mesh
 {
 	static bool loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out_vertices, std::vector<uint16_t>& out_vertex_indices, vec2& out_size);

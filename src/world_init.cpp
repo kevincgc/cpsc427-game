@@ -3,12 +3,12 @@
 
 entt::entity createSpike(RenderSystem* renderer, vec2 position)
 {
-	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::ENEMY);
 	Motion motion = Motion();
 	motion.angle = 0.f;
 	motion.velocity = { -50.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
 	motion.position = position;
-	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
+	motion.scale = mesh.original_size * 400.f * global_scaling_vector;
 	motion.scale.y *= -1.0;
 	motion.mass = 200;
 	motion.coeff_rest = 0.9f;
@@ -26,12 +26,12 @@ entt::entity createSpike(RenderSystem* renderer, vec2 position)
 
 entt::entity createDrone(RenderSystem* renderer, vec2 position)
 {
-	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::DRONE);
 	Motion motion = Motion();
 	motion.angle = 0.f;
 	motion.velocity = { -100.f * global_scaling_vector.x, 0.f * global_scaling_vector.y };
 	motion.position = position;
-	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
+	motion.scale = mesh.original_size * 400.f * global_scaling_vector;
 	motion.scale.y *= -1;
 	motion.mass = 200;
 	motion.coeff_rest = 0.9f;
