@@ -94,7 +94,7 @@ struct LoadedLevel
 // Global Game State
 struct GameState
 {
-	std::string level_id = "procedural1";
+	std::string level_id = "main";
 	LoadedLevel level;
 	int level_phase = 0;
 
