@@ -452,9 +452,9 @@ void drawCutscene(GLFWwindow* win, int* out)
 		// Note enemy movement and speed boost
 		else if (*out == 205) {
 			min_cutscene_selection = 205, max_cutscene_selection = 206;
-			nk_label(ctx, "Interesting.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "The enemies only move when I do...", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Interesting. The enemies only move when I do.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Wait, did I just see a chick? I suppose eating them may grant", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "me a short burst of speed. If they tire, they might stop moving...", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 206) {
 			min_cutscene_selection = 205, max_cutscene_selection = 206;
@@ -485,9 +485,9 @@ void drawCutscene(GLFWwindow* win, int* out)
 		}
 		else if (*out == 217) {
 			min_cutscene_selection = 216, max_cutscene_selection = 217;
-			nk_label(ctx, "I'll test my drones on you.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "They always know good prey when they sense one.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "If you get too close, they'll follow you.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I'll test my drones. If you get too close, they'll chase you", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "If you destroy them, they'll deform as the souls are set free", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "They can still hit you, but you won't lose any life.", NK_TEXT_ALIGN_LEFT);
 		}
 		// Attack cutscene: Speaker: Minotaur
 		else if (*out == 220) {
@@ -506,19 +506,19 @@ void drawCutscene(GLFWwindow* win, int* out)
 		else if (*out == 225) {
 			min_cutscene_selection = 225, max_cutscene_selection = 227;
 			nk_label(ctx, "The exit! Finally I can escape this prison.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "And over there in the corner, a teleporter?", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "Daedalus must have used these to sneek up behind me...", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And over there in the corner, a teleporter and a key?", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Daedalus probably puts invisible doors at the exits... ", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 226) {
 			min_cutscene_selection = 225, max_cutscene_selection = 227;
-			nk_label(ctx, "If I pick it up, I think I can active it (by pressing [2]).", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "It looks unstable - no wonder he threw them away.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I'll need the key to escape. I can use the teleporter (by pressing [2]).", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "It looks unstable though - no wonder he threw them away.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "I don't think I can control where it teleports me...", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 227) {
 			min_cutscene_selection = 225, max_cutscene_selection = 227;
 			nk_label(ctx, "But I don't have a choice.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "Let's hope I end up on the otherside of this wall.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Let's hope I end up on the other side of this wall.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		// Note teleporter arrival: Speaker: Minotaur
@@ -527,6 +527,13 @@ void drawCutscene(GLFWwindow* win, int* out)
 			nk_label(ctx, "That was lucky.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "Now, time to get out of this labyrinth.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note teleporter arrival: Speaker: Minotaur
+		else if (*out == 300) {
+		min_cutscene_selection = 300, max_cutscene_selection = 300;
+		nk_label(ctx, "I still need to find the key before I can leave.", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// Row for Buttons

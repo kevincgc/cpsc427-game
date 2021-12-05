@@ -79,6 +79,7 @@ bool cutscene_1_frame_2      = false;
 bool do_cutscene_1			 = true;
 bool in_a_cutscene			 = false;
 bool rtx_on					 = true;
+bool play_need_key_cutscene  = true;
 int  num_times_exit_reached  = 0;
 int  cutscene_selection      = 1; // 1 = game start (see menu.c for more info)
 int  cutscene_speaker        = SPEAKER_MINOTAUR;
@@ -1425,8 +1426,11 @@ void WorldSystem::do_timers(float elapsed_ms_since_last_update) {
 void WorldSystem::do_exit() {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-	if (tile == MapTile::EXIT) {
-		// player has found the exit!
+
+	std::cout << "Tile: " << tile << std::endl;
+
+	// If player has the key ("extra_life") and reaches the exit tile...
+	if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] > 0) {
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
 			game_state.sound_requests.push_back({ SoundEffects::TADA });
@@ -1485,6 +1489,18 @@ void WorldSystem::do_exit() {
 			outfile.close();
 		}
 	}
+	
+	else if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] < 1 && play_need_key_cutscene){
+		play_need_key_cutscene = false;
+		// Play a cutscene explaining that they need to get the key
+		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+		cutscene_selection = 300;
+		cutscene_1_frame_0 = true;
+	}
+	// Once player steps out of exit tile, reset the trigger
+	// So that when they reach the exit tile without a key again,
+	// The cutscene will play
+	if (tile == MapTile::FREE_SPACE) { play_need_key_cutscene = true; }
 }
 
 // Handle Death and Endgame
@@ -1570,20 +1586,23 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 
 		// Spawn Items and Prisoners
 		vec2 hammer_position = map_coords_to_position({ 1,5 });
-		vec2 speed_position = map_coords_to_position({ 7,3 });
-		vec2 tele_position = map_coords_to_position({ 28,2 });
-		vec2 chick_position = map_coords_to_position({ 1,1 });
-		vec2 drone_position = map_coords_to_position({ 4,1 });
-		vec2 spike_position = map_coords_to_position({ 4,5 });
+		vec2 speed_position  = map_coords_to_position({ 7,3 });
+		vec2 tele_position   = map_coords_to_position({ 28,2 });
+		vec2 key_position	 = map_coords_to_position({ 30,2 });
+		vec2 chick_position  = map_coords_to_position({ 1,1 });
+		vec2 drone_position  = map_coords_to_position({ 4,1 });
+		vec2 spike_position  = map_coords_to_position({ 4,5 });
 		hammer_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		speed_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		tele_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		spike_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		drone_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		chick_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		createItem(renderer, hammer_position, "wall breaker");
-		createItem(renderer, speed_position, "speed boost");
-		createItem(renderer, tele_position, "teleporter");
+		speed_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		tele_position   += vec2(map_scale.x / 2, map_scale.y / 2);
+		key_position    += vec2(map_scale.x / 2, map_scale.y / 2);
+		spike_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		drone_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		chick_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		createItem( renderer, hammer_position, "wall breaker");
+		createItem( renderer, speed_position,  "speed boost");
+		createItem( renderer, tele_position,   "teleporter");
+		createItem( renderer, key_position,    "extra life");
 		createSpike(renderer, spike_position);
 		createDrone(renderer, drone_position);
 		createChick(renderer, chick_position);
@@ -1740,7 +1759,7 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 		pressed_keys.clear();
 	}
 
-	// Note teleporter
+	// Note teleporter and key
 	vec2 teleporter_trigger_pos = { 28,3 };
 	if (map_pos == teleporter_trigger_pos) {
 		if (!tutorial_flags["noted_teleporter"]) {
