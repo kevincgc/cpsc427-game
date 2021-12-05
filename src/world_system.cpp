@@ -122,7 +122,8 @@ std::map<std::string, bool> tutorial_flags = {
 	{"p2_spawned_enemies",		 false },
 	{"removed_daedalus",		 false },
 	{"did_attack_cutscene",		 false },
-	{"noted_teleporter",		 false }
+	{"noted_teleporter",		 false },
+	{"noted_arrival",		 false }
 };
 
 int speed_counter = 0;
@@ -1245,12 +1246,13 @@ void WorldSystem::do_cutscene() {
 		cutscene_1_frame_2 = false;
 
 		// Play audio files
-		if     (cutscene_selection  == 102) { game_state.sound_requests.push_back({ SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY }); }
+		if      (cutscene_selection == 102) { game_state.sound_requests.push_back({ SoundEffects::DRONE_WERE_IT_ONLY_SO_EASY }); }
 		else if (cutscene_selection == 10)  { game_state.sound_requests.push_back({ SoundEffects::DRONE_STUPID_BOY }); }
-		else if (cutscene_speaker == cutscene_speaker::SPEAKER_MINOTAUR
-			  && cutscene_selection != 15
-			  && cutscene_selection != 205
-			  && cutscene_selection != 220) { game_state.sound_requests.push_back({ SoundEffects::HORSE_SNORT }); }
+		else if (cutscene_speaker   == cutscene_speaker::SPEAKER_MINOTAUR
+				 && cutscene_selection != 15
+				 && cutscene_selection != 205
+				 && cutscene_selection != 220
+				 && cutscene_selection != 230) { game_state.sound_requests.push_back({ SoundEffects::HORSE_SNORT }); }
 
 		// Set state to cutscene
 		state = ProgramState::CUTSCENE1;
@@ -1743,9 +1745,20 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 			cutscene_selection = 225;
 			cutscene_1_frame_0 = true;
 			pressed_keys.clear();
-	}
+		}
 	}
 
+	// Note teleporter arrival
+	vec2 arrival_trigger_pos = { 30,4 };
+	if (map_pos == arrival_trigger_pos) {
+		if (!tutorial_flags["noted_arrival"]) {
+			tutorial_flags["noted_arrival"] = true;
+			cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+			cutscene_selection = 230;
+			cutscene_1_frame_0 = true;
+			pressed_keys.clear();
+		}
+	}
 
 
 }
