@@ -69,6 +69,16 @@ public:
 	void do_cutscene();
 	// HUD
 	void do_HUD();
+	// Timers
+	void do_timers(float elapsed_ms_since_last_update);
+	// Exit
+	void do_exit();
+	// Death and Endgame
+	bool do_death_and_endgame(float elpased_ms_since_last_update);
+	// Remove Off-screen Entities
+	void do_cleanup();
+	// Tutorial
+	void do_tutorial(float elpased_ms_since_last_update);
 
 	// restart level
 	void restart_game();

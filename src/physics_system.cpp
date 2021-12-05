@@ -176,30 +176,30 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		}
 		// If the entity is the player...
 		else {
+			if (!in_a_cutscene) {
+				// Attempt to move the player, and if player is able to move (no collision = return True)...
+				// Warning: If player is moving, ex rightwards in to a wall, setMotionPosition returns False
+				// as expected due to collision. However, if moving into a wall AND moving up along a hallway,
+				// setMotionPosition still returns false but player is still able to move up
+				if (setMotionPosition(motion, nextpos, true)) {
 
-			// Attempt to move the player, and if player is able to move (no collision = return True)...
-			// Warning: If player is moving, ex rightwards in to a wall, setMotionPosition returns False
-			// as expected due to collision. However, if moving into a wall AND moving up along a hallway,
-			// setMotionPosition still returns false but player is still able to move up
-			if (setMotionPosition(motion, nextpos, true)) {
+					// Move only background 2 and 3 for parallax effect
+					Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
+					vec2 bg_1_nextpos = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
+					setMotionPosition(bg_motion_1, bg_1_nextpos);
 
-				// Move only background 2 and 3 for parallax effect
-				Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
-				vec2 bg_1_nextpos   = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
-				setMotionPosition(bg_motion_1, bg_1_nextpos);
+					Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
+					vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
+					setMotionPosition(bg_motion_2, bg_2_nextpos);
 
-				Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
-				vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
-				setMotionPosition(bg_motion_2, bg_2_nextpos);
-
-				// Move all elements of the HUD
-				for (entt::entity entity : registry.view<HUD>()) {
-					Motion& hud_entity_motion  = registry.get<Motion>(entity);
-					vec2    hud_entity_nextpos = hud_entity_motion.position + hud_entity_motion.velocity * step_seconds;
-					setMotionPosition(hud_entity_motion, hud_entity_nextpos);
+					// Move all elements of the HUD
+					for (entt::entity entity : registry.view<HUD>()) {
+						Motion& hud_entity_motion = registry.get<Motion>(entity);
+						vec2    hud_entity_nextpos = hud_entity_motion.position + hud_entity_motion.velocity * step_seconds;
+						setMotionPosition(hud_entity_motion, hud_entity_nextpos);
+					}
 				}
 			}
-
 		}
 	}
 
@@ -258,10 +258,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						registry.destroy(other);
 					}
 					// Start timer for 3 second text tip
-					registry.emplace_or_replace<TextTimer>(player);
-					tips.picked_up_item = 1;
-					tips.basic_help = 0;
-					tips.show_inventory = 0;
+					//registry.emplace_or_replace<TextTimer>(player);
+					//tips.picked_up_item = 1;
+					//tips.basic_help = 0;
+					//tips.show_inventory = 0;
 					return;
 				}
 				if (!(registry.view<Prey>().contains(entity)||registry.view<Prey>().contains(other)) ||

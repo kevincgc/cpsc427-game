@@ -44,8 +44,8 @@ void AISystem::step()
 			// If player is attacking
 			if (registry.view<Attack>().contains(player)) {
 
-				// If entity is attackable...
-				if (entity_motion.can_be_attacked) {
+				// If entity is attackable and not a cutscene entity...
+				if (entity_motion.can_be_attacked && !registry.view<Cutscene>().contains(entity)) {
 					// If enemy is close to player for swinging...
 					if (within_threshold(player, entity, swing_threshold)) {
 

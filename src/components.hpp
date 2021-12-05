@@ -137,7 +137,7 @@ struct TextTimer {
 };
 
 struct SpeedBoostTimer {
-	float counter_ms = 10000.f;
+	float counter_ms = 5000.f;
 };
 
 // Single Vertex Buffer element for non-textured meshes (coloured.vs.glsl & salmon.vs.glsl)
