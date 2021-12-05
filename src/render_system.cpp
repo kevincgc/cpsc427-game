@@ -2,7 +2,6 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include <iostream>
-#include <string>
 
 void RenderSystem::drawTexturedMesh(entt::entity entity,
 									const mat3 &projection)
@@ -21,14 +20,14 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 
 	RenderRequest &render_request = registry.get<RenderRequest>(entity);
 
-	// Determine if entity should be drawn facing left or right
-	if (motion.can_reflect) {
-		if		(motion.velocity.x < 0) { render_request.is_reflected = true;  } 
-		else if (motion.velocity.x > 0) { render_request.is_reflected = false; } 
-	}
-	// if zero keep last
+	// Determine if minotaur should be drawn facing left or right
+	if (motion.velocity.x < 0) {
+		render_request.is_reflected = true;
+	} else if (motion.velocity.x > 0) {
+		render_request.is_reflected = false;
+	} // if zero keep last
 
-	if (render_request.is_reflected) { transform.reflect(); }
+	if (render_request.is_reflected) transform.reflect();
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -164,79 +163,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glBindTexture(GL_TEXTURE_2D, texture_id_minotaur);
 		gl_has_errors();
 	}
-		else if (render_request.used_effect == EFFECT_ASSET_ID::ENEMY)
-			{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_color_loc = glGetAttribLocation(program, "in_color");
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(ColoredVertex), (void *)0);
-	  
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_color_loc);
-		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(ColoredVertex), (void *)sizeof(vec3));
-		gl_has_errors();
-		float time_total = (float)(glfwGetTime()) - game_start_time;
-		GLuint time_uloc = glGetUniformLocation(program, "time");
-		glUniform1f(time_uloc, time_total);
- 
- 		// random seed to ensure same entity would have the same effect
-		srand (int (entity)); 
-		int random = rand() % 4;
-		GLuint random_loc = glGetUniformLocation(program, "randomInt");
-		glUniform1i(random_loc, random);
-
-		GLuint dead_uloc = glGetUniformLocation(program, "dead");
-		if (registry.view<DeathTimer>().contains(entity)) {
-			glUniform1i(dead_uloc, true);
-		} else {
-			glUniform1i(dead_uloc, false);
-		}
-		gl_has_errors();
-	}
-	// {
-	// 	GLint in_position_loc = glGetAttribLocation(program, "in_position");
-	// 	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-	// 	gl_has_errors();
-	// 	assert(in_texcoord_loc >= 0);
-
-	// 	glEnableVertexAttribArray(in_position_loc);
-	// 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-	// 						  sizeof(TexturedVertex), (void *)0);
-	// 	gl_has_errors();
-
-	// 	float time_total = (float)(glfwGetTime()) - game_start_time;
-	// 	GLuint time_uloc = glGetUniformLocation(program, "time");
-	// 	glUniform1f(time_uloc, time_total);
-
-	// 	GLuint dead_uloc = glGetUniformLocation(program, "dead");
-	// 	if (registry.view<DeathTimer>().contains(entity)) {
-	// 		glUniform1i(dead_uloc, true);
-	// 	} else {
-	// 		glUniform1i(dead_uloc, false);
-	// 	}
-
-
-	// 	glEnableVertexAttribArray(in_texcoord_loc);
-	// 	glVertexAttribPointer(
-	// 		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-	// 		(void *)sizeof(
-	// 			vec3)); // note the stride to skip the preceeding vertex position
-	// 	// Enabling and binding texture to slot 0
-	// 	glActiveTexture(GL_TEXTURE0);
-	// 	gl_has_errors();
-
-	// 	assert(registry.view<RenderRequest>().contains(entity));
-	// 	GLuint texture_id =
-	// 		texture_gl_handles[(GLuint)registry.get<RenderRequest>(entity).used_texture];
-
-	// 	glBindTexture(GL_TEXTURE_2D, texture_id);
-	// 	gl_has_errors();
-	// }
 	else
 	{
 		assert(false && "Type of render request not supported");
@@ -368,6 +294,7 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 	gl_has_errors();
 }
+
 
 /* tutorial reference :
 / https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
@@ -566,19 +493,6 @@ void RenderSystem::draw()
 	gl_has_errors();
 	mat3 projection_2D = createProjectionMatrix();
 
-	// Drawing order
-	// 1. Background sprites
-	// 2. Map tiles
-	// 3. Sprites
-	// 4. HUD sprites
-	// 5. Cutscene sprites
-
-	// 1. Background Sprites
-	for (entt::entity entity : registry.view<Background>()) {
-		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
-	}
-
-	// 2. Map Tiles
 	std::vector<std::vector<MapTile>> map_tiles = game_state.level.map_tiles;
 	for (int i = 0; i < map_tiles.size(); i++) {
 		for (int j = 0; j < map_tiles[i].size(); j++) {
@@ -586,29 +500,28 @@ void RenderSystem::draw()
 		}
 	}
 
-	// 3. Minotaur/Enemies/Items
+	// Draw all textured meshes that have a position and size component
 	for (entt::entity entity : registry.view<RenderRequest>())
 	{
-		// Only render the motion entities...
-		if (!registry.view<Motion>().contains(entity)) continue;
+		if (!registry.view<Motion>().contains(entity))
+			continue;
+		// Note, its not very efficient to access elements indirectly via the entity
+		// albeit iterating through all Sprites in sequence. A good point to optimize
 
-		// Don't render background or cutscene or HUD entities
-		if (!registry.view<Cutscene>().contains(entity) && !registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
-			drawTexturedMesh(entity, projection_2D); 
+		// Render the sprites first
+		if (!registry.view<Cutscene>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
 		}
-	}
 
-	// 4. HUD Sprites
-	for (entt::entity entity : registry.view <HUD>()) {
-		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
-	}
-
-	// 5. Cutscene Sprites
-	for (entt::entity entity : registry.view <Cutscene>()) {
-		if (registry.view<RenderRequest>().contains(entity)) { drawTexturedMesh(entity, projection_2D); }
 	}
 
 	entt::entity player = registry.view<Player>().begin()[0];
+	// Render the cutscene images last so they'll be on top of the sprites
+	for (entt::entity entity : registry.view <Cutscene>()) {
+		if (registry.view<RenderRequest>().contains(entity)) {
+			drawTexturedMesh(entity, projection_2D);
+		}
+	}
 
 	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
@@ -724,56 +637,6 @@ void RenderSystem::draw()
 	drawText(renderedText_1, text1_pos, { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 	drawText(renderedText_2, text2_pos , { 2.f * global_scaling_vector.x, -2.5f * global_scaling_vector.y }, projection_2D, text_colour);
 
-	// **************** Feature: HUD ****************
-	vec3 white_text = { 255.f, 255.f, 255.f };
-
-	// Draw text for hotkey
-	vec2 text_hotkey1_pos	  = { 1 / 2 * w + (3    * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey2_pos	  = { 1 / 2 * w + (9.5  * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey3_pos	  = { 1 / 2 * w + (16   * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey4_pos	  = { 1 / 2 * w + (23.1 * global_scaling_vector.x) * pixel_size, 175.f * global_scaling_vector.y };
-	vec2 text_hotkey_scale	  = {			   1.f  * global_scaling_vector.x,               -1.5f * global_scaling_vector.y };
-	std::string text_hotkey_1 = "1";
-	std::string text_hotkey_2 = "2";
-	std::string text_hotkey_3 = "3";
-	std::string text_hotkey_4 = "4";
-	drawText(text_hotkey_1, text_hotkey1_pos, text_hotkey_scale, projection_2D, white_text);
-	drawText(text_hotkey_2, text_hotkey2_pos, text_hotkey_scale, projection_2D, white_text);
-	drawText(text_hotkey_3, text_hotkey3_pos, text_hotkey_scale, projection_2D, white_text);
-	drawText(text_hotkey_4, text_hotkey4_pos, text_hotkey_scale, projection_2D, white_text);
-
-	// Draw text for item count
-	vec2 hammer_count_pos		 = { 1 / 2 * w + (3+2  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 teleport_count_pos		 = { 1 / 2 * w + (9.5+2   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 speedboost_count_pos    = { 1 / 2 * w + (16+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 heart_count_pos		 = { 1 / 2 * w + (23.1+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 item_count_scale		 = {              0.8  * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
-	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
-	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
-	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
-	std::string heart_count = "x" + std::to_string(inventory[ItemType::EXTRA_LIFE]);
-	drawText(hammer_count,     hammer_count_pos,     item_count_scale, projection_2D, white_text);
-	drawText(teleport_count,   teleport_count_pos,   item_count_scale, projection_2D, white_text);
-	drawText(speedboost_count, speedboost_count_pos, item_count_scale, projection_2D, white_text);
-	drawText(heart_count,	   heart_count_pos,		 item_count_scale, projection_2D, white_text);
-
-	// Draw text for speedboost remaining active time
-	if (speed_counter > 0) {
-		vec2 text_speed_timer_pos	 = { 1 / 2 * w + (16 * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
-		vec2 text_timer_scale		 = {			   0.8 * global_scaling_vector.x,				-1.3 * global_scaling_vector.y };
-		std::string text_speed_timer = std::to_string(speed_counter/1000) + "s";
-		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
-	}
-
-	// Draw text for hammer remaining usage time
-	if (wallbreaker_counter > 0) {
-		vec2 text_speed_timer_pos    = { 1 / 2 * w + (3   * global_scaling_vector.x) * pixel_size, 90.f * global_scaling_vector.y };
-		vec2 text_timer_scale	     = {			  0.8 * global_scaling_vector.x,			   -1.3 * global_scaling_vector.y };
-		std::string text_speed_timer = std::to_string(wallbreaker_counter / 1000) + "s";
-		drawText(text_speed_timer, text_speed_timer_pos, text_timer_scale, projection_2D, white_text);
-	}
-	// ************************************************
-
 	// Truely render to the screen
 	drawToScreen();
 
@@ -800,6 +663,7 @@ mat3 RenderSystem::createProjectionMatrix()
 	float ty = -(top + bottom) / (top - bottom);
 	return {{sx, 0.f, 0.f}, {0.f, sy, 0.f}, {tx, ty, 1.f}};
 }
+
 
 mat3 RenderSystem::createProjectionMatrixforText()
 {
