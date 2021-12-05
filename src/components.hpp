@@ -99,6 +99,7 @@ struct GameState
 	int level_phase = 0;
 
 	bool has_next = false;
+	bool win_condition = false;
 
 	bool cheat_finish = false;
 

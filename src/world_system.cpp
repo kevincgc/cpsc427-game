@@ -495,6 +495,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// check if player has won
 	if (tile == MapTile::EXIT || game_state.cheat_finish) {
 		game_state.cheat_finish = false;
+		game_state.win_condition = true;
 
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
@@ -841,7 +842,7 @@ void WorldSystem::restart_game() {
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 
-	if (prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
+	if (game_state.win_condition && prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
 		fprintf(stderr, "Progression: changing level\n");
 		game_state.level_id = level_config["progression"]["next_level"].as<std::string>();
 		level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
@@ -862,7 +863,7 @@ void WorldSystem::restart_game() {
 		} else {
 			game_state.level_phase = 0;
 		}
-	} else if (game_state.level_phase > 0) {
+	} else if (game_state.win_condition && game_state.level_phase > 0) {
 		// if phase progression enabled
 		game_state.level_phase++;
 	}
@@ -1052,6 +1053,7 @@ void WorldSystem::restart_game() {
 
 	pressed_keys.clear();
 	game_time_ms = 0.f;
+	game_state.win_condition = false;
 }
 
 // Compute collisions between entities
