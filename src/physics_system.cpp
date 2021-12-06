@@ -176,13 +176,13 @@ void drawDebuggingBoxes(entt::entity& entity) {
 	const vec2 bonding_box = get_bounding_box(motion);
 	// Bounding boxes for prey, minotaur, items, and chicks
 	// Top left to bottom left
-	createLine({ motion.position.x - (bonding_box.x / 2), motion.position.y }, { motion.scale.x / 20, bonding_box.x });
+	createLine({ motion.position.x - (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
 	// Top left to top right
-	createLine({ motion.position.x, motion.position.y - (bonding_box.x / 2) }, { bonding_box.x,  motion.scale.x / 20 });
+	createLine({ motion.position.x, motion.position.y - (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
 	// Bottom left to bottom right
-	createLine({ motion.position.x, motion.position.y + (bonding_box.x / 2) }, { bonding_box.x,  motion.scale.x / 20 });
+	createLine({ motion.position.x, motion.position.y + (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
 	// Top Right to bottom right
-	createLine({ motion.position.x + (bonding_box.x / 2), motion.position.y }, { motion.scale.x / 20, bonding_box.x });
+	createLine({ motion.position.x + (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
 }
 
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)

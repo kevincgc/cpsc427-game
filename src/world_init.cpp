@@ -334,7 +334,7 @@ entt::entity createEnemy(RenderSystem* renderer, vec2 pos)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 75.f;
+	motion.scale = mesh.original_size * 75.f * global_scaling_vector;
 	motion.scale.x *= -1;
 
 	const entt::entity e = registry.create();
@@ -363,7 +363,7 @@ entt::entity createLine(vec2 position, vec2 scale)
 	motion.angle = 0.f;
 	motion.velocity = { 0, 0 };
 	motion.position = position;
-	motion.scale = scale;
+	motion.scale = scale * global_scaling_vector;
 
 	registry.emplace<DebugComponent>(e);
 	return e;
