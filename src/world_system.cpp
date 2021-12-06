@@ -906,6 +906,8 @@ void WorldSystem::restart_game() {
 
 	// set number of keys needed
 	if (game_state.level_id == "tutorial") { required_num_of_keys = 1; }
+	else if (game_state.level_id == "testing1") { required_num_of_keys = 1; }
+	else if (game_state.level_id == "testing2") { required_num_of_keys = 1; }
 	else { 
 		if (game_state.level.phase == 1) { required_num_of_keys = 1; }
 		else if (game_state.level.phase == 2) { required_num_of_keys = 2; }
