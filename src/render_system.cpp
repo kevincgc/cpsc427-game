@@ -632,11 +632,11 @@ void RenderSystem::draw()
 		std::string speed_boost_ct = std::to_string(inventory[ItemType::SPEED_BOOST]);
 		std::string speed_boost_txt = "Speed Boost: " + speed_boost_ct;
 
-		std::string extra_life_ct = std::to_string(inventory[ItemType::EXTRA_LIFE]);
-		std::string extra_life_txt = "Extra Life: " + extra_life_ct;
+		std::string key_ct = std::to_string(inventory[ItemType::KEY]);
+		std::string key_text = "Key: " + key_ct;
 
 		renderedText_1 = "Inventory: " + wall_breaker_txt + ", " + teleporter_txt + ",";
-		renderedText_2 = speed_boost_txt + ", " + extra_life_txt;
+		renderedText_2 = speed_boost_txt + ", " + key_text;
 		text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
@@ -657,10 +657,10 @@ void RenderSystem::draw()
 			text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 			text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
-		case ItemType::EXTRA_LIFE:
-			renderedText_1 = "Extra life: The player gains one extra life.";
+		case ItemType::KEY:
+			renderedText_1 = "Key: The player needs to collect these in order to exit the maze.";
 			renderedText_2 = "";
-			text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		case ItemType::TELEPORT:
@@ -708,13 +708,13 @@ void RenderSystem::draw()
 		// light blue
 		text_colour = { 0.f, 1.f, 1.f };
 	}
-	else if (most_recent_used_item == ItemType::EXTRA_LIFE && text_timer_on) {
-		// used extra life
-		renderedText_1 = "You gained an extra life!";
-		renderedText_2 = "";
-		text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
-	}
+	//else if (most_recent_used_item == ItemType::KEY && text_timer_on) {
+	//	// used extra life
+	//	renderedText_1 = "You picked up a key!";
+	//	renderedText_2 = "";
+	//	text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+	//	text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	//}
 	else
 	{
 		renderedText_1 = "";
@@ -740,22 +740,22 @@ void RenderSystem::draw()
 	drawText(text_hotkey_1, text_hotkey1_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_2, text_hotkey2_pos, text_hotkey_scale, projection_2D, white_text);
 	drawText(text_hotkey_3, text_hotkey3_pos, text_hotkey_scale, projection_2D, white_text);
-	drawText(text_hotkey_4, text_hotkey4_pos, text_hotkey_scale, projection_2D, white_text);
+	//drawText(text_hotkey_4, text_hotkey4_pos, text_hotkey_scale, projection_2D, white_text);
 
 	// Draw text for item count
-	vec2 hammer_count_pos		 = { 1 / 2 * w + (3+2  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 teleport_count_pos		 = { 1 / 2 * w + (9.5+2   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 speedboost_count_pos    = { 1 / 2 * w + (16+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 heart_count_pos		 = { 1 / 2 * w + (23.1+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 item_count_scale		 = {              0.8  * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
+	vec2 hammer_count_pos		 = { 1 / 2 * w + (5    * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 teleport_count_pos		 = { 1 / 2 * w + (11.5 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 speedboost_count_pos    = { 1 / 2 * w + (18   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 heart_count_pos		 = { 1 / 2 * w + (24.1 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 item_count_scale		 = {              0.8    * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
 	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
 	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
 	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
-	std::string heart_count = "x" + std::to_string(inventory[ItemType::EXTRA_LIFE]);
+	std::string key_count		 = std::to_string(inventory[ItemType::KEY]) + " / " + std::to_string(required_num_of_keys);
 	drawText(hammer_count,     hammer_count_pos,     item_count_scale, projection_2D, white_text);
 	drawText(teleport_count,   teleport_count_pos,   item_count_scale, projection_2D, white_text);
 	drawText(speedboost_count, speedboost_count_pos, item_count_scale, projection_2D, white_text);
-	drawText(heart_count,	   heart_count_pos,		 item_count_scale, projection_2D, white_text);
+	drawText(key_count,	   heart_count_pos,		 item_count_scale, projection_2D, white_text);
 
 	// Draw text for speedboost remaining active time
 	if (speed_counter > 0) {

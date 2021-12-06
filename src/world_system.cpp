@@ -22,6 +22,7 @@
 #include <iterator>
 #include <string>
 #include <chrono>
+#include <math.h>
 #include <random>
 using Clock = std::chrono::high_resolution_clock;
 
@@ -41,18 +42,19 @@ bool  flag_fast    = false;
 bool  active_spell = false;
 float spell_timer  = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
+int required_num_of_keys;
 
 // Item-related
 std::map<ItemType, int> inventory = {
 	{ItemType::WALL_BREAKER, 0},
-	{ItemType::EXTRA_LIFE, 0},
+	{ItemType::KEY, 0},
 	{ItemType::TELEPORT, 0},
 	{ItemType::SPEED_BOOST, 0},
 };
 Item most_recent_collected_item;
 std::map<std::string, ItemType> item_to_enum = {
 	{"wall breaker", ItemType::WALL_BREAKER},
-	{"extra life", ItemType::EXTRA_LIFE},
+	{"key", ItemType::KEY},
 	{"teleporter", ItemType::TELEPORT},
 	{"speed boost", ItemType::SPEED_BOOST},
 };
@@ -80,6 +82,7 @@ bool cutscene_1_frame_2      = false;
 bool do_cutscene_1			 = true;
 bool in_a_cutscene			 = false;
 bool rtx_on					 = true;
+bool play_need_key_cutscene  = true;
 int  num_times_exit_reached  = 0;
 int  cutscene_selection      = 1; // 1 = game start (see menu.c for more info)
 int  cutscene_speaker        = SPEAKER_MINOTAUR;
@@ -90,7 +93,7 @@ entt::entity cutscene_drone_laughing_entity;
 entt::entity cutscene_minotaur_rtx_off_entity;
 entt::entity cutscene_drone_rtx_off_entity;
 // ********* For parallax feature *********
-entt::entity background_space1_entity;
+std::vector<entt::entity> background_entities;
 entt::entity background_space2_entity;
 entt::entity background_space3_entity;
 // ********* For HUD feature **************
@@ -101,11 +104,11 @@ entt::entity hud_bg_entity;
 entt::entity hud_hammer_entity;
 entt::entity hud_teleport_entity;
 entt::entity hud_speedboost_entity;
-entt::entity hud_heart_entity;
+entt::entity hud_key_entity;
 entt::entity hud_no_hammer_entity;
 entt::entity hud_no_teleport_entity;
 entt::entity hud_no_speedboost_entity;
-entt::entity hud_no_heart_entity;
+entt::entity hud_no_key_entity;
 // ********* For Tutorial feature **************
 std::vector<entt::entity> tutorial_enemy_entities;
 entt::entity daedalus_entity;
@@ -136,7 +139,7 @@ bool player_can_lose_health    = true;
 bool player_marked_for_death   = false;
 bool player_is_manually_moving = false;
 
-static std::map<int, bool> pressed_keys = std::map<int, bool>();
+std::map<int, bool> pressed_keys = std::map<int, bool>();
 
 // For gestures
 std::queue<std::string> gesture_queue;
@@ -626,6 +629,8 @@ void WorldSystem::save_game() {
 	save["world"]["game_time_ms"] = game_time_ms;
 	save["world"]["player_health"] = player_health;
 
+	save["world"]["required_num_of_keys"] = required_num_of_keys;
+
 	std::ofstream outfile(path);
 	YAML::Emitter out;
 	out << save;
@@ -692,6 +697,7 @@ void WorldSystem::load_game() {
 
 	inventory = save["world"]["inventory"].as<std::map<ItemType, int>>();
 	player_health = save["world"]["player_health"].as<int>();
+	required_num_of_keys = save["world"]["required_num_of_keys"].as<int>();
 
 	most_recent_collected_item.name = save["world"]["most_recent_collected_item"]["name"].as<std::string>();
 	most_recent_collected_item.duration_ms = save["world"]["most_recent_collected_item"]["duration_ms"].as<float>();
@@ -901,6 +907,11 @@ void WorldSystem::restart_game() {
 	}
 	most_recent_collected_item = Item();
 
+	// set number of keys needed
+	if (game_state.level.phase == 0) { required_num_of_keys = 1; }
+	else if (game_state.level.phase < 3) { required_num_of_keys = game_state.level.phase; }
+	else { required_num_of_keys = game_state.level.phase + 1; }
+
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
 	game_time_ms = 0.f;
@@ -932,17 +943,35 @@ void WorldSystem::start_game() {
 	hud_no_hammer_entity     = createHUD(renderer, 6);
 	hud_no_teleport_entity   = createHUD(renderer, 7);
 	hud_no_speedboost_entity = createHUD(renderer, 8);
-	hud_no_heart_entity		 = createHUD(renderer, 10);
+	hud_no_key_entity		 = createHUD(renderer, 10);
 	hud_hammer_entity	     = createHUD(renderer, 3);
 	hud_teleport_entity	     = createHUD(renderer, 4);
 	hud_speedboost_entity    = createHUD(renderer, 5);
-	hud_heart_entity	     = createHUD(renderer, 9);
+	hud_key_entity			 = createHUD(renderer, 9);
 	hud_bg_entity			 = createHUD(renderer, 2);
 
+	// Reset background
+	background_entities.clear();
 	// Create background entites
-	background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
-	background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
-	background_space1_entity = createBackground(renderer, { 900,800  }, 1);
+	vec2 pos;
+	for (int i = 0; i < 6; i++) {
+		switch (i) {
+		case 0: pos = { 500,500 }; break;
+		case 1: pos = { 500,1000 }; break;
+		case 2: pos = { 1500,500 }; break;
+		case 3: pos = { 1500,1000 }; break;
+		case 4: pos = { 3000,500 }; break;
+		case 5: pos = { 3000,1000 }; break;
+		}
+		entt::entity ent = createBackground(renderer, pos, 2);
+		background_entities.push_back(ent);
+	}
+	createBackground(renderer, { 1000,1000  }, 1);
+	createBackground(renderer, { 1000,3000  }, 1);
+	createBackground(renderer, { 3000,1000  }, 1);
+	createBackground(renderer, { 3000,3000  }, 1);
+	createBackground(renderer, { 5000,1000  }, 1);
+	createBackground(renderer, { 5000,3000  }, 1);
 
 
 	// ***********************************************************
@@ -966,6 +995,9 @@ void WorldSystem::start_game() {
 		// Clear enemy entites
 		tutorial_enemy_entities.clear();
 	}
+
+
+
 }
 
 // Compute collisions between entities
@@ -1049,13 +1081,13 @@ void WorldSystem::use_wall_breaker(){
 
 }
 
-void WorldSystem::add_extra_life(){
-	// TODO: pending addition of life system
-	entt::entity player = registry.view<Player>().begin()[0];
-	std::cout << "Used extra life item!" << std::endl;
-	most_recent_used_item = ItemType::EXTRA_LIFE;
-
-}
+//void WorldSystem::add_extra_life(){
+//	// TODO: pending addition of life system
+//	entt::entity player = registry.view<Player>().begin()[0];
+//	std::cout << "Used extra life item!" << std::endl;
+//	most_recent_used_item = ItemType::EXTRA_LIFE;
+//
+//}
 
 void WorldSystem::use_teleport(){
 	entt::entity player = registry.view<Player>().begin()[0];
@@ -1122,8 +1154,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player		   = registry.view<Player>().begin()[0];
 	Player& p_player		   = registry.get<Player>(player);
 	Motion& motion			   = registry.get<Motion>(player);
-	Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
-	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);
+	/*Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
+	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);*/
 	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
 		if (!registry.view<DeathTimer>().contains(player) && !in_a_cutscene) {
@@ -1137,8 +1169,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			// Movement
 			if (action != GLFW_REPEAT) {
 				// Parallax Settings
-				bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
-				bg_3_motion.velocity = { 0, 0 };
+				for (entt::entity bg_entity : background_entities) {
+					Motion& bg_motion = registry.get<Motion>(bg_entity);
+					bg_motion.velocity = { 0,0 };
+				}
+				//bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
+				//bg_3_motion.velocity = { 0, 0 };
 				float bg_2_vel = 20.f;
 				float bg_3_vel = 40.f;
 
@@ -1151,8 +1187,13 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.y		      = -1 * player_vel.y;
 					//hud_heart_1_motion.velocity.y = -1 * player_vel.y;
-					bg_2_motion.velocity.y	      = bg_2_vel;
-					bg_3_motion.velocity.y	      = bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = bg_2_vel; }
+						else						 { bg_motion.velocity.y = bg_3_vel; }
+					}
+					//bg_2_motion.velocity.y	      = bg_2_vel;
+					//bg_3_motion.velocity.y	      = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
@@ -1160,8 +1201,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.x		      = -1 * player_vel.x;
 					//hud_heart_1_motion.velocity.x = -1 * player_vel.x;
-					bg_2_motion.velocity.x        = bg_2_vel;
-					bg_3_motion.velocity.x        = bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = bg_2_vel; }
+						else						 { bg_motion.velocity.x = bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
@@ -1169,8 +1213,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.x		      = player_vel.x;
 					//hud_heart_1_motion.velocity.x = player_vel.x;
-					bg_2_motion.velocity.x        = -1 * bg_2_vel;
-					bg_3_motion.velocity.x        = -1 * bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = -1 * bg_2_vel; }
+						else { bg_motion.velocity.x = -1 * bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
@@ -1178,8 +1225,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.y		      = player_vel.y;
 					//hud_heart_1_motion.velocity.y = player_vel.y;
-					bg_2_motion.velocity.y        = -1 * bg_2_vel;
-					bg_3_motion.velocity.y        = -1 * bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = -1 * bg_2_vel; }
+						else { bg_motion.velocity.y = -1 * bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
@@ -1204,11 +1254,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				// postItemUse(player);
 			}
 
-			if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
-				add_extra_life();
-				inventory[ItemType::EXTRA_LIFE]--;
-				// postItemUse(player);
-			}
+			//if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
+			//	add_extra_life();
+			//	inventory[ItemType::EXTRA_LIFE]--;
+			//	// postItemUse(player);
+			//}
 
 			// cheats!
 			if (pressed_keys.find(GLFW_KEY_LEFT_CONTROL) != pressed_keys.end() && pressed_keys.find(GLFW_KEY_F) != pressed_keys.end()) {
@@ -1429,6 +1479,11 @@ void WorldSystem::do_cutscene() {
 		cutscene_1_frame_0 = false;
 		cutscene_1_frame_1 = true;
 
+		// To prevent jittering
+		entt::entity player = registry.view<Player>().begin()[0];
+		Motion& motion = registry.get<Motion>(player);
+		pressed_keys.clear();
+		motion.velocity = { 0,0 };
 	}
 
 	// Gate 2
@@ -1513,11 +1568,11 @@ void WorldSystem::do_HUD() {
 	Motion& hud_hammer_motion		  = registry.get<Motion>(hud_hammer_entity);
 	Motion& hud_teleport_motion		  = registry.get<Motion>(hud_teleport_entity);
 	Motion& hud_speedboost_motion	  = registry.get<Motion>(hud_speedboost_entity);
-	Motion& hud_heart_motion		  = registry.get<Motion>(hud_heart_entity);
+	Motion& hud_key_motion		      = registry.get<Motion>(hud_key_entity);
 	Motion& hud_no_hammer_motion	  = registry.get<Motion>(hud_no_hammer_entity);
 	Motion& hud_no_teleport_motion	  = registry.get<Motion>(hud_no_teleport_entity);
 	Motion& hud_no_speedboost_motion  = registry.get<Motion>(hud_no_speedboost_entity);
-	Motion& hud_no_heart_motion		  = registry.get<Motion>(hud_no_heart_entity);
+	Motion& hud_no_key_motion		  = registry.get<Motion>(hud_no_key_entity);
 
 	// **** Hearts ****
 	// Update how many hearts there should be
@@ -1541,9 +1596,9 @@ void WorldSystem::do_HUD() {
 		hud_heart_3_motion.scale = { 0,0 };
 	}
 	// Update heart positions on screen
-	vec2 heart_1_adj = { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
-	vec2 heart_2_adj = { -window_width_px / 3								 , -window_height_px / 2.2 * global_scaling_vector.y };
-	vec2 heart_3_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.2 * global_scaling_vector.y };
+	vec2 heart_1_adj = { -window_width_px / 3 - 100 * global_scaling_vector.x, -window_height_px / 2.2  };
+	vec2 heart_2_adj = { -window_width_px / 3								 , -window_height_px / 2.2  };
+	vec2 heart_3_adj = { -window_width_px / 3 + 100 * global_scaling_vector.x, -window_height_px / 2.2  };
 	hud_heart_1_motion.position =   { hud_player_motion.position.x + heart_1_adj.x, hud_player_motion.position.y + heart_1_adj.y };
 	hud_heart_2_motion.position =   { hud_player_motion.position.x + heart_2_adj.x, hud_player_motion.position.y + heart_2_adj.y };
 	hud_heart_3_motion.position =   { hud_player_motion.position.x + heart_3_adj.x, hud_player_motion.position.y + heart_3_adj.y };
@@ -1554,14 +1609,14 @@ void WorldSystem::do_HUD() {
 
 	// **** Items ****
 	// Update what items should be displayed and their positions
-	vec2 hammer_adj			= { -window_width_px / 3 - 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 teleport_adj		= { -window_width_px / 3 - 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 speedboost_adj		= { -window_width_px / 3 + 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 hud_heart_adj		= { -window_width_px / 3 + 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 hammer_adj			= { -window_width_px / 3 - 150 * global_scaling_vector.x, -window_height_px / 2.9 };
+	vec2 teleport_adj		= { -window_width_px / 3 - 50  * global_scaling_vector.x, -window_height_px / 2.9 };
+	vec2 speedboost_adj		= { -window_width_px / 3 + 50  * global_scaling_vector.x, -window_height_px / 2.9 };
+	vec2 hud_key_adj		= { -window_width_px / 3 + 150 * global_scaling_vector.x, -window_height_px / 2.9 };
 	vec2 hud_hammer_pos		= { hud_player_motion.position.x + hammer_adj.x         , hud_player_motion.position.y + hammer_adj.y       };
 	vec2 hud_teleport_pos	= { hud_player_motion.position.x + teleport_adj.x       , hud_player_motion.position.y + teleport_adj.y     };
 	vec2 hud_speedboost_pos = { hud_player_motion.position.x + speedboost_adj.x     , hud_player_motion.position.y + speedboost_adj.y   };
-	vec2 hud_heart_pos      = { hud_player_motion.position.x + hud_heart_adj.x      , hud_player_motion.position.y + hud_heart_adj.y    };
+	vec2 hud_key_pos        = { hud_player_motion.position.x + hud_key_adj.x      , hud_player_motion.position.y + hud_key_adj.y    };
 
 	// Hammer
 	if (inventory[ItemType::WALL_BREAKER] == 0) {
@@ -1599,16 +1654,16 @@ void WorldSystem::do_HUD() {
 		hud_no_speedboost_motion.scale    = { 0,0 };
 	}
 
-	// Heart
-	if (inventory[ItemType::EXTRA_LIFE] == 0) {
-		hud_heart_motion.scale			  = { 0,0 };
-		hud_no_heart_motion.scale		  = item_scale;
-		hud_no_heart_motion.position	  = hud_heart_pos;
+	// Key
+	if (inventory[ItemType::KEY] == 0) {
+		hud_key_motion.scale			  = { 0,0 };
+		hud_no_key_motion.scale		  = item_scale;
+		hud_no_key_motion.position	  = hud_key_pos;
 	}
-	else if (inventory[ItemType::EXTRA_LIFE] > 0) {
-		hud_heart_motion.scale			  = item_scale;
-		hud_heart_motion.position		  = hud_heart_pos;
-		hud_no_heart_motion.scale		  = { 0,0 };
+	else if (inventory[ItemType::KEY] > 0) {
+		hud_key_motion.scale			  = item_scale;
+		hud_key_motion.position		  = hud_key_pos;
+		hud_no_key_motion.scale		  = { 0,0 };
 	}
 
 	// Rest of the text handling is done in render_system.cpp's draw() function
@@ -1668,7 +1723,9 @@ void WorldSystem::do_timers(float elapsed_ms_since_last_update) {
 void WorldSystem::do_exit() {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-	if (tile == MapTile::EXIT || game_state.cheat_finish) {
+
+	// If player has the key and reaches the exit tile || cheat used...
+	if ((tile == MapTile::EXIT && inventory[ItemType::KEY] >= required_num_of_keys) || game_state.cheat_finish) {
 		game_state.cheat_finish = false;
 		game_state.win_condition = true;
 
@@ -1737,6 +1794,18 @@ void WorldSystem::do_exit() {
 			outfile.close();
 		}
 	}
+
+	else if (tile == MapTile::EXIT && inventory[ItemType::KEY] < required_num_of_keys && play_need_key_cutscene){
+		play_need_key_cutscene = false;
+		// Play a cutscene explaining that they need to get the key
+		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+		cutscene_selection = 300;
+		cutscene_1_frame_0 = true;
+	}
+	// Once player steps out of exit tile, reset the trigger
+	// So that when they reach the exit tile without a key again,
+	// The cutscene will play
+	if (tile == MapTile::FREE_SPACE) { play_need_key_cutscene = true; }
 }
 
 // Handle Death and Endgame
@@ -1747,6 +1816,10 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
 		death_counter.counter_ms -= elapsed_ms_since_last_update;
 
+		// Keep enemies still
+		player_is_manually_moving = false;
+		do_pathfinding_movement = false;
+
 		if (death_counter.counter_ms < min_counter_ms) { min_counter_ms = death_counter.counter_ms; }
 
 		// If death timer expires...
@@ -1754,6 +1827,10 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 			// End invulnerability and remove player from DeathTimer component
 			registry.remove<DeathTimer>(entity);
 			player_can_lose_health = true;
+			// Stop player movement
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& player_motion = registry.get<Motion>(player);
+			player_motion.velocity = { 0,0 };
 
 			// Restart the game if the player is marked for death
 			if (player_marked_for_death) {
@@ -1822,20 +1899,23 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 
 		// Spawn Items and Prisoners
 		vec2 hammer_position = map_coords_to_position({ 1,5 });
-		vec2 speed_position = map_coords_to_position({ 7,3 });
-		vec2 tele_position = map_coords_to_position({ 28,2 });
-		vec2 chick_position = map_coords_to_position({ 1,1 });
-		vec2 drone_position = map_coords_to_position({ 4,1 });
-		vec2 spike_position = map_coords_to_position({ 4,5 });
+		vec2 speed_position  = map_coords_to_position({ 7,3 });
+		vec2 tele_position   = map_coords_to_position({ 28,2 });
+		vec2 key_position	 = map_coords_to_position({ 30,2 });
+		vec2 chick_position  = map_coords_to_position({ 1,1 });
+		vec2 drone_position  = map_coords_to_position({ 4,1 });
+		vec2 spike_position  = map_coords_to_position({ 4,5 });
 		hammer_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		speed_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		tele_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		spike_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		drone_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		chick_position += vec2(map_scale.x / 2, map_scale.y / 2);
-		createItem(renderer, hammer_position, "wall breaker");
-		createItem(renderer, speed_position, "speed boost");
-		createItem(renderer, tele_position, "teleporter");
+		speed_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		tele_position   += vec2(map_scale.x / 2, map_scale.y / 2);
+		key_position    += vec2(map_scale.x / 2, map_scale.y / 2);
+		spike_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		drone_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		chick_position  += vec2(map_scale.x / 2, map_scale.y / 2);
+		createItem( renderer, hammer_position, "wall breaker");
+		createItem( renderer, speed_position,  "speed boost");
+		createItem( renderer, tele_position,   "teleporter");
+		createItem( renderer, key_position,    "key");
 		createSpike(renderer, spike_position);
 		createDrone(renderer, drone_position);
 		createChick(renderer, chick_position);
@@ -1865,19 +1945,19 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 	}
 
 	// Cutscene: Note Floor
-	vec2 floor_trigger_pos = { 19,3 };
-	if (map_pos == floor_trigger_pos) {
-		if (!tutorial_flags["noted_floor"]) {
-			tutorial_flags["noted_floor"] = true;
-			player_is_manually_moving = false;
-			do_pathfinding_movement = false;
-			motion.velocity = { 0,0 };
-			cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
-			cutscene_selection = 210;
-			cutscene_1_frame_0 = true;
-			pressed_keys.clear();
-		}
-	}
+	//vec2 floor_trigger_pos = { 19,3 };
+	//if (map_pos == floor_trigger_pos) {
+	//	if (!tutorial_flags["noted_floor"]) {
+	//		tutorial_flags["noted_floor"] = true;
+	//		player_is_manually_moving = false;
+	//		do_pathfinding_movement = false;
+	//		motion.velocity = { 0,0 };
+	//		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+	//		cutscene_selection = 210;
+	//		cutscene_1_frame_0 = true;
+	//		pressed_keys.clear();
+	//	}
+	//}
 
 	// Cutscene: Interrupt
 	vec2 interrupt_trigger_pos = { 24, 3 };
@@ -1992,7 +2072,7 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 		pressed_keys.clear();
 	}
 
-	// Note teleporter
+	// Note teleporter and key
 	vec2 teleporter_trigger_pos = { 28,3 };
 	if (map_pos == teleporter_trigger_pos) {
 		if (!tutorial_flags["noted_teleporter"]) {

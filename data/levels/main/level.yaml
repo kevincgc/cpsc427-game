@@ -7,7 +7,7 @@ procedural_options:
 progression:
     phase_multiply:
         procedural_size: 1.2
-        enemies: 2
+        enemies: 1.5
         prey: 2
         items: 2
 
@@ -15,9 +15,9 @@ enemies:
     spikes: 1
     drones: 2
 prey:
-    chick: 3
+    chick: 2
 items:
-    wall breaker: [1,2]
-    extra life: 0
-    teleporter: [1,2]
-    speed boost: [1,2]
+    wall breaker: 1
+    key: 1
+    teleporter: 1
+    speed boost: 1

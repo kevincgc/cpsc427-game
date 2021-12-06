@@ -220,14 +220,19 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				// setMotionPosition still returns false but player is still able to move up
 				if (setMotionPosition(motion, nextpos, true)) {
 
-					// Move only background 2 and 3 for parallax effect
-					Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
-					vec2 bg_1_nextpos = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
-					setMotionPosition(bg_motion_1, bg_1_nextpos);
+					// Move only star background for parallax effect
+					for (entt::entity entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(entity);
+						vec2 bg_next_pos = bg_motion.position + bg_motion.velocity * step_seconds;
+						setMotionPosition(bg_motion, bg_next_pos);
+					}
+					//Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
+					//vec2 bg_1_nextpos = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
+					//setMotionPosition(bg_motion_1, bg_1_nextpos);
 
-					Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
-					vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
-					setMotionPosition(bg_motion_2, bg_2_nextpos);
+					//Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
+					//vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
+					//setMotionPosition(bg_motion_2, bg_2_nextpos);
 
 					// Move all elements of the HUD
 					for (entt::entity entity : registry.view<HUD>()) {

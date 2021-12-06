@@ -83,8 +83,8 @@ void AISystem::step()
 			// If enemy...
 			if (registry.view<Enemy>().contains(entity)) {
 
-				// Is close enough for chasing
-				if (within_threshold(player, entity, DIST_THRESHOLD)) {
+				// Is close enough for chasing && player isn't dead
+				if (within_threshold(player, entity, DIST_THRESHOLD) && !registry.view<DeathTimer>().contains(player)) {
 					vec2 direction_vector = motion.position - entity_motion.position;
 					entity_motion.velocity = direction_vector;
 				}
@@ -146,29 +146,39 @@ void AISystem::step()
 								std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
 
 								// Randomly select a node to travel down
-								vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
-								if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
-
-								// Travel in that direction
-								// Travel right
-								if (random_node.x > curr_pos_map.x) {
-									entity_motion.velocity.x = enemy_vel.x;
-									entity_motion.velocity.y = 0;
-								}
-								// Travel left
-								else if (random_node.x < curr_pos_map.x) {
+								// Special case: If enemy is in exit tile, adjacent_nodes will be empty
+								// To prevent error, have a special case that says:
+								// If adjacent_nodes is empty, just move left
+								if (adjacent_nodes.size() == 0) {
+									// Travel left
 									entity_motion.velocity.x = -1 * enemy_vel.x;
 									entity_motion.velocity.y = 0;
 								}
-								// Travel down
-								if (random_node.y > curr_pos_map.y) {
-									entity_motion.velocity.y = enemy_vel.y;
-									entity_motion.velocity.x = 0;
-								}
-								// Travel up
-								else if (random_node.y < curr_pos_map.y) {
-									entity_motion.velocity.y = -1 * enemy_vel.y;
-									entity_motion.velocity.x = 0;
+								else {
+									vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
+									if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
+
+									// Travel in that direction
+									// Travel right
+									if (random_node.x > curr_pos_map.x) {
+										entity_motion.velocity.x = enemy_vel.x;
+										entity_motion.velocity.y = 0;
+									}
+									// Travel left
+									else if (random_node.x < curr_pos_map.x) {
+										entity_motion.velocity.x = -1 * enemy_vel.x;
+										entity_motion.velocity.y = 0;
+									}
+									// Travel down
+									if (random_node.y > curr_pos_map.y) {
+										entity_motion.velocity.y = enemy_vel.y;
+										entity_motion.velocity.x = 0;
+									}
+									// Travel up
+									else if (random_node.y < curr_pos_map.y) {
+										entity_motion.velocity.y = -1 * enemy_vel.y;
+										entity_motion.velocity.x = 0;
+									}
 								}
 							}
 						}
@@ -427,25 +437,40 @@ std::vector<vec2> AISystem::get_adj_nodes(vec2 root_node) {
 		// For now, assuming map_tile == 0 is the only traversable tile
 		// If adjacent node is within bounds and map_tile == 0, add to adjacency list.
 		// Check right
-		if (root_node.x + 1 <= max_size) {
+		if (WorldSystem::is_within_bounds({ root_node.x + 1,root_node.y })) {
 			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles.at(root_node.y).at(root_node.x + 1))) {
 				adj_nodes.push_back({ root_node.x + 1, root_node.y });
 			}
 		}
 		// Check down
-		if (root_node.y + 1 <= max_size) {
+		/*if (root_node.y + 1 <= max_size) {
+			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y + 1][root_node.x])) {
+				adj_nodes.push_back({ root_node.x,root_node.y + 1 });
+			}
+		}*/
+		if (WorldSystem::is_within_bounds({ root_node.x,root_node.y + 1})) {
 			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y + 1][root_node.x])) {
 				adj_nodes.push_back({ root_node.x,root_node.y + 1 });
 			}
 		}
 		// Check left
-		if (root_node.x - 1 >= 0) {
+		//if (root_node.x - 1 >= 0) {
+		//	if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x - 1])) {
+		//		adj_nodes.push_back({ root_node.x - 1, root_node.y });
+		//	}
+		//}
+		if (WorldSystem::is_within_bounds({ root_node.x - 1,root_node.y })) {
 			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y][root_node.x - 1])) {
 				adj_nodes.push_back({ root_node.x - 1, root_node.y });
 			}
 		}
 		// Check up
-		if (root_node.y - 1 >= 0) {
+		//if (root_node.y - 1 >= 0) {
+		//	if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y - 1][root_node.x])) {
+		//		adj_nodes.push_back({ root_node.x, root_node.y - 1 });
+		//	}
+		//}
+		if (WorldSystem::is_within_bounds({ root_node.x,root_node.y - 1 })) {
 			if (WorldSystem::tile_is_walkable(game_state.level.map_tiles[root_node.y - 1][root_node.x])) {
 				adj_nodes.push_back({ root_node.x, root_node.y - 1 });
 			}

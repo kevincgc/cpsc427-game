@@ -153,15 +153,15 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 	switch (element) {
 		case 1:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE1;
-			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
+			motion.scale = mesh.original_size * 6000.f * global_scaling_vector;
 			break;
 		case 2:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
-			motion.scale = mesh.original_size * 2500.f * global_scaling_vector;
+			motion.scale = mesh.original_size * 4000.f * global_scaling_vector;
 			break;
 		case 3:
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
-			motion.scale = mesh.original_size * 3000.f * global_scaling_vector;
+			motion.scale = mesh.original_size * 4500.f * global_scaling_vector;
 			break;
 		case 10:
 			texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
@@ -235,13 +235,13 @@ entt::entity createHUD(RenderSystem* renderer, int element) {
 		texture_asset_id = TEXTURE_ASSET_ID::NO_SPEEDBOOST;
 		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
 		break;
-	case 9: // Heart
-		texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
-		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+	case 9: // Key
+		texture_asset_id = TEXTURE_ASSET_ID::KEY;
+		motion.scale = mesh.original_size * 120.f * global_scaling_vector;
 		break;
-	case 10: // No Heart
-		texture_asset_id = TEXTURE_ASSET_ID::NO_HEART;
-		motion.scale = mesh.original_size * 50.f * global_scaling_vector;
+	case 10: // No Key
+		texture_asset_id = TEXTURE_ASSET_ID::NO_KEY;
+		motion.scale = mesh.original_size * 120.f * global_scaling_vector;
 		break;
 	default:
 		break;
@@ -269,6 +269,7 @@ entt::entity createMinotaur(RenderSystem* renderer, vec2 pos)
 	motion.velocity = { 0.f, 0.f };
 	motion.scale = mesh.original_size * 60.f * global_scaling_vector;
 	motion.scale.x *= 1.5f;
+	motion.mass = 120.f;
 	const entt::entity e = registry.create();
 	registry.emplace<Player>(e);
 	registry.emplace<Motion>(e, motion);
@@ -288,7 +289,6 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 	motion.position = pos;
 	motion.angle = 0.f;
 	motion.velocity = { 0.f, 0.f };
-	motion.scale = mesh.original_size * 40.f * global_scaling_vector;
 
 	Item item = Item();
 	item.name = item_type;
@@ -298,16 +298,20 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 		case ItemType::WALL_BREAKER:
 			texture_type = TEXTURE_ASSET_ID::WALL_BREAKER;
 			item.duration_ms = 20000;
+			motion.scale = mesh.original_size * 40.f * global_scaling_vector;
 			break;
-		case ItemType::EXTRA_LIFE:
-			texture_type = TEXTURE_ASSET_ID::EXTRA_LIFE;
+		case ItemType::KEY: //Key
+			texture_type = TEXTURE_ASSET_ID::KEY;
+			motion.scale = mesh.original_size * 80.f * global_scaling_vector;
 			break;
 		case ItemType::TELEPORT:
 			texture_type = TEXTURE_ASSET_ID::TELEPORT;
+			motion.scale = mesh.original_size * 40.f * global_scaling_vector;
 			break;
 		case ItemType::SPEED_BOOST:
 			texture_type = TEXTURE_ASSET_ID::SPEED_BOOST;
 			item.duration_ms = 10000;
+			motion.scale = mesh.original_size * 40.f * global_scaling_vector;
 			break;
 		default:
 			// unsupported item
