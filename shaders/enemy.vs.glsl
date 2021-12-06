@@ -37,16 +37,26 @@ vec3 explode(vec3 position, vec3 normal)
 } 
 
 
+float BarrelPower = 0.5;
+
+// Given a vec2 in [-1,+1], generate a texture coord in [0,+1]
+vec2 Distort(vec2 p)
+{
+    float theta  = atan(p.y, p.x);
+    float radius = length(p);
+    radius = pow(radius, BarrelPower);
+    p.x = radius * cos(theta);
+    p.y = radius * sin(theta);
+    return 0.5 * (p + 1.0);
+}
+
 void main()
 {
 	vec2 distorted = in_position.xy;
 	if (dead) {
 		if (randomInt == 0) {
-		
 			// clapse
-		// distorted +=   getDirection(distorted) * time;
-			distorted.x += sin(distorted.x + distorted.y + time) * 0.5; 
-			distorted.y += ( -0.5- distorted.y ) * 0.08*time;
+			distorted = mix(distorted, (Distort(in_position.xy * sin(time / 100)) - 0.5) * 6, (sin(time)+1)/2);
 		}
 		
 		else if (randomInt == 1) {
