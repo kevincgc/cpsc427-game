@@ -751,7 +751,7 @@ void RenderSystem::draw()
 	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
 	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
 	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
-	std::string heart_count		 = "x" + std::to_string(inventory[ItemType::EXTRA_LIFE]) + " / " + std::to_string(required_num_of_keys);
+	std::string heart_count		 = std::to_string(inventory[ItemType::EXTRA_LIFE]) + " / " + std::to_string(required_num_of_keys);
 	drawText(hammer_count,     hammer_count_pos,     item_count_scale, projection_2D, white_text);
 	drawText(teleport_count,   teleport_count_pos,   item_count_scale, projection_2D, white_text);
 	drawText(speedboost_count, speedboost_count_pos, item_count_scale, projection_2D, white_text);
