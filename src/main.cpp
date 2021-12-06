@@ -31,7 +31,6 @@ extern "C" {
 	void drawPauseMenu( GLFWwindow* win, int* out);
 	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time, const char *level_info, int progression);
 
-	void drawCutscene_respawn(GLFWwindow* win, int* out);
 	void drawCutscene(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
@@ -132,11 +131,13 @@ int main()
 
 		case ProgramState::RUNNING:
 		{
+
 			world.step(elapsed_ms);
 			ai.step();
 			physics.step(elapsed_ms, window_width_px, window_height_px);
 			world.handle_collisions();
 			renderer.draw();
+
 			break;
 		}
 		case ProgramState::PAUSED:

@@ -29,6 +29,8 @@ class RenderSystem {
 	const std::vector < std::pair<GEOMETRY_BUFFER_ID, std::string>> mesh_paths =
 	{
 		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::MINOTAUR, mesh_path("minotaur.obj")),
+		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::ENEMY, mesh_path("enemy.obj")),
+		std::pair<GEOMETRY_BUFFER_ID, std::string>(GEOMETRY_BUFFER_ID::DRONE, mesh_path("drone.obj")),
 		  // specify meshes of other assets here
 	};
 
@@ -39,7 +41,7 @@ class RenderSystem {
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
-    textures_path("prey.png"),
+		textures_path("prey.png"),
 		textures_path("hammer.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("heart.png"),
 		textures_path("teleport.png"),  // <div>Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon">berkahicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
@@ -49,21 +51,42 @@ class RenderSystem {
 		textures_path("cutscene_drone_sad.png"),
 		textures_path("cutscene_drone_laughing.png"),
 		textures_path("cutscene_minotaur_rtx_off.png"),
-		textures_path("cutscene_drone_rtx_off.png")
+		textures_path("cutscene_drone_rtx_off.png"),
+		textures_path("background_space1.png"), // https://wallpaperaccess.com/4k-space#google_vignette
+		textures_path("background_space2.png"), // https://pngtree.com/free-png-vectors/white-stars
+		textures_path("heart.png"), //
+		textures_path("hud_background.png"),
+		textures_path("no_hammer.png"),
+		textures_path("no_teleport.png"),
+		textures_path("no_speedboost.png"),
+		textures_path("no_heart.png")
 	};
 
 
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
+// enum class EFFECT_ASSET_ID {
+// 	COLOURED = 0,
+// 	PEBBLE = COLOURED + 1,
+// 	// SALMON = PEBBLE + 1, // remove salmon
+// 	TEXTURED = PEBBLE + 1,
+// 	WATER = TEXTURED + 1,
+// 	MINOTAUR = WATER + 1,
+// 	TEXT = MINOTAUR + 1,
+// 	ENEMY = TEXT + 1,
+// 	ITEM = ENEMY + 1,
+// 	TRAP = ITEM + 1,
+// 	EFFECT_COUNT = ENEMY + 1
+// };
 	const std::array<std::string, effect_count> effect_paths = { // correspond to EFFECT_ASSET_ID
 		shader_path("coloured"),
 		shader_path("pebble"),
-		// shader_path("salmon"),
 		shader_path("textured"),
 		shader_path("water"),
 		shader_path("minotaur"),
 		shader_path("text"),
+		shader_path("enemy"),
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
