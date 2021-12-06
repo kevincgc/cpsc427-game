@@ -149,8 +149,45 @@ void preventCollisionOverlap(entt::entity entity, entt::entity other) {
 	}
 }
 
+void drawDebuggingMeshes(entt::entity& entity) {
+	Motion& motion = registry.get<Motion>(entity);
+	Mesh* meshPtrs = registry.get<Mesh*>(entity);
+	std::vector<uint16_t> vertex_indices = meshPtrs->vertex_indices;
+	std::vector<ColoredVertex> vertices = meshPtrs->vertices;
+	mat3 S = { { motion.scale.x, 0.f, 0.f },{ 0.f, motion.scale.y, 0.f },{ 0.f, 0.f, 1.f } };
+	float c = cosf(motion.angle);
+	float s = sinf(motion.angle);
+	mat3 R = { { c, -s, 0.f }, { s, c, 0.f }, { 0.f, 0.f, 1.f } };
+	mat3 T = { { 1.f, 0.f, motion.position.x }, { 0.f, 1.f, motion.position.y }, { 0.f, 0.f, 1.f } };
+	mat3 proj = { { 1.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, { 0.f, 0.f, 1.f } };
+	for (auto& vertex : vertices) {
+		vec3 object_coord = { vertex.position.x, vertex.position.y, 1.f };
+		vec3 scaled = object_coord * S;
+		vec3 rotated = scaled * R;
+		vec3 translated = rotated * T;
+		vec3 projected = translated * proj;
+		vec2 vertexCoord = { projected.x, projected.y };
+		createLine(vertexCoord, { 5.f, 5.f });
+	}
+}
+
+void drawDebuggingBoxes(entt::entity& entity) {
+	Motion& motion = registry.get<Motion>(entity);
+	const vec2 bonding_box = get_bounding_box(motion);
+	// Bounding boxes for prey, minotaur, items, and chicks
+	// Top left to bottom left
+	createLine({ motion.position.x - (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
+	// Top left to top right
+	createLine({ motion.position.x, motion.position.y - (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
+	// Bottom left to bottom right
+	createLine({ motion.position.x, motion.position.y + (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
+	// Top Right to bottom right
+	createLine({ motion.position.x + (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
+}
+
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
+
 	// Move entities based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 
@@ -282,5 +319,26 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				}
 			}
 		}
+	}
+
+	// debugging of bounding boxes
+	if (debugging.in_debug_mode)
+	{
+		// Dots for every vertex of enemy meshes
+		for (auto enemy_entity : registry.view<Enemy>()) {
+			drawDebuggingMeshes(enemy_entity);
+		}
+
+		// Draw bounding boxes for all moving entities (not including HUD, cutscenes, etc)
+		for (auto prey : registry.view<Prey>()) {
+			drawDebuggingBoxes(prey);
+		}
+		for (auto player : registry.view<Player>()) {
+			drawDebuggingBoxes(player);
+		}
+		for (auto item : registry.view<Item>()) {
+			drawDebuggingBoxes(item);
+		}
+
 	}
 }

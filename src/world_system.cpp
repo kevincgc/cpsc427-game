@@ -23,6 +23,7 @@
 #include <string>
 #include <chrono>
 #include <math.h>
+#include <random>
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
@@ -370,6 +371,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	title_ss << "Elapsed time: " << formatTime(game_time_ms);
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
+	// Remove debug info from the last step
+	for (auto debug_ent : registry.view<DebugComponent>()) {
+		registry.destroy(debug_ent);
+	}
+
 	// setting coordinates of camera
 	camera.x = registry.get<Motion>(player_minotaur).position.x - screen_width / 2;
 	camera.y = registry.get<Motion>(player_minotaur).position.y - screen_height / 2;
@@ -389,6 +395,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 	}
+
 	// Change player speed
 	if (registry.view<SpeedBoostTimer>().contains(player_minotaur)) { player_vel = default_player_vel * 2.f; }
 	// Temporary implementation: Handle speed-up spell: Player moves faster
@@ -1107,8 +1114,11 @@ void WorldSystem::use_teleport(){
 			}
 		}
 
-		int pos_ind = std::rand() % teleportable_tiles.size();
-		position = map_coords_to_position(teleportable_tiles[pos_ind]);
+		std::random_device rd; // obtain a random number from hardware
+		std::mt19937 gen(rd()); // seed the generator
+		std::uniform_int_distribution<unsigned long int> distr(1, teleportable_tiles.size() - 1); // define the range
+
+		position = map_coords_to_position(teleportable_tiles[distr(gen)]);
 		position += vec2(map_scale.x / 2, map_scale.y / 2);
 	}
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
@@ -1285,6 +1295,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					tips.basic_help = !tips.basic_help;
 					tips.show_inventory = 0;
 				}
+			}
+
+			// Toggle Debugging mode
+			if (key == GLFW_KEY_B && action == GLFW_PRESS) {
+				debugging.in_debug_mode = !debugging.in_debug_mode;
 			}
 
 			// Toggle cutscene rtx
