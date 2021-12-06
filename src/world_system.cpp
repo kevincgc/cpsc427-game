@@ -635,9 +635,12 @@ void WorldSystem::load_game() {
 	}
 	file.close();
 
+	// Delete old map, if one exists
+	game_state.level.map_tiles.clear();
+
 	// Remove all entities that we created
-	// All that have a motion, we could also iterate over all spikes, drones, ... but that would be more cumbersome
 	registry.clear();
+	chick_ai.clear();
 
 	YAML::Node save = YAML::LoadFile(path);
 
@@ -674,15 +677,6 @@ void WorldSystem::load_game() {
 			}
 		}
 	}
-
-
-	// TODO save/restore other entities
-	// for (entt::entity entity : registry.view<Motion>()) {
-	// 	if (entity == player_minotaur) continue;
-
-	// 	Motion& motion = registry.get<Motion>(entity);
-	// 	save["world"]["entities"];
-	// }
 
 	death_count = save["world"]["death_count"].as<int>();
 	num_times_exit_reached = save["world"]["num_times_exit_reached"].as<int>();
