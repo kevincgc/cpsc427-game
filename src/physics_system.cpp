@@ -324,6 +324,7 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			drawDebuggingMeshes(enemy_entity);
 		}
 
+		// Draw bounding boxes for all moving entities (not including HUD, cutscenes, etc)
 		for (auto prey : registry.view<Prey>()) {
 			drawDebuggingBoxes(prey);
 		}

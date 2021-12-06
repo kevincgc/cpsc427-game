@@ -1010,12 +1010,9 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				}
 			}
 
-			// Debugging mode
-			if (key == GLFW_KEY_B) {
-				if (action == GLFW_RELEASE)
-					debugging.in_debug_mode = false;
-				else
-					debugging.in_debug_mode = true;
+			// Toggle Debugging mode
+			if (key == GLFW_KEY_B && action == GLFW_PRESS) {
+				debugging.in_debug_mode = !debugging.in_debug_mode;
 			}
 
 			// Toggle cutscene rtx
