@@ -554,14 +554,14 @@ void drawCutscene(GLFWwindow* win, int* out)
 		// Note teleporter arrival: Speaker: Minotaur
 		else if (*out == 230) {
 			min_cutscene_selection = 230, max_cutscene_selection = 230;
-			nk_label(ctx, "That was lucky.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "That was lucky. Good think there's a key here.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Certain mazes will need a certain number of kesy to escape.", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "Now, time to get out of this labyrinth.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		// Note teleporter arrival: Speaker: Minotaur
 		else if (*out == 300) {
 		min_cutscene_selection = 300, max_cutscene_selection = 300;
-		nk_label(ctx, "I still need to find the key before I can leave.", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "I still need to find all the keys before I can leave.", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}

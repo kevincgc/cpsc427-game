@@ -112,6 +112,7 @@ extern int speed_counter;
 extern int wallbreaker_counter;
 extern vec2 position_to_map_coords;
 extern bool is_within_bounds;
+extern int required_num_of_keys;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;

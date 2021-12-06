@@ -22,6 +22,7 @@
 #include <iterator>
 #include <string>
 #include <chrono>
+#include <math.h>
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
@@ -40,6 +41,7 @@ bool  flag_fast    = false;
 bool  active_spell = false;
 float spell_timer  = 6000.f;
 std::vector<vec2> spawnable_tiles; // moved out for respawn functionality
+int required_num_of_keys;
 
 // Item-related
 std::map<ItemType, int> inventory = {
@@ -895,6 +897,18 @@ void WorldSystem::restart_game() {
 	}
 	most_recent_collected_item = Item();
 
+	// set number of keys needed
+	if (game_state.level_id == "tutorial") { required_num_of_keys = 1; }
+	else { 
+		if (game_state.level.phase == 1) { required_num_of_keys = 1; }
+		else if (game_state.level.phase == 2) { required_num_of_keys = 2; }
+		else if (game_state.level.phase == 3) { required_num_of_keys = 4; }
+		else if (game_state.level.phase == 4) { required_num_of_keys = 5; }
+		else if (game_state.level.phase == 5) { required_num_of_keys = 6; }
+		else if (game_state.level.phase > 5 ) { required_num_of_keys = game_state.level.phase + 1 ; }
+		
+	}
+
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
 	game_time_ms = 0.f;
@@ -1700,7 +1714,7 @@ void WorldSystem::do_exit() {
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 
 	// If player has the key ("extra_life") and reaches the exit tile || cheat used...
-	if ((tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] > 0) || game_state.cheat_finish) {
+	if ((tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] >= required_num_of_keys) || game_state.cheat_finish) {
 		game_state.cheat_finish = false;
 		game_state.win_condition = true;
 
@@ -1770,7 +1784,7 @@ void WorldSystem::do_exit() {
 		}
 	}
 	
-	else if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] < 1 && play_need_key_cutscene){
+	else if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] < required_num_of_keys && play_need_key_cutscene){
 		play_need_key_cutscene = false;
 		// Play a cutscene explaining that they need to get the key
 		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
