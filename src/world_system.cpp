@@ -908,18 +908,9 @@ void WorldSystem::restart_game() {
 	most_recent_collected_item = Item();
 
 	// set number of keys needed
-	if (game_state.level_id == "tutorial") { required_num_of_keys = 1; }
-	else if (game_state.level_id == "testing1") { required_num_of_keys = 1; }
-	else if (game_state.level_id == "testing2") { required_num_of_keys = 1; }
-	else { 
-		if (game_state.level.phase == 1) { required_num_of_keys = 1; }
-		else if (game_state.level.phase == 2) { required_num_of_keys = 2; }
-		else if (game_state.level.phase == 3) { required_num_of_keys = 4; }
-		else if (game_state.level.phase == 4) { required_num_of_keys = 5; }
-		else if (game_state.level.phase == 5) { required_num_of_keys = 6; }
-		else if (game_state.level.phase > 5 ) { required_num_of_keys = game_state.level.phase + 1 ; }
-
-	}
+	if (game_state.level.phase == 0) { required_num_of_keys = 1; }
+	else if (game_state.level.phase < 3) { required_num_of_keys = game_state.level.phase; }
+	else { required_num_of_keys = game_state.level.phase + 1; }
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
