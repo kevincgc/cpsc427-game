@@ -629,6 +629,8 @@ void WorldSystem::save_game() {
 	save["world"]["game_time_ms"] = game_time_ms;
 	save["world"]["player_health"] = player_health;
 
+	save["world"]["required_num_of_keys"] = required_num_of_keys;
+
 	std::ofstream outfile(path);
 	YAML::Emitter out;
 	out << save;
@@ -695,6 +697,7 @@ void WorldSystem::load_game() {
 
 	inventory = save["world"]["inventory"].as<std::map<ItemType, int>>();
 	player_health = save["world"]["player_health"].as<int>();
+	required_num_of_keys = save["world"]["required_num_of_keys"].as<int>();
 
 	most_recent_collected_item.name = save["world"]["most_recent_collected_item"]["name"].as<std::string>();
 	most_recent_collected_item.duration_ms = save["world"]["most_recent_collected_item"]["duration_ms"].as<float>();
@@ -915,7 +918,7 @@ void WorldSystem::restart_game() {
 		else if (game_state.level.phase == 4) { required_num_of_keys = 5; }
 		else if (game_state.level.phase == 5) { required_num_of_keys = 6; }
 		else if (game_state.level.phase > 5 ) { required_num_of_keys = game_state.level.phase + 1 ; }
-		
+
 	}
 
 	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
@@ -978,7 +981,7 @@ void WorldSystem::start_game() {
 	createBackground(renderer, { 3000,3000  }, 1);
 	createBackground(renderer, { 5000,1000  }, 1);
 	createBackground(renderer, { 5000,3000  }, 1);
-	
+
 
 	// ***********************************************************
 
@@ -1002,7 +1005,7 @@ void WorldSystem::start_game() {
 		tutorial_enemy_entities.clear();
 	}
 
-	
+
 
 }
 
@@ -1800,7 +1803,7 @@ void WorldSystem::do_exit() {
 			outfile.close();
 		}
 	}
-	
+
 	else if (tile == MapTile::EXIT && inventory[ItemType::KEY] < required_num_of_keys && play_need_key_cutscene){
 		play_need_key_cutscene = false;
 		// Play a cutscene explaining that they need to get the key
