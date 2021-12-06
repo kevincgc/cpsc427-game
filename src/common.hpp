@@ -87,7 +87,7 @@ extern vec2 global_scaling_vector;
 extern vec2 map_scale;
 extern int cutscene_selection;
 
-// From world_system.cpp - now globally accessible (especially for ai_system.cpp)
+// From world_system.cpp - now globally accessible
 extern vec2  player_vel;
 extern vec2	 default_player_vel;
 extern vec2  enemy_vel;
@@ -98,7 +98,6 @@ extern bool  player_swing;
 extern bool  player_is_manually_moving;
 extern bool  in_a_cutscene;
 extern std::map<int, bool> pressed_keys;
-
 extern entt::entity cutscene_minotaur_entity;
 extern entt::entity cutscene_drone_entity;
 extern entt::entity cutscene_drone_sad_entity;
@@ -110,6 +109,8 @@ extern entt::entity background_space3_entity;
 extern std::vector<entt::entity> background_entities;
 extern int speed_counter;
 extern int wallbreaker_counter;
+extern vec2 position_to_map_coords;
+extern bool is_within_bounds;
 
 // From ai_system.cpp - set to false when world_system.cpp detects death
 extern bool do_pathfinding_movement;

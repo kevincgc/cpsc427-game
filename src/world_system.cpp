@@ -789,28 +789,28 @@ void WorldSystem::restart_game() {
 	hud_heart_entity	     = createHUD(renderer, 9);
 	hud_bg_entity			 = createHUD(renderer, 2);
 
+	// Reset background
+	background_entities.clear();
 	// Create background entites
-	//background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
-	//background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
 	vec2 pos;
 	for (int i = 0; i < 6; i++) {
 		switch (i) {
 		case 0: pos = { 500,500 }; break;
 		case 1: pos = { 500,1000 }; break;
-		case 2: pos = { 1000,500 }; break;
-		case 3: pos = { 1000,1000 }; break;
-		case 4: pos = { 1000,1500 }; break;
-		case 5: pos = { 1500,1500 }; break;
+		case 2: pos = { 1500,500 }; break;
+		case 3: pos = { 1500,1000 }; break;
+		case 4: pos = { 3000,500 }; break;
+		case 5: pos = { 3000,1000 }; break;
 		}
 		entt::entity ent = createBackground(renderer, pos, 2);
 		background_entities.push_back(ent);
 	}
 	createBackground(renderer, { 1000,1000  }, 1);
-	createBackground(renderer, { 1000,2000  }, 1);
-	createBackground(renderer, { 2000,1000  }, 1);
-	createBackground(renderer, { 2000,2000  }, 1);
+	createBackground(renderer, { 1000,3000  }, 1);
 	createBackground(renderer, { 3000,1000  }, 1);
-	createBackground(renderer, { 3000,2000  }, 1);
+	createBackground(renderer, { 3000,3000  }, 1);
+	createBackground(renderer, { 5000,1000  }, 1);
+	createBackground(renderer, { 5000,3000  }, 1);
 	
 
 	// ***********************************************************
@@ -835,6 +835,9 @@ void WorldSystem::restart_game() {
 		// Clear enemy entites
 		tutorial_enemy_entities.clear();
 	}
+
+	
+
 }
 
 // Compute collisions between entities
@@ -1645,6 +1648,10 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
 		death_counter.counter_ms -= elapsed_ms_since_last_update;
 
+		// Keep enemies still
+		player_is_manually_moving = false;
+		do_pathfinding_movement = false;
+
 		if (death_counter.counter_ms < min_counter_ms) { min_counter_ms = death_counter.counter_ms; }
 
 		// If death timer expires...
@@ -1652,6 +1659,10 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 			// End invulnerability and remove player from DeathTimer component
 			registry.remove<DeathTimer>(entity);
 			player_can_lose_health = true;
+			// Stop player movement
+			entt::entity player = registry.view<Player>().begin()[0];
+			Motion& player_motion = registry.get<Motion>(player);
+			player_motion.velocity = { 0,0 };
 
 			// Restart the game if the player is marked for death
 			if (player_marked_for_death) {
@@ -1766,19 +1777,19 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 	}
 
 	// Cutscene: Note Floor
-	vec2 floor_trigger_pos = { 19,3 };
-	if (map_pos == floor_trigger_pos) {
-		if (!tutorial_flags["noted_floor"]) {
-			tutorial_flags["noted_floor"] = true;
-			player_is_manually_moving = false;
-			do_pathfinding_movement = false;
-			motion.velocity = { 0,0 };
-			cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
-			cutscene_selection = 210;
-			cutscene_1_frame_0 = true;
-			pressed_keys.clear();
-		}
-	}
+	//vec2 floor_trigger_pos = { 19,3 };
+	//if (map_pos == floor_trigger_pos) {
+	//	if (!tutorial_flags["noted_floor"]) {
+	//		tutorial_flags["noted_floor"] = true;
+	//		player_is_manually_moving = false;
+	//		do_pathfinding_movement = false;
+	//		motion.velocity = { 0,0 };
+	//		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
+	//		cutscene_selection = 210;
+	//		cutscene_1_frame_0 = true;
+	//		pressed_keys.clear();
+	//	}
+	//}
 
 	// Cutscene: Interrupt
 	vec2 interrupt_trigger_pos = { 24, 3 };

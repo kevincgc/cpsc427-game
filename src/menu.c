@@ -339,7 +339,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			min_cutscene_selection = 1;
 			max_cutscene_selection = 3;
 			nk_label(ctx, "This is an impressive maze, Daedalus, but my hooves grow weary of the", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "endless wandering. My father is due what he is owed.",		   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "endless wandering...",		   NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 3) {
@@ -381,16 +381,16 @@ void drawCutscene(GLFWwindow* win, int* out)
 			// Reached exit - speaker: drone
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
-			nk_label(ctx, "Daedalus: What?! I haven't finished my next labyrinth!", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Daedalus: What?! I barely finished constructing this phase!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I better get to work on the next one...", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 16) {
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
-			nk_label(ctx, "Enjoy your empty victory, Son of Minos, for it will be short lived.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "But I don't think I can finish the background decorations in time!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Why don't you take it a little slower, Son of Minos,", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "there's so much to see.", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// ********** Death Dialogue **********
@@ -447,21 +447,21 @@ void drawCutscene(GLFWwindow* win, int* out)
 		// Tutorial start
 		else if (*out == 200) {
 			min_cutscene_selection = 200, max_cutscene_selection = 202;
-			nk_label(ctx, "I will suffer imprisonment no longer.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I will suffer imprisonment no longer. Time to stretch these legs", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "(by pressing [w/a/s/d] or clicking on an empty tile).", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 201) {
 			min_cutscene_selection = 200, max_cutscene_selection = 202;
 			nk_label(ctx, "What's this, a gifted hammer?", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "If I pick it up, I can use it (by pressing [1]) on a wall (by clicking it)...", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 202) {
 			min_cutscene_selection = 200, max_cutscene_selection = 202;
-			nk_label(ctx, "Tutorial: Press 1 to activate the hammer.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "You have 20s to click on a wall to break it.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "Walls along the perimeter cannot be broken.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Looks fragile, I think it only has 20 seconds before I can use it.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And it looks like I can only use it once unless if I pick up another.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I don't think it's strong enough to break the outer walls.", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 203) {
 			min_cutscene_selection = 200, max_cutscene_selection = 203;
