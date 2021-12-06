@@ -1,8 +1,5 @@
-name: Testing Map 1
+name: Testing Map 2
 type: premade
-progression:
-    next_level: testing2
-
 enemies:
     spikes: 1
     drones: [1, 2]
@@ -11,5 +8,5 @@ prey:
 items:
     wall breaker: 1
     speed boost: 1
-    extra life: 1
+    extra life: 0
     teleporter: 1

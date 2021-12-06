@@ -29,7 +29,7 @@ extern "C" {
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
-	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time);
+	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time, const char *level_info, int progression);
 
 	void drawCutscene(GLFWwindow* win, int* out);
 
@@ -160,14 +160,21 @@ int main()
 					strncpy(leaderboard_array[i], leaderboard[i].c_str(), len + 1);
 				}
 
-				drawGameOverMenu(window, &selection, 1, size_send, leaderboard_array, world.get_player_time().c_str());
+				int progression = 1;
+				if (game_state.level_phase > 0) {
+					progression = 3;
+				} else if (game_state.has_next) {
+					progression = 2;
+				}
+
+				drawGameOverMenu(window, &selection, 1, size_send, leaderboard_array, world.get_player_time().c_str(), world.get_level_info().c_str(), progression);
 
 				for (int i = 0; i < size_send; i++) {
 					delete[] leaderboard_array[i];
 				}
 				delete[] leaderboard_array;
 			} else {
-				drawGameOverMenu(window, &selection, 0, 0, nullptr, nullptr);
+				drawGameOverMenu(window, &selection, 0, 0, nullptr, nullptr, nullptr, 0);
 			}
 
 			switch (selection) {
