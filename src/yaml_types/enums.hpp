@@ -31,4 +31,32 @@ namespace YAML {
             return true;
         }
     };
+
+    template <>
+    struct convert<TEXTURE_ASSET_ID> {
+        static Node encode(const TEXTURE_ASSET_ID &val) { return Node((int) val); }
+
+        static bool decode(const Node &node, TEXTURE_ASSET_ID &v) {
+            if (!node.IsScalar()) {
+                return false;
+            }
+
+            v = (TEXTURE_ASSET_ID) node.as<int>();
+            return true;
+        }
+    };
+
+    template <>
+    struct convert<GEOMETRY_BUFFER_ID> {
+        static Node encode(const GEOMETRY_BUFFER_ID &val) { return Node((int) val); }
+
+        static bool decode(const Node &node, GEOMETRY_BUFFER_ID &v) {
+            if (!node.IsScalar()) {
+                return false;
+            }
+
+            v = (GEOMETRY_BUFFER_ID) node.as<int>();
+            return true;
+        }
+    };
 }

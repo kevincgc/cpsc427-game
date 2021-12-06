@@ -597,8 +597,8 @@ void WorldSystem::save_game() {
 		node_entity["motion"]["can_collide"] = motion.can_collide;
 
 		RenderRequest& rr = registry.get<RenderRequest>(entity);
-		node_entity["texture_type"] = (int) rr.used_texture;
-		node_entity["geometry_type"] = (int) rr.used_geometry;
+		node_entity["texture_type"] = rr.used_texture;
+		node_entity["geometry_type"] = rr.used_geometry;
 
 		if (registry.view<Item>().contains(entity)) {
 			Item &item = registry.get<Item>(entity);
@@ -654,6 +654,27 @@ void WorldSystem::load_game() {
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+
+	YAML::Node entities = save["world"]["entities"];
+	for (int i = 0; i < entities.size(); i++) {
+		YAML::Node entity_node = entities[i];
+
+		vec2 position = entity_node["motion"]["position"].as<vec2>();
+		if (entity_node["item_type"]) { // type item
+			createItem(renderer, position, entity_node["item_type"].as<std::string>());
+		} else {
+			TEXTURE_ASSET_ID texture_type = entity_node["texture_type"].as<TEXTURE_ASSET_ID>();
+
+			if (texture_type == TEXTURE_ASSET_ID::CHICK) {
+				createChick(renderer, position);
+			} else if (texture_type == TEXTURE_ASSET_ID::SPIKE) {
+				createSpike(renderer, position);
+			} else if (texture_type == TEXTURE_ASSET_ID::DRONE) {
+				createDrone(renderer, position);
+			}
+		}
+	}
+
 
 	// TODO save/restore other entities
 	// for (entt::entity entity : registry.view<Motion>()) {
@@ -1674,7 +1695,7 @@ void WorldSystem::do_exit() {
 			YAML::Node leaderboard = YAML::LoadFile(path);
 
 			std::vector<double> leaderboard_map = {};
-			std::string leaderboard_id = game_state.level_id + "_" + std::to_string(game_state.level_phase);
+			std::string leaderboard_id = game_state.level_id + "_" + std::to_string(game_state.level.phase);
 			if (leaderboard[leaderboard_id]) leaderboard_map = leaderboard[leaderboard_id].as<std::vector<double>>();
 
 			leaderboard_map.push_back(current_finish_time);
@@ -1682,8 +1703,8 @@ void WorldSystem::do_exit() {
 
 			current_leaderboard.clear();
 			std::cout << "LEVEL " << game_state.level_id;
-			if (game_state.level_phase > 0) { // only if phase progression enabled
-				std::cout << " PHASE " << game_state.level_phase;
+			if (game_state.level.phase > 0) { // only if phase progression enabled
+				std::cout << " PHASE " << game_state.level.phase;
 			}
 			std::cout << " LEADERBOARD:" << std::endl;
 
