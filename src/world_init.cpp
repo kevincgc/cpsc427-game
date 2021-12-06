@@ -300,8 +300,8 @@ entt::entity createItem(RenderSystem* renderer, vec2 pos, std::string item_type)
 			item.duration_ms = 20000;
 			motion.scale = mesh.original_size * 40.f * global_scaling_vector;
 			break;
-		case ItemType::EXTRA_LIFE: //Key
-			texture_type = TEXTURE_ASSET_ID::EXTRA_LIFE;
+		case ItemType::KEY: //Key
+			texture_type = TEXTURE_ASSET_ID::KEY;
 			motion.scale = mesh.original_size * 80.f * global_scaling_vector;
 			break;
 		case ItemType::TELEPORT:

@@ -47,14 +47,14 @@ int required_num_of_keys;
 // Item-related
 std::map<ItemType, int> inventory = {
 	{ItemType::WALL_BREAKER, 0},
-	{ItemType::EXTRA_LIFE, 0},
+	{ItemType::KEY, 0},
 	{ItemType::TELEPORT, 0},
 	{ItemType::SPEED_BOOST, 0},
 };
 Item most_recent_collected_item;
 std::map<std::string, ItemType> item_to_enum = {
 	{"wall breaker", ItemType::WALL_BREAKER},
-	{"extra life", ItemType::EXTRA_LIFE},
+	{"key", ItemType::KEY},
 	{"teleporter", ItemType::TELEPORT},
 	{"speed boost", ItemType::SPEED_BOOST},
 };
@@ -104,11 +104,11 @@ entt::entity hud_bg_entity;
 entt::entity hud_hammer_entity;
 entt::entity hud_teleport_entity;
 entt::entity hud_speedboost_entity;
-entt::entity hud_heart_entity;
+entt::entity hud_key_entity;
 entt::entity hud_no_hammer_entity;
 entt::entity hud_no_teleport_entity;
 entt::entity hud_no_speedboost_entity;
-entt::entity hud_no_heart_entity;
+entt::entity hud_no_key_entity;
 // ********* For Tutorial feature **************
 std::vector<entt::entity> tutorial_enemy_entities;
 entt::entity daedalus_entity;
@@ -947,11 +947,11 @@ void WorldSystem::start_game() {
 	hud_no_hammer_entity     = createHUD(renderer, 6);
 	hud_no_teleport_entity   = createHUD(renderer, 7);
 	hud_no_speedboost_entity = createHUD(renderer, 8);
-	hud_no_heart_entity		 = createHUD(renderer, 10);
+	hud_no_key_entity		 = createHUD(renderer, 10);
 	hud_hammer_entity	     = createHUD(renderer, 3);
 	hud_teleport_entity	     = createHUD(renderer, 4);
 	hud_speedboost_entity    = createHUD(renderer, 5);
-	hud_heart_entity	     = createHUD(renderer, 9);
+	hud_key_entity			 = createHUD(renderer, 9);
 	hud_bg_entity			 = createHUD(renderer, 2);
 
 	// Reset background
@@ -1085,13 +1085,13 @@ void WorldSystem::use_wall_breaker(){
 
 }
 
-void WorldSystem::add_extra_life(){
-	// TODO: pending addition of life system
-	entt::entity player = registry.view<Player>().begin()[0];
-	std::cout << "Used extra life item!" << std::endl;
-	most_recent_used_item = ItemType::EXTRA_LIFE;
-
-}
+//void WorldSystem::add_extra_life(){
+//	// TODO: pending addition of life system
+//	entt::entity player = registry.view<Player>().begin()[0];
+//	std::cout << "Used extra life item!" << std::endl;
+//	most_recent_used_item = ItemType::EXTRA_LIFE;
+//
+//}
 
 void WorldSystem::use_teleport(){
 	entt::entity player = registry.view<Player>().begin()[0];
@@ -1258,11 +1258,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				// postItemUse(player);
 			}
 
-			if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
-				add_extra_life();
-				inventory[ItemType::EXTRA_LIFE]--;
-				// postItemUse(player);
-			}
+			//if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
+			//	add_extra_life();
+			//	inventory[ItemType::EXTRA_LIFE]--;
+			//	// postItemUse(player);
+			//}
 
 			// cheats!
 			if (pressed_keys.find(GLFW_KEY_LEFT_CONTROL) != pressed_keys.end() && pressed_keys.find(GLFW_KEY_F) != pressed_keys.end()) {
@@ -1572,11 +1572,11 @@ void WorldSystem::do_HUD() {
 	Motion& hud_hammer_motion		  = registry.get<Motion>(hud_hammer_entity);
 	Motion& hud_teleport_motion		  = registry.get<Motion>(hud_teleport_entity);
 	Motion& hud_speedboost_motion	  = registry.get<Motion>(hud_speedboost_entity);
-	Motion& hud_heart_motion		  = registry.get<Motion>(hud_heart_entity);
+	Motion& hud_key_motion		      = registry.get<Motion>(hud_key_entity);
 	Motion& hud_no_hammer_motion	  = registry.get<Motion>(hud_no_hammer_entity);
 	Motion& hud_no_teleport_motion	  = registry.get<Motion>(hud_no_teleport_entity);
 	Motion& hud_no_speedboost_motion  = registry.get<Motion>(hud_no_speedboost_entity);
-	Motion& hud_no_heart_motion		  = registry.get<Motion>(hud_no_heart_entity);
+	Motion& hud_no_key_motion		  = registry.get<Motion>(hud_no_key_entity);
 
 	// **** Hearts ****
 	// Update how many hearts there should be
@@ -1616,11 +1616,11 @@ void WorldSystem::do_HUD() {
 	vec2 hammer_adj			= { -window_width_px / 3 - 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
 	vec2 teleport_adj		= { -window_width_px / 3 - 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
 	vec2 speedboost_adj		= { -window_width_px / 3 + 50  * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
-	vec2 hud_heart_adj		= { -window_width_px / 3 + 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
+	vec2 hud_key_adj		= { -window_width_px / 3 + 150 * global_scaling_vector.x, -window_height_px / 2.9 * global_scaling_vector.y };
 	vec2 hud_hammer_pos		= { hud_player_motion.position.x + hammer_adj.x         , hud_player_motion.position.y + hammer_adj.y       };
 	vec2 hud_teleport_pos	= { hud_player_motion.position.x + teleport_adj.x       , hud_player_motion.position.y + teleport_adj.y     };
 	vec2 hud_speedboost_pos = { hud_player_motion.position.x + speedboost_adj.x     , hud_player_motion.position.y + speedboost_adj.y   };
-	vec2 hud_heart_pos      = { hud_player_motion.position.x + hud_heart_adj.x      , hud_player_motion.position.y + hud_heart_adj.y    };
+	vec2 hud_key_pos        = { hud_player_motion.position.x + hud_key_adj.x      , hud_player_motion.position.y + hud_key_adj.y    };
 
 	// Hammer
 	if (inventory[ItemType::WALL_BREAKER] == 0) {
@@ -1658,16 +1658,16 @@ void WorldSystem::do_HUD() {
 		hud_no_speedboost_motion.scale    = { 0,0 };
 	}
 
-	// Heart
-	if (inventory[ItemType::EXTRA_LIFE] == 0) {
-		hud_heart_motion.scale			  = { 0,0 };
-		hud_no_heart_motion.scale		  = item_scale;
-		hud_no_heart_motion.position	  = hud_heart_pos;
+	// Key
+	if (inventory[ItemType::KEY] == 0) {
+		hud_key_motion.scale			  = { 0,0 };
+		hud_no_key_motion.scale		  = item_scale;
+		hud_no_key_motion.position	  = hud_key_pos;
 	}
-	else if (inventory[ItemType::EXTRA_LIFE] > 0) {
-		hud_heart_motion.scale			  = item_scale;
-		hud_heart_motion.position		  = hud_heart_pos;
-		hud_no_heart_motion.scale		  = { 0,0 };
+	else if (inventory[ItemType::KEY] > 0) {
+		hud_key_motion.scale			  = item_scale;
+		hud_key_motion.position		  = hud_key_pos;
+		hud_no_key_motion.scale		  = { 0,0 };
 	}
 
 	// Rest of the text handling is done in render_system.cpp's draw() function
@@ -1728,8 +1728,8 @@ void WorldSystem::do_exit() {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
 
-	// If player has the key ("extra_life") and reaches the exit tile || cheat used...
-	if ((tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] >= required_num_of_keys) || game_state.cheat_finish) {
+	// If player has the key and reaches the exit tile || cheat used...
+	if ((tile == MapTile::EXIT && inventory[ItemType::KEY] >= required_num_of_keys) || game_state.cheat_finish) {
 		game_state.cheat_finish = false;
 		game_state.win_condition = true;
 
@@ -1799,7 +1799,7 @@ void WorldSystem::do_exit() {
 		}
 	}
 	
-	else if (tile == MapTile::EXIT && inventory[ItemType::EXTRA_LIFE] < required_num_of_keys && play_need_key_cutscene){
+	else if (tile == MapTile::EXIT && inventory[ItemType::KEY] < required_num_of_keys && play_need_key_cutscene){
 		play_need_key_cutscene = false;
 		// Play a cutscene explaining that they need to get the key
 		cutscene_speaker = cutscene_speaker::SPEAKER_MINOTAUR;
@@ -1919,7 +1919,7 @@ void WorldSystem::do_tutorial(float elapsed_ms_since_last_update) {
 		createItem( renderer, hammer_position, "wall breaker");
 		createItem( renderer, speed_position,  "speed boost");
 		createItem( renderer, tele_position,   "teleporter");
-		createItem( renderer, key_position,    "extra life");
+		createItem( renderer, key_position,    "key");
 		createSpike(renderer, spike_position);
 		createDrone(renderer, drone_position);
 		createChick(renderer, chick_position);

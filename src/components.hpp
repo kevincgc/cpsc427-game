@@ -69,7 +69,7 @@ enum ItemType {
 	WALL_BREAKER,
 	TELEPORT,
 	SPEED_BOOST,
-	EXTRA_LIFE,
+	KEY,
 };
 
 // Level State

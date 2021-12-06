@@ -63,7 +63,7 @@ public:
 	static MapTile get_map_tile(vec2 map_coords);
 	static bool is_within_bounds(vec2 map_coords);
 	void use_wall_breaker();
-	void add_extra_life();
+	//void add_extra_life();
 	void use_teleport();
 	void use_speed_boost();
 	void postItemUse(entt::entity& player);
