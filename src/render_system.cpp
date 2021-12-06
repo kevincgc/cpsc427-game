@@ -743,11 +743,11 @@ void RenderSystem::draw()
 	//drawText(text_hotkey_4, text_hotkey4_pos, text_hotkey_scale, projection_2D, white_text);
 
 	// Draw text for item count
-	vec2 hammer_count_pos		 = { 1 / 2 * w + (3+2  * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 teleport_count_pos		 = { 1 / 2 * w + (9.5+2   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 speedboost_count_pos    = { 1 / 2 * w + (16+2 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 heart_count_pos		 = { 1 / 2 * w + (23.1+1 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
-	vec2 item_count_scale		 = {              0.8  * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
+	vec2 hammer_count_pos		 = { 1 / 2 * w + (5    * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 teleport_count_pos		 = { 1 / 2 * w + (11.5 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 speedboost_count_pos    = { 1 / 2 * w + (18   * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 heart_count_pos		 = { 1 / 2 * w + (24.1 * global_scaling_vector.x) * pixel_size, 150.f * global_scaling_vector.y };
+	vec2 item_count_scale		 = {              0.8    * global_scaling_vector.x,                -1.3 * global_scaling_vector.y };
 	std::string hammer_count     = "x" + std::to_string(inventory[ItemType::WALL_BREAKER]);
 	std::string teleport_count   = "x" + std::to_string(inventory[ItemType::TELEPORT]);
 	std::string speedboost_count = "x" + std::to_string(inventory[ItemType::SPEED_BOOST]);
