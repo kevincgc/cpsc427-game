@@ -849,39 +849,46 @@ void WorldSystem::save_game() {
 	save["game_state"]["level_phase"] = game_state.level.phase;
 	save["game_state"]["level_has_next"] = game_state.level.has_next;
 
-	std::vector<std::vector<int>> map_tiles;
-	for (auto subvec : game_state.level.map_tiles) {
-		std::vector<int> sv;
-		for (MapTile tile : subvec) {
-			sv.push_back((int) tile);
-		}
-
-		map_tiles.push_back(sv);
-	}
-
-	save["game_state"]["level_map"] = map_tiles;
+	save["game_state"]["level_map"] = game_state.level.map_tiles;
 
 	YAML::Node node_world;
 	save["world"] = node_world;
 
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
-	vec2 player_coords = position_to_map_coords(player_motion.position);
-	save["world"]["player_position"].push_back(player_coords[0]);
-	save["world"]["player_position"].push_back(player_coords[1]);
+	save["world"]["player_position"] = position_to_map_coords(player_motion.position);
 
-	// TODO save/restore other entities
-	// for (entt::entity entity : registry.view<Motion>()) {
-	// 	if (entity == player_minotaur) continue;
+	// TODO save/restore other entities with motion
+	for (entt::entity entity : registry.view<Motion>()) {
+		if (entity == player_minotaur) continue;
 
-	// 	Motion& motion = registry.get<Motion>(entity);
-	// 	save["world"]["entities"];
-	// }
+		Motion& motion = registry.get<Motion>(entity);
+
+		YAML::Node node_entity;
+		node_entity["motion"]["position"] = motion.position;
+		node_entity["motion"]["angle"] = motion.angle;
+		node_entity["motion"]["velocity"] = motion.velocity;
+		node_entity["motion"]["scale"] = motion.scale;
+		node_entity["motion"]["mass"] = motion.mass;
+		node_entity["motion"]["coeff_rest"] = motion.coeff_rest;
+		node_entity["motion"]["can_collide"] = motion.can_collide;
+
+		RenderRequest& rr = registry.get<RenderRequest>(entity);
+		node_entity["texture_type"] = (int) rr.used_texture;
+		node_entity["geometry_type"] = (int) rr.used_geometry;
+
+		if (registry.view<Item>().contains(entity)) {
+			Item &item = registry.get<Item>(entity);
+			node_entity["item_type"] = item.name;
+		}
+
+		save["world"]["entities"].push_back(node_entity);
+	}
 
 	save["world"]["death_count"] = death_count;
 	save["world"]["num_times_exit_reached"] = num_times_exit_reached;
 	save["world"]["rtx_on"] = rtx_on;
 
-	save["world"]["inventory"] = std::map<int, int>(inventory.begin(), inventory.end());
+	save["world"]["inventory"] = inventory;
 	save["world"]["most_recent_collected_item"]["name"] = most_recent_collected_item.name;
 	save["world"]["most_recent_collected_item"]["duration_ms"] = most_recent_collected_item.duration_ms;
 
@@ -911,23 +918,15 @@ void WorldSystem::load_game() {
 	YAML::Node save = YAML::LoadFile(path);
 
 	game_state.level_id = save["game_state"]["level_id"].as<std::string>();
+	game_state.prev_level = game_state.level_id;
 	game_state.win_condition = save["game_state"]["win_condition"].as<bool>();
 	game_state.level.phase = save["game_state"]["level_phase"].as<int>();
 	game_state.level.has_next = save["game_state"]["level_has_next"].as<bool>();
 
-	std::vector<std::vector<int>> map_tiles = save["game_state"]["level_map"].as<std::vector<std::vector<int>>>();
-	for (auto subvec : map_tiles) {
-		std::vector<MapTile> sv;
-		for (int tile : subvec) {
-			sv.push_back((MapTile) tile);
-		}
-
-		game_state.level.map_tiles.push_back(sv);
-	}
+	game_state.level.map_tiles = save["game_state"]["level_map"].as<std::vector<std::vector<MapTile>>>();
 
 	// Create a new Minotaur
-	std::vector<float> player_pos = save["world"]["player_position"].as<std::vector<float>>();
-	vec2 minotaur_position = WorldSystem::map_coords_to_position({player_pos[0], player_pos[1]});
+	vec2 minotaur_position = WorldSystem::map_coords_to_position(save["world"]["player_position"].as<vec2>());
 	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
 	player_minotaur = createMinotaur(renderer, minotaur_position);
 	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
@@ -944,10 +943,7 @@ void WorldSystem::load_game() {
 	num_times_exit_reached = save["world"]["num_times_exit_reached"].as<int>();
 	rtx_on = save["world"]["rtx_on"].as<bool>();
 
-	std::map<int, int> inv = save["world"]["inventory"].as<std::map<int, int>>();
-	for (auto &item : inv) {
-		inventory[(ItemType) item.first] = item.second;
-	}
+	inventory = save["world"]["inventory"].as<std::map<ItemType, int>>();
 
 	most_recent_collected_item.name = save["world"]["most_recent_collected_item"]["name"].as<std::string>();
 	most_recent_collected_item.duration_ms = save["world"]["most_recent_collected_item"]["duration_ms"].as<float>();
@@ -959,14 +955,12 @@ void WorldSystem::load_game() {
 
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
-	static std::string prev_level = "";
-
 	// delete old map, if one exists
 	game_state.level.map_tiles.clear();
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 
-	if (game_state.win_condition && prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
+	if (game_state.win_condition && game_state.prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
 		fprintf(stderr, "Progression: changing level\n");
 		game_state.level_id = level_config["progression"]["next_level"].as<std::string>();
 		level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
@@ -977,9 +971,9 @@ void WorldSystem::restart_game() {
 
 	fprintf(stderr, "Started loading level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
-	if (prev_level != game_state.level_id) {
+	if (game_state.prev_level != game_state.level_id) {
 		fprintf(stderr, "Level changed\n");
-		prev_level = game_state.level_id;
+		game_state.prev_level = game_state.level_id;
 
 		if (level_config["progression"]["phase_multiply"]) {
 			fprintf(stderr, "Enabling phase progression\n");

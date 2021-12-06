@@ -16,6 +16,8 @@
 
 // yaml
 #include "yaml-cpp/yaml.h"
+#include "yaml_types/vec.hpp"
+#include "yaml_types/enums.hpp"
 
 extern entt::registry registry;
 extern std::map < int, std::map <std::string, std::string>> spellbook;

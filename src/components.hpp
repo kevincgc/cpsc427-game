@@ -97,6 +97,7 @@ struct LoadedLevel
 struct GameState
 {
 	std::string level_id = "main";
+	std::string prev_level = "";
 	LoadedLevel level;
 	bool win_condition = false;
 

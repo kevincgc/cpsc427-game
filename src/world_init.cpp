@@ -1,26 +1,5 @@
 #include "world_init.hpp"
 
-// entt::entity createSalmon(RenderSystem* renderer, vec2 pos)
-// {
-// 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SALMON);
-// 	Motion motion = Motion();
-// 	motion.position = pos;
-// 	motion.angle = 0.f;
-// 	motion.velocity = { 0.f, 0.f };
-// 	motion.scale = mesh.original_size * 75.f;
-// 	motion.scale.x *= 1.5;
-
-// 	const entt::entity e = registry.create();
-// 	registry.emplace<Player>(e);
-// 	registry.emplace<Motion>(e, motion);
-// 	registry.emplace<Mesh*>(e, &mesh);
-// 	registry.emplace<RenderRequest>(e,
-// 			TEXTURE_ASSET_ID::MINOTAUR, // TEXTURE_COUNT indicates that no texture is needed
-// 			EFFECT_ASSET_ID::SALMON, // TEXTURED
-// 			GEOMETRY_BUFFER_ID::SALMON);
-// 	return e;
-// }
-
 entt::entity createSpike(RenderSystem* renderer, vec2 position)
 {
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
