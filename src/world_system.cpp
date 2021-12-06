@@ -1514,7 +1514,7 @@ void WorldSystem::do_exit() {
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
-			game_state.sound_requests.push_back({ SoundEffects::TADA });
+			game_state.sound_requests.push_back({SoundEffects::TADA});
 			initial_game = false;
 			do_pathfinding_movement = false;
 
@@ -1545,13 +1545,19 @@ void WorldSystem::do_exit() {
 			YAML::Node leaderboard = YAML::LoadFile(path);
 
 			std::vector<double> leaderboard_map = {};
-			if (leaderboard[game_state.level_id]) leaderboard_map = leaderboard[game_state.level_id].as<std::vector<double>>();
+			std::string leaderboard_id = game_state.level_id + "_" + std::to_string(game_state.level_phase);
+			if (leaderboard[leaderboard_id]) leaderboard_map = leaderboard[leaderboard_id].as<std::vector<double>>();
 
 			leaderboard_map.push_back(current_finish_time);
 			std::sort(leaderboard_map.begin(), leaderboard_map.end());
 
 			current_leaderboard.clear();
-			std::cout << "LEADERBOARD:" << std::endl;
+			std::cout << "LEVEL " << game_state.level_id;
+			if (game_state.level_phase > 0) { // only if phase progression enabled
+				std::cout << " PHASE " << game_state.level_phase;
+			}
+			std::cout << " LEADERBOARD:" << std::endl;
+
 			for (int i = 0; i < leaderboard_map.size(); i++) {
 				std::ostringstream str;
 				str << i + 1 << ". " << formatTime(leaderboard_map[i]);
@@ -1561,7 +1567,7 @@ void WorldSystem::do_exit() {
 				std::cout << str.str() << std::endl;
 			}
 
-			leaderboard[game_state.level_id] = leaderboard_map;
+			leaderboard[leaderboard_id] = leaderboard_map;
 
 			std::ofstream outfile(path);
 			YAML::Emitter out;
