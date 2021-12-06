@@ -617,6 +617,7 @@ void WorldSystem::save_game() {
 	save["world"]["most_recent_collected_item"]["duration_ms"] = most_recent_collected_item.duration_ms;
 
 	save["world"]["game_time_ms"] = game_time_ms;
+	save["world"]["player_health"] = player_health;
 
 	std::ofstream outfile(path);
 	YAML::Emitter out;
@@ -683,6 +684,7 @@ void WorldSystem::load_game() {
 	rtx_on = save["world"]["rtx_on"].as<bool>();
 
 	inventory = save["world"]["inventory"].as<std::map<ItemType, int>>();
+	player_health = save["world"]["player_health"].as<int>();
 
 	most_recent_collected_item.name = save["world"]["most_recent_collected_item"]["name"].as<std::string>();
 	most_recent_collected_item.duration_ms = save["world"]["most_recent_collected_item"]["duration_ms"].as<float>();
