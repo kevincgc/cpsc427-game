@@ -22,6 +22,7 @@
 #include <iterator>
 #include <string>
 #include <chrono>
+#include <random>
 using Clock = std::chrono::high_resolution_clock;
 
 // Game configuration
@@ -1077,8 +1078,11 @@ void WorldSystem::use_teleport(){
 			}
 		}
 
-		int pos_ind = std::rand() % teleportable_tiles.size();
-		position = map_coords_to_position(teleportable_tiles[pos_ind]);
+		std::random_device rd; // obtain a random number from hardware
+		std::mt19937 gen(rd()); // seed the generator
+		std::uniform_int_distribution<unsigned long int> distr(1, teleportable_tiles.size() - 1); // define the range
+
+		position = map_coords_to_position(teleportable_tiles[distr(gen)]);
 		position += vec2(map_scale.x / 2, map_scale.y / 2);
 	}
 	std::cout << "Used teleport item to teleport to a random location!" << std::endl;
