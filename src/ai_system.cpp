@@ -146,29 +146,39 @@ void AISystem::step()
 								std::vector<vec2> adjacent_nodes = get_adj_nodes(curr_pos_map);
 
 								// Randomly select a node to travel down
-								vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
-								if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
-
-								// Travel in that direction
-								// Travel right
-								if (random_node.x > curr_pos_map.x) {
-									entity_motion.velocity.x = enemy_vel.x;
-									entity_motion.velocity.y = 0;
-								}
-								// Travel left
-								else if (random_node.x < curr_pos_map.x) {
+								// Special case: If enemy is in exit tile, adjacent_nodes will be empty
+								// To prevent error, have a special case that says:
+								// If adjacent_nodes is empty, just move left
+								if (adjacent_nodes.size() == 0) {
+									// Travel left
 									entity_motion.velocity.x = -1 * enemy_vel.x;
 									entity_motion.velocity.y = 0;
 								}
-								// Travel down
-								if (random_node.y > curr_pos_map.y) {
-									entity_motion.velocity.y = enemy_vel.y;
-									entity_motion.velocity.x = 0;
-								}
-								// Travel up
-								else if (random_node.y < curr_pos_map.y) {
-									entity_motion.velocity.y = -1 * enemy_vel.y;
-									entity_motion.velocity.x = 0;
+								else {
+									vec2 random_node = adjacent_nodes[rand() % adjacent_nodes.size()];
+									if (ai_debug) { std::cout << "Selected random node for enemy to travel: [" << random_node.x << ", " << random_node.y << "]" << std::endl; }
+
+									// Travel in that direction
+									// Travel right
+									if (random_node.x > curr_pos_map.x) {
+										entity_motion.velocity.x = enemy_vel.x;
+										entity_motion.velocity.y = 0;
+									}
+									// Travel left
+									else if (random_node.x < curr_pos_map.x) {
+										entity_motion.velocity.x = -1 * enemy_vel.x;
+										entity_motion.velocity.y = 0;
+									}
+									// Travel down
+									if (random_node.y > curr_pos_map.y) {
+										entity_motion.velocity.y = enemy_vel.y;
+										entity_motion.velocity.x = 0;
+									}
+									// Travel up
+									else if (random_node.y < curr_pos_map.y) {
+										entity_motion.velocity.y = -1 * enemy_vel.y;
+										entity_motion.velocity.x = 0;
+									}
 								}
 							}
 						}

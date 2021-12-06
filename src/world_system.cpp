@@ -1187,6 +1187,11 @@ void WorldSystem::do_cutscene() {
 		cutscene_1_frame_0 = false;
 		cutscene_1_frame_1 = true;
 
+		// To prevent jittering
+		entt::entity player = registry.view<Player>().begin()[0];
+		Motion& motion = registry.get<Motion>(player);
+		pressed_keys.clear();
+		motion.velocity = { 0,0 };
 	}
 
 	// Gate 2
