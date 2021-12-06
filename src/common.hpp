@@ -70,6 +70,7 @@ enum class ProgramState {
 	MAIN_MENU,
 	OPTIONS,
 	RESET_GAME,
+	LOAD_GAME,
 	RUNNING,
 	PAUSED,
 	GAME_OVER_WIN,

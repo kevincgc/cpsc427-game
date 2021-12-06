@@ -327,9 +327,6 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	player_vel *= global_scaling_vector;
 	default_player_vel *= global_scaling_vector;
 	enemy_vel *= global_scaling_vector;
-
-	// Set all states to default
-	restart_game();
 }
 
 std::vector<std::string> WorldSystem::get_leaderboard() {
@@ -339,8 +336,8 @@ std::vector<std::string> WorldSystem::get_leaderboard() {
 std::string WorldSystem::get_level_info() {
 	std::string str = "LEVEL: " + game_state.level_id;
 
-	if (game_state.level_phase > 0) {
-		str += " PHASE: " + std::to_string(game_state.level_phase);
+	if (game_state.level.phase > 0) {
+		str += " PHASE: " + std::to_string(game_state.level.phase);
 	}
 
 	return str;
@@ -516,12 +513,12 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 
 	// random end position
 	std::vector<int> possible_end_positions;
-	for (int i = 0; i < height; i++) {
+	for (int i = 3; i < height; i++) {
 		if (tile_is_walkable(maze[i][width - 2])) possible_end_positions.push_back(i);
 	}
 
 	// start at 3, because 0, 1 and 2 are too easy for some algorithms
-	ind = std::uniform_int_distribution<int>(3, possible_end_positions.size() - 1)(rng);
+	ind = std::uniform_int_distribution<int>(0, possible_end_positions.size() - 1)(rng);
 	const int end_position = possible_end_positions[ind];
 	maze[end_position][width - 1] = MapTile::EXIT;
 
@@ -558,6 +555,146 @@ void WorldSystem::process_entity_node(YAML::Node node, std::function<void(std::s
 	}
 }
 
+void WorldSystem::save_game() {
+	std::string path = data_path() + "/savegame.yaml";
+	std::ifstream file(path);
+	if (!file.good()) {
+		std::ofstream outfile(path);
+		outfile.close();
+	}
+	file.close();
+
+	YAML::Node save;
+
+	YAML::Node node_game_state;
+	save["game_state"] = node_game_state;
+
+	save["game_state"]["level_id"] = game_state.level_id;
+	save["game_state"]["win_condition"] = game_state.win_condition;
+	save["game_state"]["level_phase"] = game_state.level.phase;
+	save["game_state"]["level_has_next"] = game_state.level.has_next;
+
+	save["game_state"]["level_map"] = game_state.level.map_tiles;
+
+	YAML::Node node_world;
+	save["world"] = node_world;
+
+	Motion& player_motion = registry.get<Motion>(player_minotaur);
+	save["world"]["player_position"] = position_to_map_coords(player_motion.position);
+
+	// TODO save/restore other entities with motion
+	for (entt::entity entity : registry.view<Motion>()) {
+		if (entity == player_minotaur) continue;
+
+		Motion& motion = registry.get<Motion>(entity);
+
+		YAML::Node node_entity;
+		node_entity["motion"]["position"] = motion.position;
+		node_entity["motion"]["angle"] = motion.angle;
+		node_entity["motion"]["velocity"] = motion.velocity;
+		node_entity["motion"]["scale"] = motion.scale;
+		node_entity["motion"]["mass"] = motion.mass;
+		node_entity["motion"]["coeff_rest"] = motion.coeff_rest;
+		node_entity["motion"]["can_collide"] = motion.can_collide;
+
+		RenderRequest& rr = registry.get<RenderRequest>(entity);
+		node_entity["texture_type"] = rr.used_texture;
+		node_entity["geometry_type"] = rr.used_geometry;
+
+		if (registry.view<Item>().contains(entity)) {
+			Item &item = registry.get<Item>(entity);
+			node_entity["item_type"] = item.name;
+		}
+
+		save["world"]["entities"].push_back(node_entity);
+	}
+
+	save["world"]["death_count"] = death_count;
+	save["world"]["num_times_exit_reached"] = num_times_exit_reached;
+	save["world"]["rtx_on"] = rtx_on;
+
+	save["world"]["inventory"] = inventory;
+	save["world"]["most_recent_collected_item"]["name"] = most_recent_collected_item.name;
+	save["world"]["most_recent_collected_item"]["duration_ms"] = most_recent_collected_item.duration_ms;
+
+	save["world"]["game_time_ms"] = game_time_ms;
+	save["world"]["player_health"] = player_health;
+
+	std::ofstream outfile(path);
+	YAML::Emitter out;
+	out << save;
+	outfile << out.c_str();
+	outfile.close();
+}
+
+void WorldSystem::load_game() {
+	std::string path = data_path() + "/savegame.yaml";
+	std::ifstream file(path);
+	if (!file.good()) {
+		// no save file, start from scratch
+		restart_game();
+		return;
+	}
+	file.close();
+
+	// Delete old map, if one exists
+	game_state.level.map_tiles.clear();
+
+	// Remove all entities that we created
+	registry.clear();
+	chick_ai.clear();
+
+	YAML::Node save = YAML::LoadFile(path);
+
+	game_state.level_id = save["game_state"]["level_id"].as<std::string>();
+	game_state.prev_level = game_state.level_id;
+	game_state.win_condition = save["game_state"]["win_condition"].as<bool>();
+	game_state.level.phase = save["game_state"]["level_phase"].as<int>();
+	game_state.level.has_next = save["game_state"]["level_has_next"].as<bool>();
+
+	game_state.level.map_tiles = save["game_state"]["level_map"].as<std::vector<std::vector<MapTile>>>();
+
+	// Create a new Minotaur
+	vec2 minotaur_position = WorldSystem::map_coords_to_position(save["world"]["player_position"].as<vec2>());
+	minotaur_position += vec2(map_scale.x / 2, map_scale.y / 2); // this is to make it spawn on the center of the tile
+	player_minotaur = createMinotaur(renderer, minotaur_position);
+	registry.emplace<Colour>(player_minotaur, vec3(1, 0.8f, 0.8f));
+
+	YAML::Node entities = save["world"]["entities"];
+	for (int i = 0; i < entities.size(); i++) {
+		YAML::Node entity_node = entities[i];
+
+		vec2 position = entity_node["motion"]["position"].as<vec2>();
+		if (entity_node["item_type"]) { // type item
+			createItem(renderer, position, entity_node["item_type"].as<std::string>());
+		} else {
+			TEXTURE_ASSET_ID texture_type = entity_node["texture_type"].as<TEXTURE_ASSET_ID>();
+
+			if (texture_type == TEXTURE_ASSET_ID::CHICK) {
+				createChick(renderer, position);
+			} else if (texture_type == TEXTURE_ASSET_ID::SPIKE) {
+				createSpike(renderer, position);
+			} else if (texture_type == TEXTURE_ASSET_ID::DRONE) {
+				createDrone(renderer, position);
+			}
+		}
+	}
+
+	death_count = save["world"]["death_count"].as<int>();
+	num_times_exit_reached = save["world"]["num_times_exit_reached"].as<int>();
+	rtx_on = save["world"]["rtx_on"].as<bool>();
+
+	inventory = save["world"]["inventory"].as<std::map<ItemType, int>>();
+	player_health = save["world"]["player_health"].as<int>();
+
+	most_recent_collected_item.name = save["world"]["most_recent_collected_item"]["name"].as<std::string>();
+	most_recent_collected_item.duration_ms = save["world"]["most_recent_collected_item"]["duration_ms"].as<float>();
+
+	game_time_ms = save["world"]["game_time_ms"].as<double>();
+
+	start_game();
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 	static std::string prev_level = "";
@@ -567,7 +704,7 @@ void WorldSystem::restart_game() {
 
 	YAML::Node level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
 
-	if (game_state.win_condition && prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
+	if (game_state.win_condition && game_state.prev_level == game_state.level_id && level_config["progression"]["next_level"]) {
 		fprintf(stderr, "Progression: changing level\n");
 		game_state.level_id = level_config["progression"]["next_level"].as<std::string>();
 		level_config = YAML::LoadFile(levels_path(game_state.level_id + "/level.yaml"));
@@ -578,33 +715,33 @@ void WorldSystem::restart_game() {
 
 	fprintf(stderr, "Started loading level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
-	if (prev_level != game_state.level_id) {
+	if (game_state.prev_level != game_state.level_id) {
 		fprintf(stderr, "Level changed\n");
-		prev_level = game_state.level_id;
+		game_state.prev_level = game_state.level_id;
 
 		if (level_config["progression"]["phase_multiply"]) {
 			fprintf(stderr, "Enabling phase progression\n");
-			game_state.level_phase = 1;
+			game_state.level.phase = 1;
 		} else {
-			game_state.level_phase = 0;
+			game_state.level.phase = 0;
 		}
-	} else if (game_state.win_condition && game_state.level_phase > 0) {
+	} else if (game_state.win_condition && game_state.level.phase > 0) {
 		// if phase progression enabled
-		game_state.level_phase++;
+		game_state.level.phase++;
 	}
 
 	if (level_config["progression"]["next_level"]) {
 		fprintf(stderr, "Level has next_level\n");
-		game_state.has_next = true;
+		game_state.level.has_next = true;
 	} else {
-		game_state.has_next = false;
+		game_state.level.has_next = false;
 	}
 
-	if (game_state.level_phase > 0) {
-		fprintf(stderr, "Loading phase %d\n", game_state.level_phase);
+	if (game_state.level.phase > 0) {
+		fprintf(stderr, "Loading phase %d\n", game_state.level.phase);
 	}
 
-	bool multiplier_enabled = game_state.level_phase > 0 && level_config["progression"] && level_config["progression"]["phase_multiply"];
+	bool multiplier_enabled = game_state.level.phase > 0 && level_config["progression"] && level_config["progression"]["phase_multiply"];
 
 	if (level_type == "premade") {
 		// load map
@@ -644,7 +781,7 @@ void WorldSystem::restart_game() {
 
 		if (multiplier_enabled) {
 			if (level_config["progression"]["phase_multiply"]["procedural_size"]) {
-				float multiplier = level_config["progression"]["phase_multiply"]["procedural_size"].as<float>() * (game_state.level_phase - 1);
+				float multiplier = level_config["progression"]["phase_multiply"]["procedural_size"].as<float>() * (game_state.level.phase - 1);
 				multiplier = max(multiplier, 1.f);
 				size[0] *= multiplier;
 				if (size[0] % 2 == 0) size[0] += 1; // ensure odd
@@ -685,9 +822,9 @@ void WorldSystem::restart_game() {
 	if (enemies) {
 		float multiplier = 1.f;
 		if (multiplier_enabled && level_config["progression"]["phase_multiply"]["enemies"]) {
-			multiplier = level_config["progression"]["phase_multiply"]["enemies"].as<float>() * (game_state.level_phase - 1);
+			multiplier = level_config["progression"]["phase_multiply"]["enemies"].as<float>() * (game_state.level.phase - 1);
 			multiplier = max(multiplier, 1.f);
-			fprintf(stderr, "Phase %d enemies multiplier %d\n", game_state.level_phase, multiplier);
+			fprintf(stderr, "Phase %d enemies multiplier %d\n", game_state.level.phase, multiplier);
 		}
 
 		process_entity_node(enemies, [this](std::string enemy_type, vec2 position) {
@@ -709,9 +846,9 @@ void WorldSystem::restart_game() {
 	if (prey) {
 		float multiplier = 1.f;
 		if (multiplier_enabled && level_config["progression"]["phase_multiply"]["prey"]) {
-			multiplier = level_config["progression"]["phase_multiply"]["prey"].as<float>() * (game_state.level_phase - 1);
+			multiplier = level_config["progression"]["phase_multiply"]["prey"].as<float>() * (game_state.level.phase - 1);
 			multiplier = max(multiplier, 1.f);
-			fprintf(stderr, "Phase %d prey multiplier %d\n", game_state.level_phase, multiplier);
+			fprintf(stderr, "Phase %d prey multiplier %d\n", game_state.level.phase, multiplier);
 		}
 
 		process_entity_node(prey, [this](std::string prey_type, vec2 position) {
@@ -730,9 +867,9 @@ void WorldSystem::restart_game() {
 	if (items) {
 		float multiplier = 1.f;
 		if (multiplier_enabled && level_config["progression"]["phase_multiply"]["items"]) {
-			multiplier = level_config["progression"]["phase_multiply"]["items"].as<float>() * (game_state.level_phase - 1);
+			multiplier = level_config["progression"]["phase_multiply"]["items"].as<float>() * (game_state.level.phase - 1);
 			multiplier = max(multiplier, 1.f);
-			fprintf(stderr, "Phase %d items multiplier %d\n", game_state.level_phase, multiplier);
+			fprintf(stderr, "Phase %d items multiplier %d\n", game_state.level.phase, multiplier);
 		}
 
 		process_entity_node(items, [this](std::string item_type, vec2 position) {
@@ -757,13 +894,20 @@ void WorldSystem::restart_game() {
 		item.second = 0;
 	}
 	most_recent_collected_item = Item();
+
+	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
+
+	game_time_ms = 0.f;
+
+	start_game();
+}
+
+void WorldSystem::start_game() {
 	tips = Help();
 
 	// reset player flash timer
 	flash_timer = 1000.f;
 	registry.emplace<Flash>(player_minotaur);
-
-	fprintf(stderr, "Loaded level: %s - %s (%s)\n", game_state.level_id.c_str(), level_name.c_str(), level_type.c_str());
 
 	// Create cutscene entities
 	cutscene_drone_entity			 = createCutscene(renderer, Cutscene_enum::DRONE		   );
@@ -823,7 +967,6 @@ void WorldSystem::restart_game() {
 	player_is_manually_moving = false;
 	pressed_keys.clear();
 
-	game_time_ms = 0.f;
 	game_state.win_condition = false;
 
 	// Reset tutorial
@@ -1595,7 +1738,7 @@ void WorldSystem::do_exit() {
 			YAML::Node leaderboard = YAML::LoadFile(path);
 
 			std::vector<double> leaderboard_map = {};
-			std::string leaderboard_id = game_state.level_id + "_" + std::to_string(game_state.level_phase);
+			std::string leaderboard_id = game_state.level_id + "_" + std::to_string(game_state.level.phase);
 			if (leaderboard[leaderboard_id]) leaderboard_map = leaderboard[leaderboard_id].as<std::vector<double>>();
 
 			leaderboard_map.push_back(current_finish_time);
@@ -1603,8 +1746,8 @@ void WorldSystem::do_exit() {
 
 			current_leaderboard.clear();
 			std::cout << "LEVEL " << game_state.level_id;
-			if (game_state.level_phase > 0) { // only if phase progression enabled
-				std::cout << " PHASE " << game_state.level_phase;
+			if (game_state.level.phase > 0) { // only if phase progression enabled
+				std::cout << " PHASE " << game_state.level.phase;
 			}
 			std::cout << " LEADERBOARD:" << std::endl;
 
