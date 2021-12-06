@@ -154,6 +154,16 @@ struct TexturedVertex
 	vec2 texcoord;
 };
 
+
+struct NormalMappingVertices
+{
+	vec3 position;
+	vec2 texcoord;
+	vec3 normal;
+	vec3 tangent;
+
+};
+
 struct Colour
 {
 	vec3 colour;
@@ -245,7 +255,9 @@ enum class TEXTURE_ASSET_ID {
 	// WALL_T_RIGHT,
 	// WALL_CROSS,
 	WALL = 0,
+	WALL_NORMAL_MAP,
 	FREESPACE,
+	FREESPACE_NORMAL_MAP,
 	SPIKE,
 	DRONE,
 	MINOTAUR,
@@ -281,9 +293,10 @@ enum class EFFECT_ASSET_ID {
 	MINOTAUR = WATER + 1,
 	TEXT = MINOTAUR + 1,
 	ENEMY = TEXT + 1,
+	NORMAL_MAP = ENEMY + 1,
 	ITEM = ENEMY + 1,
 	TRAP = ITEM + 1,
-	EFFECT_COUNT = ENEMY + 1
+	EFFECT_COUNT = NORMAL_MAP + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -296,9 +309,10 @@ enum class GEOMETRY_BUFFER_ID {
 	MINOTAUR = SCREEN_TRIANGLE + 1,
 	ENEMY = MINOTAUR + 1,
 	DRONE = ENEMY + 1,
-	ITEM = DRONE + 1,
+	TILE = DRONE + 1,
+	ITEM = TILE + 1,
 	TRAP = ITEM + 1,
-	GEOMETRY_COUNT = DRONE + 1
+	GEOMETRY_COUNT = TILE + 1
 };
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 

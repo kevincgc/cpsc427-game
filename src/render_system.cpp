@@ -37,7 +37,6 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 	// Setting shaders
 	glUseProgram(program);
 	gl_has_errors();
-
 	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
 	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
 	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
@@ -164,8 +163,8 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		glBindTexture(GL_TEXTURE_2D, texture_id_minotaur);
 		gl_has_errors();
 	}
-		else if (render_request.used_effect == EFFECT_ASSET_ID::ENEMY)
-			{
+	else if (render_request.used_effect == EFFECT_ASSET_ID::ENEMY)
+	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_color_loc = glGetAttribLocation(program, "in_color");
 		gl_has_errors();
@@ -198,6 +197,8 @@ void RenderSystem::drawTexturedMesh(entt::entity entity,
 		}
 		gl_has_errors();
 	}
+	
+	
 	// {
 	// 	GLint in_position_loc = glGetAttribLocation(program, "in_position");
 	// 	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
@@ -273,16 +274,22 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 {
 	// define which texture to draw
 	TEXTURE_ASSET_ID texture_asset;
+	TEXTURE_ASSET_ID texture_asset_map;
 	switch (map_tile) {
 		case MapTile::BREAKABLE_WALL:
 		case MapTile::UNBREAKABLE_WALL:
 			texture_asset = TEXTURE_ASSET_ID::WALL;
+			texture_asset_map = TEXTURE_ASSET_ID::WALL_NORMAL_MAP;
 			break;
 
 		case MapTile::FREE_SPACE:
+			texture_asset = TEXTURE_ASSET_ID::FREESPACE;
+			texture_asset_map = TEXTURE_ASSET_ID::FREESPACE_NORMAL_MAP;
+			break;
 		case MapTile::ENTRANCE:
 		case MapTile::EXIT:
 			texture_asset = TEXTURE_ASSET_ID::FREESPACE;
+			texture_asset_map = TEXTURE_ASSET_ID::FREESPACE_NORMAL_MAP;
 			break;
 		default:
 			return; // don't render anything
@@ -303,8 +310,8 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 
 	const RenderRequest render_request = {
 		texture_asset,
-		EFFECT_ASSET_ID::TEXTURED,
-		GEOMETRY_BUFFER_ID::SPRITE
+		EFFECT_ASSET_ID::NORMAL_MAP,
+		GEOMETRY_BUFFER_ID::TILE
 	};
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
@@ -326,27 +333,51 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 
 	GLint in_position_loc = glGetAttribLocation(program, "in_position");
 	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	GLint in_normal_loc = glGetAttribLocation(program, "Normal");
+	GLint in_tangent_loc = glGetAttribLocation(program, "Tangent");
+
 	gl_has_errors();
 	assert(in_texcoord_loc >= 0);
+	assert(in_normal_loc >= 0);
+	assert(in_tangent_loc >= 0);
 
 	glEnableVertexAttribArray(in_position_loc);
 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-							sizeof(TexturedVertex), (void *)0);
+							sizeof(NormalMappingVertices), (void *)0);
 	gl_has_errors();
+
 
 	glEnableVertexAttribArray(in_texcoord_loc);
 	glVertexAttribPointer(
-		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(NormalMappingVertices),
 		(void *)sizeof(
 			vec3)); // note the stride to skip the preceeding vertex position
+
+
+	glEnableVertexAttribArray(in_normal_loc);
+	glVertexAttribPointer(in_normal_loc, 3, GL_FLOAT, GL_FALSE,
+		sizeof(NormalMappingVertices), (void*)0);
+	gl_has_errors();
+
+
+	glEnableVertexAttribArray(in_tangent_loc);
+	glVertexAttribPointer(in_tangent_loc, 3, GL_FLOAT, GL_FALSE,
+		sizeof(NormalMappingVertices), (void*)0);
+	gl_has_errors();
+
+
 	// Enabling and binding texture to slot 0
-	glActiveTexture(GL_TEXTURE0);
 	gl_has_errors();
 
 	GLuint texture_id = texture_gl_handles[(GLuint) render_request.used_texture];
+	
 
-	glBindTexture(GL_TEXTURE_2D, texture_id);
+	
+	
+	
+	
 	gl_has_errors();
+
 
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
@@ -363,7 +394,21 @@ void RenderSystem::drawTile(const vec2 map_coords, const MapTile map_tile, const
 	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
 	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	//passing normal map
+	GLuint normalMapLocation = glGetUniformLocation(currProgram, "normalMap");
+	glUniform1i(normalMapLocation, 1);
+	GLuint map_id = texture_gl_handles[(GLuint)texture_asset_map];
 	gl_has_errors();
+	
+	
+	
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, map_id);
+	gl_has_errors();
+
 	// Drawing of num_indices/3 triangles specified in the index buffer
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 	gl_has_errors();
@@ -426,6 +471,8 @@ void RenderSystem::drawText(const std::string text, vec2 position, vec2 scale, c
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl_has_errors();
+	
+	
 
 	for (int p = 0; p < text.length(); p++)
 	{
@@ -529,6 +576,7 @@ void RenderSystem::drawToScreen()
 
 	// Bind our texture in Texture Unit 0
 	glActiveTexture(GL_TEXTURE0);
+	
 
 	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
 	gl_has_errors();
@@ -818,3 +866,7 @@ mat3 RenderSystem::createProjectionMatrixforText()
 	float ty = -(top + bottom) / (top - bottom);
 	return { {-sx, 0.f, 0.f}, {0.f, -sy, 0.f}, {tx, ty, 1.f} };
 }
+
+
+
+

@@ -140,6 +140,9 @@ void RenderSystem::bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices
 	gl_has_errors();
 }
 
+
+
+
 void RenderSystem::initializeGlMeshes()
 {
 	for (uint i = 0; i < mesh_paths.size(); i++)
@@ -187,6 +190,49 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> textured_indices = { 0, 3, 1, 1, 3, 2 };
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SPRITE, textured_vertices, textured_indices);
+
+
+	//////////////////////////
+	// Initialize tile
+	// The position corresponds to the center of the texture
+	std::vector<NormalMappingVertices> mapping_vertices(4);
+	mapping_vertices[0].position = { -1.f / 2, +1.f / 2, 0.f };
+	mapping_vertices[1].position = { +1.f / 2, +1.f / 2, 0.f };
+	mapping_vertices[2].position = { +1.f / 2, -1.f / 2, 0.f };
+	mapping_vertices[3].position = { -1.f / 2, -1.f / 2, 0.f };
+	mapping_vertices[0].texcoord = { 0.f, 1.f };
+	mapping_vertices[1].texcoord = { 1.f, 1.f };
+	mapping_vertices[2].texcoord = { 1.f, 0.f };
+	mapping_vertices[3].texcoord = { 0.f, 0.f };
+	mapping_vertices[0].normal = { 0.f,0.f,1.f };
+	mapping_vertices[1].normal = { 0.f,0.f,1.f };
+	mapping_vertices[2].normal = { 0.f,0.f,1.f };
+	mapping_vertices[3].normal = { 0.f,0.f,1.f };
+
+	vec3 delta_position_1 = mapping_vertices[1].position - mapping_vertices[0].position;
+	vec3 delta_position_2 = mapping_vertices[2].position - mapping_vertices[0].position;
+
+	vec2 deltaUV1 = mapping_vertices[1].texcoord - mapping_vertices[0].texcoord;
+	vec2 deltaUV2 = mapping_vertices[2].texcoord - mapping_vertices[0].texcoord;
+
+	float d = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+	vec3 tangent;
+	tangent.x = d * (deltaUV2.y * delta_position_1.x - deltaUV1.y * delta_position_2.x);
+	tangent.y = d * (deltaUV2.y * delta_position_1.y - deltaUV1.y * delta_position_2.y);
+	tangent.z = d * (deltaUV2.y * delta_position_1.z - deltaUV1.y * delta_position_2.z);
+
+	mapping_vertices[0].tangent = tangent;
+	mapping_vertices[1].tangent = tangent;
+	mapping_vertices[2].tangent = tangent;
+	mapping_vertices[3].tangent = tangent;
+
+	
+
+	// Counterclockwise as it's the default opengl front winding direction.
+	const std::vector<uint16_t> mapping_indices = { 0, 3, 1, 1, 3, 2 };
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::TILE, mapping_vertices, mapping_indices);
+
 
 	//////////////////////////
 	// Initialize sprite
