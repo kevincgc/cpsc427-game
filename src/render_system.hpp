@@ -144,6 +144,8 @@ private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(entt::entity entity, const mat3& projection);
 	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3& projection, vec2 screen);
+	void drawWall(const vec2 map_coords, const mat3& projection, vec2 screen);
+	void drawFreeSpace(const vec2 map_coords, const mat3& projection, vec2 screen);
 	void drawText(const std::string text, vec2 position, vec2 scale, const mat3& projection, vec3 text_colour);
 	void drawToScreen();
 

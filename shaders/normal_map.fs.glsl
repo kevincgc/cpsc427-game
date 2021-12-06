@@ -28,11 +28,11 @@ void main()
 	//  color
 	vec3 original_color = texture(sampler0, texcoord).rgb;
 	// ambient
-	vec3 ambient = 0.3* original_color;
+	vec3 ambient = 0.6* original_color;
 	// diffuse_color
 	vec3 lightDirection = normalize(TangentLightPosition - TangentFragPosition);
 	float diffuse_value = max(dot(lightDirection, normal), 0.0);
-	vec3 diffuse =  1.0 *  diffuse_value * original_color;
+	vec3 diffuse = 1.3 *  diffuse_value * original_color;
 	// specular
 	vec3 viewDirection = normalize(TangentViewPosition - TangentFragPosition);
 	vec3 reflectDir = reflect(-lightDirection, normal);
