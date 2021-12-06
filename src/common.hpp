@@ -107,6 +107,7 @@ extern entt::entity cutscene_minotaur_rtx_off_entity;
 extern entt::entity cutscene_drone_rtx_off_entity;
 extern entt::entity background_space2_entity;
 extern entt::entity background_space3_entity;
+extern std::vector<entt::entity> background_entities;
 extern int speed_counter;
 extern int wallbreaker_counter;
 

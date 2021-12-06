@@ -90,7 +90,7 @@ entt::entity cutscene_drone_laughing_entity;
 entt::entity cutscene_minotaur_rtx_off_entity;
 entt::entity cutscene_drone_rtx_off_entity;
 // ********* For parallax feature *********
-entt::entity background_space1_entity;
+std::vector<entt::entity> background_entities;
 entt::entity background_space2_entity;
 entt::entity background_space3_entity;
 // ********* For HUD feature **************
@@ -710,9 +710,27 @@ void WorldSystem::restart_game() {
 	hud_bg_entity			 = createHUD(renderer, 2);
 
 	// Create background entites
-	background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
-	background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
-	background_space1_entity = createBackground(renderer, { 900,800  }, 1);
+	//background_space3_entity = createBackground(renderer, { 600,1100 }, 3);
+	//background_space2_entity = createBackground(renderer, { 700,1200 }, 2);
+	vec2 pos;
+	for (int i = 0; i < 6; i++) {
+		switch (i) {
+		case 0: pos = { 500,500 }; break;
+		case 1: pos = { 500,1000 }; break;
+		case 2: pos = { 1000,500 }; break;
+		case 3: pos = { 1000,1000 }; break;
+		case 4: pos = { 1000,1500 }; break;
+		case 5: pos = { 1500,1500 }; break;
+		}
+		entt::entity ent = createBackground(renderer, pos, 2);
+		background_entities.push_back(ent);
+	}
+	createBackground(renderer, { 1000,1000  }, 1);
+	createBackground(renderer, { 1000,2000  }, 1);
+	createBackground(renderer, { 2000,1000  }, 1);
+	createBackground(renderer, { 2000,2000  }, 1);
+	createBackground(renderer, { 3000,1000  }, 1);
+	createBackground(renderer, { 3000,2000  }, 1);
 	
 
 	// ***********************************************************
@@ -889,8 +907,8 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player		   = registry.view<Player>().begin()[0];
 	Player& p_player		   = registry.get<Player>(player);
 	Motion& motion			   = registry.get<Motion>(player);
-	Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
-	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);
+	/*Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
+	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);*/
 	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
 		if (!registry.view<DeathTimer>().contains(player) && !in_a_cutscene) {
@@ -904,8 +922,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			// Movement
 			if (action != GLFW_REPEAT) {
 				// Parallax Settings
-				bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
-				bg_3_motion.velocity = { 0, 0 };
+				for (entt::entity bg_entity : background_entities) {
+					Motion& bg_motion = registry.get<Motion>(bg_entity);
+					bg_motion.velocity = { 0,0 };
+				}
+				//bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
+				//bg_3_motion.velocity = { 0, 0 };
 				float bg_2_vel = 20.f;
 				float bg_3_vel = 40.f;
 
@@ -918,8 +940,13 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.y		      = -1 * player_vel.y;
 					//hud_heart_1_motion.velocity.y = -1 * player_vel.y;
-					bg_2_motion.velocity.y	      = bg_2_vel;
-					bg_3_motion.velocity.y	      = bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = bg_2_vel; }
+						else						 { bg_motion.velocity.y = bg_3_vel; }
+					}
+					//bg_2_motion.velocity.y	      = bg_2_vel;
+					//bg_3_motion.velocity.y	      = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
@@ -927,8 +954,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.x		      = -1 * player_vel.x;
 					//hud_heart_1_motion.velocity.x = -1 * player_vel.x;
-					bg_2_motion.velocity.x        = bg_2_vel;
-					bg_3_motion.velocity.x        = bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = bg_2_vel; }
+						else						 { bg_motion.velocity.x = bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
@@ -936,8 +966,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.x		      = player_vel.x;
 					//hud_heart_1_motion.velocity.x = player_vel.x;
-					bg_2_motion.velocity.x        = -1 * bg_2_vel;
-					bg_3_motion.velocity.x        = -1 * bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = -1 * bg_2_vel; }
+						else { bg_motion.velocity.x = -1 * bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
@@ -945,8 +978,11 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.y		      = player_vel.y;
 					//hud_heart_1_motion.velocity.y = player_vel.y;
-					bg_2_motion.velocity.y        = -1 * bg_2_vel;
-					bg_3_motion.velocity.y        = -1 * bg_3_vel;
+					for (entt::entity bg_entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(bg_entity);
+						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = -1 * bg_2_vel; }
+						else { bg_motion.velocity.y = -1 * bg_3_vel; }
+					}
 				}
 
 				if (pressed_keys.size() == 0) { player_is_manually_moving = false; }
