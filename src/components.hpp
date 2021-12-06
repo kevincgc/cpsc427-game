@@ -82,8 +82,14 @@ struct LoadedLevel
 // Global Game State
 struct GameState
 {
-	std::string level_id = "procedural1";
+	std::string level_id = "main";
 	LoadedLevel level;
+	int level_phase = 0;
+
+	bool has_next = false;
+	bool win_condition = false;
+
+	bool cheat_finish = false;
 
 	std::vector<SoundEffectRequest> sound_requests;
 };

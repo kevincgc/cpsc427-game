@@ -4,10 +4,17 @@ procedural_options:
     size: [13, 13]
     method: binarytree
 
+progression:
+    phase_multiply:
+        procedural_size: 2
+        enemies: 2
+        prey: 2
+        items: 2
+
 enemies:
     spikes: 2
     drones: 3
-prey: 
+prey:
     chick: 3
 items:
     wall breaker: [1,2]

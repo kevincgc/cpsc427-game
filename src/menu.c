@@ -231,7 +231,7 @@ void drawPauseMenu( GLFWwindow* win, int* out)
     glfwSwapBuffers(win);
 }
 
-void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time)
+void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time, const char *level_info, int progression)
 {
     nk_glfw3_new_frame(&glfw);
     int res;
@@ -239,6 +239,7 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboar
     if (player_win) {
         res = nk_begin(ctx, "You escaped!", nk_rect(400 * scale_x, 75 * scale_y, 425 * scale_x, 600 * scale_y), NK_WINDOW_BORDER | NK_WINDOW_TITLE);
         nk_layout_row_dynamic(ctx, 30 * scale_x, 1);
+        nk_label(ctx, level_info, NK_TEXT_ALIGN_LEFT);
         nk_label(ctx, player_time, NK_TEXT_ALIGN_LEFT);
 
         nk_label(ctx, "LEADERBOARD", NK_TEXT_ALIGN_CENTERED);
@@ -252,7 +253,26 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboar
     if (res)
     {
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
-        if (nk_button_label(ctx, "TRY AGAIN")) {
+        int res = 0;
+        switch (progression) {
+            case 0:
+                res = nk_button_label(ctx, "TRY AGAIN");
+                break;
+
+            case 1:
+                res = nk_button_label(ctx, "RESTART LEVEL");
+                break;
+
+            case 2:
+                res = nk_button_label(ctx, "NEXT LEVEL");
+                break;
+
+            case 3:
+                res = nk_button_label(ctx, "NEXT PHASE");
+                break;
+        }
+
+        if (res) {
             fprintf(stdout, "Restarting Game\n");
             *out = 1;
         }
