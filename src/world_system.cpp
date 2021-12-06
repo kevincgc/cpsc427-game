@@ -512,12 +512,12 @@ std::vector<std::vector<MapTile>> WorldSystem::generateProceduralMaze(std::strin
 
 	// random end position
 	std::vector<int> possible_end_positions;
-	for (int i = 0; i < height; i++) {
+	for (int i = 3; i < height; i++) {
 		if (tile_is_walkable(maze[i][width - 2])) possible_end_positions.push_back(i);
 	}
 
 	// start at 3, because 0, 1 and 2 are too easy for some algorithms
-	ind = std::uniform_int_distribution<int>(3, possible_end_positions.size() - 1)(rng);
+	ind = std::uniform_int_distribution<int>(0, possible_end_positions.size() - 1)(rng);
 	const int end_position = possible_end_positions[ind];
 	maze[end_position][width - 1] = MapTile::EXIT;
 
