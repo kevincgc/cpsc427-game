@@ -1510,7 +1510,10 @@ void WorldSystem::do_timers(float elapsed_ms_since_last_update) {
 void WorldSystem::do_exit() {
 	Motion& player_motion = registry.get<Motion>(player_minotaur);
 	MapTile tile = get_map_tile(position_to_map_coords(player_motion.position));
-	if (tile == MapTile::EXIT) {
+	if (tile == MapTile::EXIT || game_state.cheat_finish) {
+		game_state.cheat_finish = false;
+		game_state.win_condition = true;
+
 		// player has found the exit!
 		if (!registry.view<EndGame>().contains(player_minotaur)) {
 			registry.emplace<EndGame>(player_minotaur);
