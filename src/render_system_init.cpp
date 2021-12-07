@@ -34,14 +34,12 @@ bool RenderSystem::init(int width, int height, GLFWwindow* window_arg)
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // vsync
 
-
-
 	// Load OpenGL function pointers
 	const int is_fine = glewInit();
 	assert(is_fine == 0);
 	registry.emplace<ScreenState>(screen_state_entity);
 	reinitSetBuffer(width, height, window_arg);
-  initText();
+	initText();
 	initializeGlTextures();
 	initializeGlEffects();
 	initializeGlGeometryBuffers();
