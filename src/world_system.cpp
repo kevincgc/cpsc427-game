@@ -1835,14 +1835,13 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 
 			// Remove entity from DeathTimer
 			registry.remove<DeathTimer>(entity);
-
+			
 			// If the entity is the player...
 			if (registry.view<Player>().contains(entity)) {
 				// End invulnerability
 				player_can_lose_health = true;
-
 				// Stop player movement
-				Motion& player_motion = registry.get<Motion>(entity);
+				Motion& player_motion  = registry.get<Motion>(entity);
 				player_motion.velocity = { 0,0 };
 			}
 			// If the entity is not the player, destroy it (i.e. destroy the enemy)
@@ -1850,7 +1849,6 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 				registry.destroy(entity);
 			}
 			
-
 			// Restart the game if the player is marked for death
 			if (player_marked_for_death) {
 				cutscene_1_frame_0 = true;
