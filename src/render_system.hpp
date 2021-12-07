@@ -37,7 +37,9 @@ class RenderSystem {
 	// Make sure these paths remain in sync with the associated enumerators.
 	const std::array<std::string, texture_count > texture_paths = {
 		textures_path("wall.png"), //<div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+		textures_path("wall_normal_map.png"),
 		textures_path("freespace.png"),
+		textures_path("freespace_normal_map.png"),
 		textures_path("enemy.png"), // <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("drone.png"), // <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 		textures_path("Minotaur_sprite_sheet.png"), // https://elthen.itch.io/2d-pixel-art-minotaur-sprites
@@ -88,6 +90,7 @@ class RenderSystem {
 		shader_path("minotaur"),
 		shader_path("text"),
 		shader_path("enemy"),
+		shader_path("normal_map")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -137,10 +140,13 @@ public:
 
 	mat3 createProjectionMatrixforText();
 
+
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(entt::entity entity, const mat3& projection);
 	void drawTile(const vec2 map_coords, const MapTile map_tile, const mat3& projection, vec2 screen);
+	void drawWall(const vec2 map_coords, const mat3& projection, vec2 screen);
+	void drawFreeSpace(const vec2 map_coords, const mat3& projection, vec2 screen);
 	void drawText(const std::string text, vec2 position, vec2 scale, const mat3& projection, vec3 text_colour);
 	void drawToScreen();
 
