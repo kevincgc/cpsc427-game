@@ -14,6 +14,7 @@ This commit is our submission for M4.
 * background_satellite.png: https://www.pngaaa.com/detail/1865660
 * cutscene_drone.png | cutscene_drone.png_laughing.png | cutscene_drone.png_sad.png | cutscene_minotaur.png: Varalee Chinsomboon - used with permission
 * cutscene_minotaur_rtx_off.png | cutscene_drone_rtx_off.png: Andrew Tsai
+* xxx_normal_map.png generated from https://cpetry.github.io/NormalMap-Online/
 
 ### Fonts
 * all: https://www.fontsquirrel.com/fonts/list/popular
