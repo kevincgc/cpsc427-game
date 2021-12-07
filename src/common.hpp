@@ -119,3 +119,31 @@ extern bool do_pathfinding_movement;
 
 extern float game_start_time;
 extern bool initial_game;
+
+enum class Event {
+	PLAYER_ENEMY_COLLISION,
+	PLAYER_PREY_COLLISION
+};
+
+//From https://gameprogrammingpatterns.com/observer.html
+class Observer
+{
+public:
+	virtual ~Observer() {}
+	virtual void onNotify(const entt::entity& entity, const entt::entity& other, Event event) = 0;
+};
+
+class Subject
+{
+private:
+	static const int MAX_OBS = 3;
+	Observer* observers_[MAX_OBS];
+	int numObservers_ = 0;
+public:
+	void addObserver(Observer* observer);
+
+	void removeObserver(Observer* observer);
+
+protected:
+	void notify(const entt::entity& entity, const entt::entity& other, Event event);
+};

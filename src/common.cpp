@@ -186,3 +186,31 @@ void Mouse_spell::reset_spells(std::map<int, std::map<std::string, std::string>>
 }
 
 ProgramState state = ProgramState::INIT;
+
+
+void Subject::addObserver(Observer* observer)
+{
+	if (numObservers_ < MAX_OBS) {
+		observers_[numObservers_++] = observer;
+	}
+	else {
+		std::cout << "too many observers" << std::endl;
+	}
+}
+
+void Subject::removeObserver(Observer* observer)
+{
+	for (int i = 0; i < MAX_OBS; i++) {
+		if (observers_[i] == observer) {
+			observers_[i] = nullptr;
+		}
+	}
+}
+
+void Subject::notify(const entt::entity& entity, const entt::entity& other, Event event)
+{
+	for (int i = 0; i < numObservers_; i++)
+	{
+		observers_[i]->onNotify(entity, other, event);
+	}
+}

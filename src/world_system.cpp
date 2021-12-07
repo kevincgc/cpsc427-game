@@ -128,7 +128,7 @@ std::map<std::string, bool> tutorial_flags = {
 	{"did_attack_cutscene",		 false },
 	{"noted_teleporter",		 false },
 	{"noted_arrival",		 false }
-};
+}; 
 
 int speed_counter = 0;
 int wallbreaker_counter = 0;
@@ -175,6 +175,21 @@ std::map < int, std::map <std::string, std::string>> spellbook = {
 };
 Mouse_spell mouse_spell;
 
+class WorldSystem;
+WorldSystem* wrld_sys;
+class KeyCallback {
+public:
+	void on_key(int key, int, int action, int mod) {
+		wrld_sys->on_key(key, 0, action, mod);
+	}
+	void on_mouse_move(vec2 mouse_position) {
+		wrld_sys->on_mouse_move(mouse_position);
+	}
+	void on_mouse_button(int button, int action, int mods) {
+		wrld_sys->on_mouse_button(button, action, mods);
+	}
+};
+
 //Debugging
 vec2 debug_pos = { 0,0 };
 
@@ -193,6 +208,7 @@ WorldSystem::WorldSystem()
 	: points(0) {
 	// Seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+	wrld_sys = this;
 }
 
 WorldSystem::~WorldSystem() {
@@ -273,9 +289,9 @@ GLFWwindow* WorldSystem::create_window() {
 	// Input is handled using GLFW, for more info see
 	// http://www.glfw.org/docs/latest/input_guide.html
 	glfwSetWindowUserPointer(window, this);
-	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
-	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
-	auto mouse_button_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button(_0, _1, _2); };
+	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((KeyCallback*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
+	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((KeyCallback*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
+	auto mouse_button_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2) { ((KeyCallback*)glfwGetWindowUserPointer(wnd))->on_mouse_button(_0, _1, _2); };
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
 	glfwSetMouseButtonCallback(window, mouse_button_redirect);
@@ -1003,71 +1019,57 @@ void WorldSystem::start_game() {
 
 }
 
-// Compute collisions between entities
-void WorldSystem::handle_collisions() {
+void WorldSystem::onNotify(const entt::entity& entity, const entt::entity& other, Event event) {
+	entt::entity player = registry.view<Player>().begin()[0];
+	switch (event)
+	{
+	case Event::PLAYER_ENEMY_COLLISION:
+		if (player_can_lose_health && !registry.view<DeathTimer>().contains(player))
+		{
+			game_state.sound_requests.push_back({ SoundEffects::PLAYER_DEAD }); // Scream
+			registry.emplace<DeathTimer>(entity);							    // Start a death timer (an invulnerability cooldown)
+			player_can_lose_health = false;										// Set invulnerability
+			player_health--;													// Reduce player health by one
 
-	// Loop over all collisions detected by the physics system
-	auto collisions = registry.view<Collision>();
-	for (entt::entity entity : collisions) {
+			if (player_health < 1) {
 
-		// The entity and its collider
-		entt::entity entity_other = collisions.get<Collision>(entity).other;
+				player_marked_for_death = true;									// Mark player for death
 
-		// For now, we are only interested in collisions that involve the minotaur
-		if (registry.view<Player>().contains(entity)) {
+				// Render colour
+				Colour& c = registry.get<Colour>(entity);
+				c.colour = vec3(0.27, 0.27, 0.27);
 
-			// Checking Player - Enemy collisions
-			if (registry.view<Enemy>().contains(entity_other) && player_can_lose_health && !registry.view<DeathTimer>().contains(entity_other) ) {
+				// Increment death_count
+				death_count++;
+				std::cout << "Death count is: " << death_count << std::endl;
 
-				game_state.sound_requests.push_back({ SoundEffects::PLAYER_DEAD }); // Scream
-				registry.emplace<DeathTimer>(entity);							    // Start a death timer (an invulnerability cooldown)
-				player_can_lose_health = false;										// Set invulnerability
-				player_health--;													// Reduce player health by one
-
-				if (player_health < 1) {
-
-					player_marked_for_death = true;									// Mark player for death
-
-					// Render colour
-					Colour& c = registry.get<Colour>(entity);
-					c.colour = vec3(0.27, 0.27, 0.27);
-
-					// Increment death_count
-					death_count++;
-					std::cout << "Death count is: " << death_count << std::endl;
-
-					// Set movement flags to false so enemies won't move upon reset
-					do_pathfinding_movement = false;
-					player_is_manually_moving = false;
-				}
-
-			}
-			// Checking Player - Prey collisions
-			if (registry.view<Prey>().contains(entity_other)) {
-				entt::entity player = registry.view<Player>().begin()[0];
-				game_state.sound_requests.push_back({SoundEffects::CHICK_DIE});
-				std::cout << "Calories make you go brrrrr" << std::endl;
-				registry.get<Motion>(player).velocity *= 2.5f;
-				for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
-					Prey& p = registry.get<Prey>(*it);
-				}
-				Prey& prey = registry.get<Prey>(entity_other);
-				auto ai_it = chick_ai.begin();
-				for (auto it = chick_ai.begin(); it != chick_ai.end(); it++) {
-					if ((*it).get_id() == prey.id) {
-						ai_it = it;
-					}
-				}
-				(*ai_it).clear();
-				chick_ai.erase(ai_it);
-				std::cout << "Destroyed entity " << int(entity_other) << std::endl;
-				registry.destroy(entity_other);
+				// Set movement flags to false so enemies won't move upon reset
+				do_pathfinding_movement = false;
+				player_is_manually_moving = false;
 			}
 		}
+		break;
+	case Event::PLAYER_PREY_COLLISION:
+		game_state.sound_requests.push_back({ SoundEffects::CHICK_DIE });
+		std::cout << "Calories make you go brrrrr" << std::endl;
+		registry.get<Motion>(player).velocity *= 2.5f;
+		for (auto it = registry.view<Prey>().begin(); it != registry.view<Prey>().end(); it++) {
+			Prey& p = registry.get<Prey>(*it);
+		}
+		const entt::entity& prey_entity = registry.view<Prey>().contains(entity) ? entity : other;
+		Prey& prey = registry.view<Prey>().contains(entity) ? registry.get<Prey>(entity) : registry.get<Prey>(other);
+		auto ai_it = chick_ai.begin();
+		for (auto it = chick_ai.begin(); it != chick_ai.end(); it++) {
+			if ((*it).get_id() == prey.id) {
+				ai_it = it;
+			}
+		}
+		(*ai_it).clear();
+		chick_ai.erase(ai_it);
+		std::cout << "Destroyed entity " << int(prey_entity) << std::endl;
+		registry.destroy(prey_entity);
+		break;
 	}
-
-	// Remove all collisions from this simulation step
-	registry.clear<Collision>();
 }
 
 // Should the game be over ?
@@ -1143,8 +1145,6 @@ void WorldSystem::postItemUse(entt::entity& player) {
 
 // On key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
-
-
 	// Menu Interaction
 	if (action == GLFW_PRESS && state == ProgramState::RUNNING) {
 		pressed_keys.insert({ key, true });
