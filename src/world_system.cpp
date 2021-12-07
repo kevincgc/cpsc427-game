@@ -1811,6 +1811,8 @@ void WorldSystem::do_exit() {
 // Handle Death and Endgame
 bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 	float min_counter_ms = 3000.f;
+
+	// For each entity in DeathTimer (can be enemy or player)
 	for (entt::entity entity : registry.view<DeathTimer>()) {
 		// Progress Death Timer
 		DeathTimer& death_counter = registry.get<DeathTimer>(entity);
@@ -1824,14 +1826,23 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 
 		// If death timer expires...
 		if (death_counter.counter_ms < 0) {
-			// End invulnerability and remove player from DeathTimer component
-			registry.remove<DeathTimer>(entity);
-			player_can_lose_health = true;
-			// Stop player movement
-			entt::entity player = registry.view<Player>().begin()[0];
-			Motion& player_motion = registry.get<Motion>(player);
-			player_motion.velocity = { 0,0 };
 
+			// Remove entity from DeathTimer
+			registry.remove<DeathTimer>(entity);
+			
+			// If the entity is the player...
+			if (registry.view<Player>().contains(entity)) {
+				// End invulnerability
+				player_can_lose_health = true;
+				// Stop player movement
+				Motion& player_motion  = registry.get<Motion>(entity);
+				player_motion.velocity = { 0,0 };
+			}
+			// If the entity is not the player, destroy it (i.e. destroy the enemy)
+			else {
+				registry.destroy(entity);
+			}
+			
 			// Restart the game if the player is marked for death
 			if (player_marked_for_death) {
 				cutscene_1_frame_0 = true;
@@ -1846,9 +1857,7 @@ bool WorldSystem::do_death_and_endgame(float elapsed_ms_since_last_update) {
 				return true;
 			}
 
-			if (!registry.view<Player>().contains(entity)) {
-				registry.destroy(entity);
-			}
+
 		}
 	}
 
