@@ -1,7 +1,9 @@
 # team10
-Team 10 would like to take a grace day for the Milestone 3 submission. We will be handing it in before 23:59 on Monday, 2021-11-22.
+This commit is our submission for M4.
 
-This commit is our submission for M3.
+### Notes
+
+- The game doesn't compile on Linux. Since we're using Mac and Windows only we didn't know it was a requirement to compile on Linux. Since the M3 feedback took a long time to reach us, we didn't have time to fix it even though we tried.
 
 ### Graphic assets
 * wall.png: <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
