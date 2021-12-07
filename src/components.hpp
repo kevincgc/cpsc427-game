@@ -114,7 +114,6 @@ struct Help {
 	bool picked_up_item = 0;
 	bool item_info = 0;
 	bool used_item = 0;
-	bool show_inventory = 0;
 };
 extern Help tips;
 
@@ -139,7 +138,7 @@ struct WallBreakerTimer
 };
 
 struct TextTimer {
-	float counter_ms = 7000.f;
+	float counter_ms = 5000.f;
 };
 
 struct SpeedBoostTimer {

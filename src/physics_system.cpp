@@ -299,11 +299,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						std::cout << "Picked up a " << item.name << "!" << std::endl;
 						registry.destroy(other);
 					}
-					// Start timer for 3 second text tip
-					//registry.emplace_or_replace<TextTimer>(player);
-					//tips.picked_up_item = 1;
-					//tips.basic_help = 0;
-					//tips.show_inventory = 0;
+					// Start timer for 5 second text tip
+					registry.emplace_or_replace<TextTimer>(player);
+					tips.picked_up_item = 1;
+					tips.basic_help = 0;
 					return;
 				}
 				if (!(registry.view<Prey>().contains(entity)||registry.view<Prey>().contains(other)) ||
