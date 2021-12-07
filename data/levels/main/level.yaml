@@ -20,4 +20,4 @@ items:
     wall breaker: 1
     key: 1
     teleporter: 1
-    speed boost: 1
+    speed boost: [0,1]
