@@ -55,6 +55,7 @@ void AISystem::step()
 						
 						// Destroy the enemy
 						// registry.destroy(entity);
+						entity_motion.can_collide = false;
 						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
 						// Don't process any of the code below for the enemy
 						// because it's no longer in the registry
@@ -64,6 +65,7 @@ void AISystem::step()
 					// If enemy is to the left of the player and the player is facing left
 					else if (entity_motion.position.x < motion.position.x && render_request.is_reflected) {
 						// registry.destroy(entity);
+						entity_motion.can_collide = false;
 						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
 						break;
 					}
@@ -71,6 +73,7 @@ void AISystem::step()
 					// If enemy is vertically close to the player, just destroy them
 					else if (abs(entity_motion.position.y - motion.position.y) < 100) {
 						// registry.destroy(entity);
+						entity_motion.can_collide = false;
 						if (!registry.view<DeathTimer>().contains(entity)) registry.emplace<DeathTimer>(entity);
 						break;
 					}
