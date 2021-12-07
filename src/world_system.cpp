@@ -1239,43 +1239,30 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			if (action == GLFW_PRESS && key == GLFW_KEY_1 && inventory[ItemType::WALL_BREAKER] > 0) {
 				use_wall_breaker();
 				inventory[ItemType::WALL_BREAKER]--;
-				// postItemUse(player);
+				 postItemUse(player);
 			}
 
 			if (action == GLFW_PRESS && key == GLFW_KEY_2 && inventory[ItemType::TELEPORT] > 0) {
 				use_teleport();
 				inventory[ItemType::TELEPORT]--;
-				// postItemUse(player);
+				 postItemUse(player);
 			}
 
 			if (action == GLFW_PRESS && key == GLFW_KEY_3 && inventory[ItemType::SPEED_BOOST] > 0) {
 				use_speed_boost();
 				inventory[ItemType::SPEED_BOOST]--;
-				// postItemUse(player);
+				 postItemUse(player);
 			}
-
-			//if (action == GLFW_PRESS && key == GLFW_KEY_4 && inventory[ItemType::EXTRA_LIFE] > 0) {
-			//	add_extra_life();
-			//	inventory[ItemType::EXTRA_LIFE]--;
-			//	// postItemUse(player);
-			//}
 
 			// cheats!
 			if (pressed_keys.find(GLFW_KEY_LEFT_CONTROL) != pressed_keys.end() && pressed_keys.find(GLFW_KEY_F) != pressed_keys.end()) {
 				game_state.cheat_finish = true;
 			}
 
-			// toggle show current inventory
-			if (key == GLFW_KEY_I && action == GLFW_PRESS) {
-				tips.show_inventory = !tips.show_inventory;
-				tips.basic_help = 0;
-			}
-
 			// Tell user about the item they just picked up (toggle with T if they are holding an item)
 			if (!most_recent_collected_item.name.empty() && action == GLFW_PRESS && key == GLFW_KEY_T) {
 				tips.basic_help = 0;
 				tips.picked_up_item = 0;
-				tips.show_inventory = 0;
 				tips.item_info = !tips.item_info;
 			}
 
@@ -1289,7 +1276,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				// toggle H for basic help mode
 				if (key == GLFW_KEY_H) {
 					tips.basic_help = !tips.basic_help;
-					tips.show_inventory = 0;
 				}
 			}
 

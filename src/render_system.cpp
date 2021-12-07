@@ -723,7 +723,7 @@ void RenderSystem::draw()
 
 	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	vec2 text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
 	// ensures text disappears after 3 seconds for non-toggled options
 	bool text_timer_on = registry.view<TextTimer>().contains(player);
@@ -731,31 +731,20 @@ void RenderSystem::draw()
 	if (tips.basic_help)
 	{
 		renderedText_1 = "Click and point to a square to move to it and press spacebar to attack enemies.";
-		renderedText_2 = "Toggle \"I\" to see your inventory and press 1,2,3, or 4 to use collected items!";
-	}
-	else if (tips.show_inventory) {
-		std::string wall_breaker_ct = std::to_string(inventory[ItemType::WALL_BREAKER]);
-		std::string wall_breaker_txt = "Wall Breaker: " + wall_breaker_ct;
-
-		std::string teleporter_ct = std::to_string(inventory[ItemType::TELEPORT]);
-		std::string teleporter_txt = "Teleporter: " + teleporter_ct;
-
-		std::string speed_boost_ct = std::to_string(inventory[ItemType::SPEED_BOOST]);
-		std::string speed_boost_txt = "Speed Boost: " + speed_boost_ct;
-
-		std::string key_ct = std::to_string(inventory[ItemType::KEY]);
-		std::string key_text = "Key: " + key_ct;
-
-		renderedText_1 = "Inventory: " + wall_breaker_txt + ", " + teleporter_txt + ",";
-		renderedText_2 = speed_boost_txt + ", " + key_text;
-		text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-		text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+		renderedText_2 = "Press 1,2, or 3 to use collected items!";
 	}
 	else if (tips.picked_up_item && !most_recent_collected_item.name.empty() && text_timer_on) {
 		// Item collected
-		std::string key = std::to_string(static_cast<typename std::underlying_type<ItemType>::type>(item_to_enum[most_recent_collected_item.name]));
+		ItemType item_type = item_to_enum[most_recent_collected_item.name];
+		std::string key = std::to_string(static_cast<typename std::underlying_type<ItemType>::type>(item_type));
 		renderedText_1 = "You picked up the " + most_recent_collected_item.name + "! It has been added to your inventory.";
-		renderedText_2 = "Press " + key + " to use it and toggle \"T\" for a description of the item's usage.";
+
+		if (item_type == ItemType::KEY) {
+			renderedText_2 = "";
+		}
+		else {
+			renderedText_2 = "Press " + key + " to use it and toggle \"T\" for a description of the item's usage.";
+		}
 		text1_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 		text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	}
@@ -771,7 +760,7 @@ void RenderSystem::draw()
 		case ItemType::KEY:
 			renderedText_1 = "Key: The player needs to collect these in order to exit the maze.";
 			renderedText_2 = "";
-			text1_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
+			text1_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
 			text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 			break;
 		case ItemType::TELEPORT:
@@ -819,13 +808,6 @@ void RenderSystem::draw()
 		// light blue
 		text_colour = { 0.f, 1.f, 1.f };
 	}
-	//else if (most_recent_used_item == ItemType::KEY && text_timer_on) {
-	//	// used extra life
-	//	renderedText_1 = "You picked up a key!";
-	//	renderedText_2 = "";
-	//	text1_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	//	text2_pos = { 1 / 2 * w + (15.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
-	//}
 	else
 	{
 		renderedText_1 = "";
