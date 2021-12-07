@@ -62,7 +62,9 @@ class RenderSystem {
 		textures_path("no_hammer.png"),
 		textures_path("no_teleport.png"),
 		textures_path("no_speedboost.png"),
-		textures_path("no_key.png")
+		textures_path("no_key.png"),
+		textures_path("background_moon.png"), // https://toppng.com/moon-PNG-free-PNG-Images_25446
+		textures_path("background_satellite.png") //https://www.pngaaa.com/detail/1865660
 	};
 
 
