@@ -10,6 +10,8 @@ This commit is our submission for M4.
 * enemy.png: <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 * drone.png:  <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 * Minotaur_sprite_sheet.png:  https://elthen.itch.io/2d-pixel-art-minotaur-sprites
+* background_moon.png: https://toppng.com/moon-PNG-free-PNG-Images_25446
+* background_satellite.png: https://www.pngaaa.com/detail/1865660
 * cutscene_drone.png | cutscene_drone.png_laughing.png | cutscene_drone.png_sad.png | cutscene_minotaur.png: Varalee Chinsomboon - used with permission
 * cutscene_minotaur_rtx_off.png | cutscene_drone_rtx_off.png: Andrew Tsai
 
