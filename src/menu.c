@@ -124,6 +124,11 @@ void drawMainMenu( GLFWwindow* win, int *out)
             *out = 1;
         }
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+        if (nk_button_label(ctx, "LOAD GAME")) {
+            fprintf(stdout, "Load game selected\n");
+            *out = 3;
+        }
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "OPTIONS")) {
             fprintf(stdout, "Options Menu\n");
             *out = 2;
@@ -211,6 +216,11 @@ void drawPauseMenu( GLFWwindow* win, int* out)
             *out = 1;
         }
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
+        if (nk_button_label(ctx, "SAVE GAME")) {
+            fprintf(stdout, "Save Game Selected\n");
+            *out = 4;
+        }
+        nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
         if (nk_button_label(ctx, "RESTART GAME")) {
             fprintf(stdout, "Restarting Game\n");
             *out = 2;
@@ -231,7 +241,7 @@ void drawPauseMenu( GLFWwindow* win, int* out)
     glfwSwapBuffers(win);
 }
 
-void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time)
+void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time, const char *level_info, int progression)
 {
     nk_glfw3_new_frame(&glfw);
     int res;
@@ -239,6 +249,7 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboar
     if (player_win) {
         res = nk_begin(ctx, "You escaped!", nk_rect(400 * scale_x, 75 * scale_y, 425 * scale_x, 600 * scale_y), NK_WINDOW_BORDER | NK_WINDOW_TITLE);
         nk_layout_row_dynamic(ctx, 30 * scale_x, 1);
+        nk_label(ctx, level_info, NK_TEXT_ALIGN_LEFT);
         nk_label(ctx, player_time, NK_TEXT_ALIGN_LEFT);
 
         nk_label(ctx, "LEADERBOARD", NK_TEXT_ALIGN_CENTERED);
@@ -252,7 +263,26 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboar
     if (res)
     {
         nk_layout_row_dynamic(ctx, 50 * scale_x, 1);
-        if (nk_button_label(ctx, "TRY AGAIN")) {
+        int res = 0;
+        switch (progression) {
+            case 0:
+                res = nk_button_label(ctx, "TRY AGAIN");
+                break;
+
+            case 1:
+                res = nk_button_label(ctx, "RESTART LEVEL");
+                break;
+
+            case 2:
+                res = nk_button_label(ctx, "NEXT LEVEL");
+                break;
+
+            case 3:
+                res = nk_button_label(ctx, "NEXT PHASE");
+                break;
+        }
+
+        if (res) {
             fprintf(stdout, "Restarting Game\n");
             *out = 1;
         }
@@ -279,6 +309,7 @@ void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboar
 // out 1-9 = cutscene_1 (game start)
 // out 10-19 = cutscene_2 (reached the exit)
 // out 100-199 = cutscene_death
+// out 200-299 = cutscene_tutorial
 
 void drawCutscene(GLFWwindow* win, int* out)
 {
@@ -318,7 +349,7 @@ void drawCutscene(GLFWwindow* win, int* out)
 			min_cutscene_selection = 1;
 			max_cutscene_selection = 3;
 			nk_label(ctx, "This is an impressive maze, Daedalus, but my hooves grow weary of the", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "endless wandering. My father is due what he is owed.",		   NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "endless wandering...",		   NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 3) {
@@ -360,16 +391,16 @@ void drawCutscene(GLFWwindow* win, int* out)
 			// Reached exit - speaker: drone
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
-			nk_label(ctx, "Daedalus: What?! I haven't finished my next labyrinth!", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Daedalus: What?! I barely finished constructing this phase!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I better get to work on the next one...", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 		else if (*out == 16) {
 			min_cutscene_selection = 15;
 			max_cutscene_selection = 16;
-			nk_label(ctx, "Enjoy your empty victory, Son of Minos, for it will be short lived.", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "But I don't think I can finish the background decorations in time!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Why don't you take it a little slower, Son of Minos,", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "there's so much to see.", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// ********** Death Dialogue **********
@@ -403,8 +434,8 @@ void drawCutscene(GLFWwindow* win, int* out)
 		}
 
 
-		else if (105 <= *out) {
-			// For now we will set anything above ____ as one of five randomly selected 'voicelines' of the minotaur
+		else if (105 <= *out && *out <= 199) {
+			// For now we will set anything between 105 to 199 as one of five randomly selected 'voicelines' of the minotaur
 			min_cutscene_selection = *out, max_cutscene_selection = *out;
 
 			if (!cutscene_chosen_text) {
@@ -420,6 +451,119 @@ void drawCutscene(GLFWwindow* win, int* out)
 			nk_label(ctx, cutscene_chosen_text, NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+
+		// ********** Tutorial Dialogue **********
+		// Tutorial start
+		else if (*out == 200) {
+			min_cutscene_selection = 200, max_cutscene_selection = 202;
+			nk_label(ctx, "I will suffer imprisonment no longer. Time to stretch these legs", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "(by pressing [w/a/s/d] or clicking on an empty tile).", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 201) {
+			min_cutscene_selection = 200, max_cutscene_selection = 202;
+			nk_label(ctx, "What's this, a gifted hammer?", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "If I pick it up, I can use it (by pressing [1]) on a wall (by clicking it)...", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 202) {
+			min_cutscene_selection = 200, max_cutscene_selection = 202;
+			nk_label(ctx, "Looks fragile, I think it only has 20 seconds before I can use it.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And it looks like I can only use it once unless if I pick up another.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I don't think it's strong enough to break the outer walls.", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 203) {
+			min_cutscene_selection = 200, max_cutscene_selection = 203;
+			nk_label(ctx, "This hammer is fragile", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "It looks like it'll break after one use.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note enemy movement and speed boost
+		else if (*out == 205) {
+			min_cutscene_selection = 205, max_cutscene_selection = 206;
+			nk_label(ctx, "Interesting. The enemies only move when I do.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Wait, did I just see a chick? I suppose eating them may grant", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "me a short burst of speed. If they tire, they might stop moving...", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 206) {
+			min_cutscene_selection = 205, max_cutscene_selection = 206;
+			nk_label(ctx, "Another item over there. Looks like it'll speed me up.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I wonder how long it'll last for after activating it", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "(by pressing [3]). Maybe 5 seconds?", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note floor disappearing
+		else if (*out == 210) {
+			min_cutscene_selection = 210, max_cutscene_selection = 210;
+			nk_label(ctx, "The void! It disappeared!", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I'm standing on bare floor.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Is this all just an illusion?", NK_TEXT_ALIGN_LEFT);
+		}
+		// Hold it right there: Speaker: Daedalus
+		else if (*out == 215) {
+			min_cutscene_selection = 215, max_cutscene_selection = 215;
+			nk_label(ctx, "Hold it right there.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "You're now in stasis, beast.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Let me get a closer look at you.", NK_TEXT_ALIGN_LEFT);
+		}
+		// Daedalus speech: Speaker: Daedalus
+		else if (*out == 216) {
+			min_cutscene_selection = 216, max_cutscene_selection = 217;
+			nk_label(ctx, "Oh Son of Minos, I've been careless to leave my toys lying around", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "But never have I crafted one that could break walls.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I'll find out who's helping you, but first...", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 217) {
+			min_cutscene_selection = 216, max_cutscene_selection = 217;
+			nk_label(ctx, "I'll test my drones. If you get too close, they'll chase you", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "If you destroy them, they'll deform as the souls are set free", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "They can still hit you, but you won't lose any life.", NK_TEXT_ALIGN_LEFT);
+		}
+		// Attack cutscene: Speaker: Minotaur
+		else if (*out == 220) {
+			min_cutscene_selection = 220, max_cutscene_selection = 221;
+			nk_label(ctx, "I can defend myself (by pressing [spacebar])", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Looks like these drones aren't very smart.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "If they hit the wall, they'll probably stop moving.", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 221) {
+			min_cutscene_selection = 220, max_cutscene_selection = 221;
+			nk_label(ctx, "But if I know Daedalus, he's already made smarter drones.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Regardless, these will be easy to take care of.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note teleporter: Speaker: Minotaur
+		else if (*out == 225) {
+			min_cutscene_selection = 225, max_cutscene_selection = 227;
+			nk_label(ctx, "The exit! Finally I can escape this prison.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "And over there in the corner, a teleporter and a key?", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Daedalus probably puts invisible doors at the exits... ", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 226) {
+			min_cutscene_selection = 225, max_cutscene_selection = 227;
+			nk_label(ctx, "I'll need the key to escape. I can use the teleporter (by pressing [2]).", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "It looks unstable though - no wonder he threw them away.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "I don't think I can control where it teleports me...", NK_TEXT_ALIGN_LEFT);
+		}
+		else if (*out == 227) {
+			min_cutscene_selection = 225, max_cutscene_selection = 227;
+			nk_label(ctx, "But I don't have a choice.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Let's hope I end up on the other side of this wall.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note teleporter arrival: Speaker: Minotaur
+		else if (*out == 230) {
+			min_cutscene_selection = 230, max_cutscene_selection = 230;
+			nk_label(ctx, "That was lucky. Good think there's a key here.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Certain mazes will need a certain number of kesy to escape.", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Now, time to get out of this labyrinth.", NK_TEXT_ALIGN_LEFT);
+		}
+		// Note teleporter arrival: Speaker: Minotaur
+		else if (*out == 300) {
+		min_cutscene_selection = 300, max_cutscene_selection = 300;
+		nk_label(ctx, "I still need to find all the keys before I can leave.", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
 		}
 
 		// Row for Buttons

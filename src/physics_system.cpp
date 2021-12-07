@@ -48,47 +48,60 @@ void impulseCollisionResolution(Motion& player_motion, Motion& motion_other) {
 }
 
 // returns true if successfull, false if it didn't set
-bool setMotionPosition(Motion& motion, vec2 nextpos) {
-	vec2 bounding_box = get_bounding_box(motion);
-	vec2 corners[] = {
-		// upper right
-		vec2(bounding_box.x / 2, -bounding_box.y / 2),
+bool setMotionPosition(Motion& motion, vec2 nextpos, bool is_player = false) {
+	if (motion.can_collide) {
+		vec2 bounding_box = get_bounding_box(motion);
+		vec2 corners[] = {
+			// upper right
+			vec2(bounding_box.x / 2, -bounding_box.y / 2),
 
-		// upper left
-		vec2(-bounding_box.x / 2, -bounding_box.y / 2),
+			// upper left
+			vec2(-bounding_box.x / 2, -bounding_box.y / 2),
 
-		// lower left
-		vec2(-bounding_box.x / 2, bounding_box.y / 2),
+			// lower left
+			vec2(-bounding_box.x / 2, bounding_box.y / 2),
 
-		// lower right
-		vec2(bounding_box.x / 2, bounding_box.y / 2),
-	};
+			// lower right
+			vec2(bounding_box.x / 2, bounding_box.y / 2),
+		};
 
-	bool collision_x = false;
-	bool collision_y = false;
-	for (const auto corner : corners) {
-		const vec2 test_point_x = WorldSystem::position_to_map_coords({nextpos.x + corner.x, motion.position.y + corner.y});
-		const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
-		if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
-			collision_x = true;
+		bool collision_x = false;
+		bool collision_y = false;
+		for (const auto corner : corners) {
+			const vec2 test_point_x = WorldSystem::position_to_map_coords({ nextpos.x + corner.x, motion.position.y + corner.y });
+			const MapTile tile_x = WorldSystem::get_map_tile(test_point_x);
+			if (!WorldSystem::tile_is_walkable(tile_x) || !WorldSystem::is_within_bounds(test_point_x)) {
+				collision_x = true;
+			}
+
+			const vec2 test_point_y = WorldSystem::position_to_map_coords({ motion.position.x + corner.x, nextpos.y + corner.y });
+			const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
+			if (!WorldSystem::tile_is_walkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
+				collision_y = true;
+			}
 		}
 
-		const vec2 test_point_y = WorldSystem::position_to_map_coords({motion.position.x + corner.x, nextpos.y + corner.y});
-		const MapTile tile_y = WorldSystem::get_map_tile(test_point_y);
-		if (!WorldSystem::tile_is_walkable(tile_y) || !WorldSystem::is_within_bounds(test_point_y)) {
-			collision_y = true;
+		if (!collision_x) {
+			if (is_player) { motion.prev_pos.x = motion.position.x; }
+			motion.position.x = nextpos.x;
 		}
+
+		if (!collision_y) {
+			if (is_player) { motion.prev_pos.y = motion.position.y; }
+			motion.position.y = nextpos.y;
+		}
+
+		return !collision_x && !collision_y;
 	}
-
-	if (!collision_x) {
+	// Non-collidable objects
+	// For entities like the background stars that have motion but no collision
+	else {
 		motion.position.x = nextpos.x;
-	}
-
-	if (!collision_y) {
 		motion.position.y = nextpos.y;
 	}
 
-	return !collision_x && !collision_y;
+	return true;
+
 }
 
 // TODO: Optimization needed for overlap handling/clipping, weird behaviour occurring with certain collisions
@@ -136,8 +149,45 @@ void preventCollisionOverlap(entt::entity entity, entt::entity other) {
 	}
 }
 
+void drawDebuggingMeshes(entt::entity& entity) {
+	Motion& motion = registry.get<Motion>(entity);
+	Mesh* meshPtrs = registry.get<Mesh*>(entity);
+	std::vector<uint16_t> vertex_indices = meshPtrs->vertex_indices;
+	std::vector<ColoredVertex> vertices = meshPtrs->vertices;
+	mat3 S = { { motion.scale.x, 0.f, 0.f },{ 0.f, motion.scale.y, 0.f },{ 0.f, 0.f, 1.f } };
+	float c = cosf(motion.angle);
+	float s = sinf(motion.angle);
+	mat3 R = { { c, -s, 0.f }, { s, c, 0.f }, { 0.f, 0.f, 1.f } };
+	mat3 T = { { 1.f, 0.f, motion.position.x }, { 0.f, 1.f, motion.position.y }, { 0.f, 0.f, 1.f } };
+	mat3 proj = { { 1.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, { 0.f, 0.f, 1.f } };
+	for (auto& vertex : vertices) {
+		vec3 object_coord = { vertex.position.x, vertex.position.y, 1.f };
+		vec3 scaled = object_coord * S;
+		vec3 rotated = scaled * R;
+		vec3 translated = rotated * T;
+		vec3 projected = translated * proj;
+		vec2 vertexCoord = { projected.x, projected.y };
+		createLine(vertexCoord, { 5.f, 5.f });
+	}
+}
+
+void drawDebuggingBoxes(entt::entity& entity) {
+	Motion& motion = registry.get<Motion>(entity);
+	const vec2 bonding_box = get_bounding_box(motion);
+	// Bounding boxes for prey, minotaur, items, and chicks
+	// Top left to bottom left
+	createLine({ motion.position.x - (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
+	// Top left to top right
+	createLine({ motion.position.x, motion.position.y - (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
+	// Bottom left to bottom right
+	createLine({ motion.position.x, motion.position.y + (bonding_box.y / 2.f) }, { bonding_box.x,  motion.scale.x / 20.f });
+	// Top Right to bottom right
+	createLine({ motion.position.x + (bonding_box.x / 2.f), motion.position.y }, { motion.scale.x / 20.f, bonding_box.y });
+}
+
 void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_height_px)
 {
+
 	// Move entities based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 
@@ -147,23 +197,53 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 		Motion& motion = registry.get<Motion>(entity);
 		vec2 nextpos = motion.position + motion.velocity * step_seconds;
 
+		// If the entity is not the player...
 		if (!registry.view<Player>().contains(entity)) {
-			if (player_is_manually_moving || do_pathfinding_movement) {
-				setMotionPosition(motion, nextpos);
+			// If the entity is not the background or hud either...
+			// (we only want the background and hud to move if the
+			//  player can pass the setMotionPosition collision 
+			//  check)
+			if (!registry.view<Background>().contains(entity) && !registry.view<HUD>().contains(entity)) {
+				// Move the entity only if the player is moving
+				if (player_is_manually_moving || do_pathfinding_movement) {
+					setMotionPosition(motion, nextpos);
+				}
+			}
+
+		}
+		// If the entity is the player...
+		else {
+			if (!in_a_cutscene) {
+				// Attempt to move the player, and if player is able to move (no collision = return True)...
+				// Warning: If player is moving, ex rightwards in to a wall, setMotionPosition returns False
+				// as expected due to collision. However, if moving into a wall AND moving up along a hallway,
+				// setMotionPosition still returns false but player is still able to move up
+				if (setMotionPosition(motion, nextpos, true)) {
+
+					// Move only star background for parallax effect
+					for (entt::entity entity : background_entities) {
+						Motion& bg_motion = registry.get<Motion>(entity);
+						vec2 bg_next_pos = bg_motion.position + bg_motion.velocity * step_seconds;
+						setMotionPosition(bg_motion, bg_next_pos);
+					}
+					//Motion& bg_motion_1 = registry.get<Motion>(background_space2_entity);
+					//vec2 bg_1_nextpos = bg_motion_1.position + bg_motion_1.velocity * step_seconds;
+					//setMotionPosition(bg_motion_1, bg_1_nextpos);
+
+					//Motion& bg_motion_2 = registry.get<Motion>(background_space3_entity);
+					//vec2 bg_2_nextpos = bg_motion_2.position + bg_motion_2.velocity * step_seconds;
+					//setMotionPosition(bg_motion_2, bg_2_nextpos);
+
+					// Move all elements of the HUD
+					for (entt::entity entity : registry.view<HUD>()) {
+						Motion& hud_entity_motion = registry.get<Motion>(entity);
+						vec2    hud_entity_nextpos = hud_entity_motion.position + hud_entity_motion.velocity * step_seconds;
+						setMotionPosition(hud_entity_motion, hud_entity_nextpos);
+					}
+				}
 			}
 		}
-		else {
-			setMotionPosition(motion, nextpos);
-		}
 	}
-
-	// Move enemy
-	// If player is moving, move enemies too
-	//if (player_is_manually_moving || do_pathfinding_movement) {
-	//	for (int i = 1; i <= registry.size<Motion>; i++) {
-	//		Motion& enemy_motion = registry.get<Motion>.begin()[i];
-	//	}
-	//}
 
 	entt::entity player = registry.view<Player>().begin()[0];
 	Motion& player_motion = registry.get<Motion>(player);
@@ -201,6 +281,20 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
+				// player-prey collision
+				if ((entity == player && registry.view<Prey>().contains(other)) || (other == player && registry.view<Prey>().contains(entity))) {
+					notify(entity, other, Event::PLAYER_PREY_COLLISION);
+					continue;
+				}
+
+				// player-enemy collision
+				if ((entity == player && registry.view<Enemy>().contains(other)) || (other == player && registry.view<Enemy>().contains(entity))) {
+					notify(entity, other, Event::PLAYER_ENEMY_COLLISION);
+					preventCollisionOverlap(other, entity);
+					impulseCollisionResolution(registry.get<Motion>(entity), registry.get<Motion>(other));
+					continue;
+				}
+
 				// If collision involves an item and the player
 				if (other_is_item || ent_is_item) {
 					// Add item to inventory, prompt text from tips
@@ -219,11 +313,10 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 						std::cout << "Picked up a " << item.name << "!" << std::endl;
 						registry.destroy(other);
 					}
-					// Start timer for 3 second text tip
+					// Start timer for 5 second text tip
 					registry.emplace_or_replace<TextTimer>(player);
 					tips.picked_up_item = 1;
 					tips.basic_help = 0;
-					tips.show_inventory = 0;
 					return;
 				}
 				if (!(registry.view<Prey>().contains(entity)||registry.view<Prey>().contains(other)) ||
@@ -239,5 +332,26 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 				}
 			}
 		}
+	}
+
+	// debugging of bounding boxes
+	if (debugging.in_debug_mode)
+	{
+		// Dots for every vertex of enemy meshes
+		for (auto enemy_entity : registry.view<Enemy>()) {
+			drawDebuggingMeshes(enemy_entity);
+		}
+
+		// Draw bounding boxes for all moving entities (not including HUD, cutscenes, etc)
+		for (auto prey : registry.view<Prey>()) {
+			drawDebuggingBoxes(prey);
+		}
+		for (auto player : registry.view<Player>()) {
+			drawDebuggingBoxes(player);
+		}
+		for (auto item : registry.view<Item>()) {
+			drawDebuggingBoxes(item);
+		}
+
 	}
 }

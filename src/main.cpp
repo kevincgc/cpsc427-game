@@ -29,9 +29,8 @@ extern "C" {
 	void drawMainMenu(GLFWwindow* window, int* is_start_game);
 	void drawOptionsMenu( GLFWwindow* win, int* out);
 	void drawPauseMenu( GLFWwindow* win, int* out);
-	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time);
+	void drawGameOverMenu( GLFWwindow* win, int* out, int player_win, int leaderboard_size, char **leaderboard, const char *player_time, const char *level_info, int progression);
 
-	void drawCutscene_respawn(GLFWwindow* win, int* out);
 	void drawCutscene(GLFWwindow* win, int* out);
 
 	void initOptionsMenu();
@@ -49,6 +48,7 @@ int main()
 	GLFWwindow* window;
 	bool has_completed_init = false;
 	auto t = Clock::now();
+	physics.addObserver(&world);
 
 	while (!world.is_over()) {
 		glfwPollEvents();
@@ -77,6 +77,7 @@ int main()
 			if (selection == 1 && !has_completed_init) {
 				renderer.init(window_width_px, window_height_px, window);
 				world.init(&renderer);
+				world.restart_game();
 				has_completed_init = true;
 				initial_game = true;
 				game_start_time = (float)(glfwGetTime());
@@ -88,6 +89,23 @@ int main()
 			else if (selection == 2) {
 				initOptionsMenu();
 				state = ProgramState::OPTIONS;
+			}
+			else if (selection == 3) {
+				if (has_completed_init) {
+					renderer.reinit(window_width_px, window_height_px, window);
+					world.load_game();
+					initial_game = true;
+					game_start_time = (float)(glfwGetTime());
+					state = ProgramState::RUNNING;
+				} else {
+					renderer.init(window_width_px, window_height_px, window);
+					world.init(&renderer);
+					world.load_game();
+					has_completed_init = true;
+					initial_game = true;
+					game_start_time = (float)(glfwGetTime());
+					state = ProgramState::RUNNING;
+				}
 			}
 			else if (selection == -1) {
 				state = ProgramState::EXIT;
@@ -114,11 +132,12 @@ int main()
 
 		case ProgramState::RUNNING:
 		{
+
 			world.step(elapsed_ms);
 			ai.step();
 			physics.step(elapsed_ms, window_width_px, window_height_px);
-			world.handle_collisions();
 			renderer.draw();
+
 			break;
 		}
 		case ProgramState::PAUSED:
@@ -126,15 +145,18 @@ int main()
 			int selection = 0;
 			drawPauseMenu(window, &selection);
 			switch (selection) {
-			case 1:
-				renderer.reinit(window_width_px, window_height_px, window);
-				state = ProgramState::RUNNING;
-				break;
 			case 2:
 				state = ProgramState::RESET_GAME;
 				break;
 			case 3:
 				state = ProgramState::MAIN_MENU;
+				break;
+			case 4:
+				world.save_game();
+				// onto case 1
+			case 1:
+				renderer.reinit(window_width_px, window_height_px, window);
+				state = ProgramState::RUNNING;
 				break;
 			case -1:
 				state = ProgramState::EXIT;
@@ -158,14 +180,21 @@ int main()
 					strncpy(leaderboard_array[i], leaderboard[i].c_str(), len + 1);
 				}
 
-				drawGameOverMenu(window, &selection, 1, size_send, leaderboard_array, world.get_player_time().c_str());
+				int progression = 1;
+				if (game_state.level.phase > 0) {
+					progression = 3;
+				} else if (game_state.level.has_next) {
+					progression = 2;
+				}
+
+				drawGameOverMenu(window, &selection, 1, size_send, leaderboard_array, world.get_player_time().c_str(), world.get_level_info().c_str(), progression);
 
 				for (int i = 0; i < size_send; i++) {
 					delete[] leaderboard_array[i];
 				}
 				delete[] leaderboard_array;
 			} else {
-				drawGameOverMenu(window, &selection, 0, 0, nullptr, nullptr);
+				drawGameOverMenu(window, &selection, 0, 0, nullptr, nullptr, nullptr, 0);
 			}
 
 			switch (selection) {
@@ -201,6 +230,11 @@ int main()
 				cutscene_minotaur_motion.scale = { 0,0 };
 				cutscene_drone_motion.scale = { 0,0 };
 				renderer.reinit(window_width_px, window_height_px, window);
+				
+				// Keep player from persistently moving post-cutscene
+				motion.velocity = { 0,0 };
+				pressed_keys.clear();
+
 				state = ProgramState::RUNNING;
 
 				cutscene_minotaur_motion.scale		   = { 0,0 };

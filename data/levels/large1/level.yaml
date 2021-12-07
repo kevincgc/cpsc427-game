@@ -8,5 +8,5 @@ prey:
 items:
     speed boost: [2,3]
     wall breaker: [3,4]
-    extra life: 0
+    key: 1
     teleporter: 3

@@ -15,7 +15,7 @@ void main() {
   if (flash) {
     out_color.xy *= vec2(uv.x + sin(time), uv.y);
   } else if (used_wall_breaker) {
-    if (int (time) % 2 == 0) {
+    if (int (time) % 2 != 0) {
       out_color *= vec4(0.9137, 0.0745, 0.0745, 1.0);
     } 
   } else if (used_speed_boost) {
