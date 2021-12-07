@@ -723,7 +723,7 @@ void RenderSystem::draw()
 
 	// render text with initial position and colour
 	vec2 text1_pos = { 1 / 2 * w + (10.f * global_scaling_vector.x) * pixel_size, 60.f * global_scaling_vector.y };
-	vec2 text2_pos = { 1 / 2 * w + (25.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
+	vec2 text2_pos = { 1 / 2 * w + (20.f * global_scaling_vector.x) * pixel_size, 70.f * (global_scaling_vector.y) + (2.f * global_scaling_vector.y) * pixel_size };
 	vec3 text_colour = { 0.f, 1.f, 0.f }; // green by default
 	// ensures text disappears after 3 seconds for non-toggled options
 	bool text_timer_on = registry.view<TextTimer>().contains(player);
@@ -731,7 +731,7 @@ void RenderSystem::draw()
 	if (tips.basic_help)
 	{
 		renderedText_1 = "Click and point to a square to move to it and press spacebar to attack enemies.";
-		renderedText_2 = "Press 1,2,3, or 4 to use collected items!";
+		renderedText_2 = "Press 1,2, or 3 to use collected items!";
 	}
 	else if (tips.picked_up_item && !most_recent_collected_item.name.empty() && text_timer_on) {
 		// Item collected
