@@ -9,7 +9,7 @@
 extern entt::registry registry;
 
 // A simple physics system that moves rigid bodies and checks for collision
-class PhysicsSystem
+class PhysicsSystem : public Subject
 {
 public:
 	void step(float elapsed_ms, float window_width_px, float window_height_px);

@@ -281,6 +281,20 @@ void PhysicsSystem::step(float elapsed_ms, float window_width_px, float window_h
 			Motion& motion_other = registry.get<Motion>(other);
 			if (collides(motion, motion_other))
 			{
+				// player-prey collision
+				if ((entity == player && registry.view<Prey>().contains(other)) || (other == player && registry.view<Prey>().contains(entity))) {
+					notify(entity, other, Event::PLAYER_PREY_COLLISION);
+					continue;
+				}
+
+				// player-enemy collision
+				if ((entity == player && registry.view<Enemy>().contains(other)) || (other == player && registry.view<Enemy>().contains(entity))) {
+					notify(entity, other, Event::PLAYER_ENEMY_COLLISION);
+					preventCollisionOverlap(other, entity);
+					impulseCollisionResolution(registry.get<Motion>(entity), registry.get<Motion>(other));
+					continue;
+				}
+
 				// If collision involves an item and the player
 				if (other_is_item || ent_is_item) {
 					// Add item to inventory, prompt text from tips

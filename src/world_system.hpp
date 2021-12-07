@@ -28,7 +28,7 @@ extern ItemType most_recent_used_item;
 
 // Container for all our entities and game logic. Individual rendering / update is
 // deferred to the relative update() methods
-class WorldSystem
+class WorldSystem: public Observer
 {
 public:
 	WorldSystem();
@@ -49,8 +49,8 @@ public:
 	bool step(float elapsed_ms);
 	void play_sounds();
 
-	// Check for collisions
-	void handle_collisions();
+	// Handle observer events
+	void onNotify(const entt::entity& entity, const entt::entity& other, Event event);
 
 	// Should the game be over ?
 	bool is_over()const;
@@ -92,13 +92,14 @@ public:
 	std::string get_player_time();
 	std::string get_level_info();
 
-private:
-
-	void start_game();
 	// Input callback functions
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button(int button, int action, int mods);
+
+private:
+
+	void start_game();
 
 	// OpenGL window handle
 	GLFWwindow* window;

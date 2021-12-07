@@ -48,6 +48,7 @@ int main()
 	GLFWwindow* window;
 	bool has_completed_init = false;
 	auto t = Clock::now();
+	physics.addObserver(&world);
 
 	while (!world.is_over()) {
 		glfwPollEvents();
@@ -135,7 +136,6 @@ int main()
 			world.step(elapsed_ms);
 			ai.step();
 			physics.step(elapsed_ms, window_width_px, window_height_px);
-			world.handle_collisions();
 			renderer.draw();
 
 			break;
