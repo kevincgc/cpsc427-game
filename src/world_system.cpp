@@ -954,16 +954,19 @@ void WorldSystem::start_game() {
 	background_entities.clear();
 	// Create background entites
 	vec2 pos;
-	for (int i = 0; i < 6; i++) {
+	int asset;
+	for (int i = 0; i < 8; i++) {
 		switch (i) {
-		case 0: pos = { 500,500 }; break;
-		case 1: pos = { 500,1000 }; break;
-		case 2: pos = { 1500,500 }; break;
-		case 3: pos = { 1500,1000 }; break;
-		case 4: pos = { 3000,500 }; break;
-		case 5: pos = { 3000,1000 }; break;
+		case 0: pos = { 500,500 }; asset = 2; break;
+		case 1: pos = { 500,1000 }; asset = 2; break;
+		case 2: pos = { 1500,500 }; asset = 2; break;
+		case 3: pos = { 1500,1000 }; asset = 2; break;
+		case 4: pos = { 3000,500 }; asset = 2; break;
+		case 5: pos = { 3000,1000 }; asset = 2; break;
+		case 6: pos = { 500, 500 }; asset = 4; break;
+		case 7: pos = { 200, 500 }; asset = 5; break;
 		}
-		entt::entity ent = createBackground(renderer, pos, 2);
+		entt::entity ent = createBackground(renderer, pos, asset);
 		background_entities.push_back(ent);
 	}
 	createBackground(renderer, { 1000,1000  }, 1);
@@ -1154,8 +1157,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	entt::entity player		   = registry.view<Player>().begin()[0];
 	Player& p_player		   = registry.get<Player>(player);
 	Motion& motion			   = registry.get<Motion>(player);
-	/*Motion& bg_2_motion		   = registry.get<Motion>(background_space2_entity);
-	Motion& bg_3_motion		   = registry.get<Motion>(background_space3_entity);*/
 	Motion& hud_heart_1_motion = registry.get<Motion>(hud_heart_1_entity);
 
 		if (!registry.view<DeathTimer>().contains(player) && !in_a_cutscene) {
@@ -1175,8 +1176,10 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 				}
 				//bg_2_motion.velocity = { 0, 0 }; // This prevents constant movement by resetting to 0
 				//bg_3_motion.velocity = { 0, 0 };
-				float bg_2_vel = 20.f;
-				float bg_3_vel = 40.f;
+				float bg_2_vel = 40.f;
+				float bg_3_vel = 80.f;
+				float bg_moon_vel = 20.f;
+				float bg_satellite_vel = 60.f;
 
 				hud_heart_1_motion.velocity = { 0,0 };
 				motion.velocity				= { 0, 0 };
@@ -1186,14 +1189,13 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					do_pathfinding_movement       = false;
 					player_is_manually_moving     = true;
 					motion.velocity.y		      = -1 * player_vel.y;
-					//hud_heart_1_motion.velocity.y = -1 * player_vel.y;
-					for (entt::entity bg_entity : background_entities) {
-						Motion& bg_motion = registry.get<Motion>(bg_entity);
-						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = bg_2_vel; }
-						else						 { bg_motion.velocity.y = bg_3_vel; }
+					for (int bg_entity = 0; bg_entity < background_entities.size(); bg_entity++) {
+						Motion& bg_motion = registry.get<Motion>(background_entities[bg_entity]);
+						if (int(bg_entity) % 2  == 0 && int(bg_entity) < 6)  { bg_motion.velocity.y = bg_2_vel; }
+						else if (int(bg_entity) == 6) { bg_motion.velocity.y = bg_moon_vel; }
+						else if (int(bg_entity) == 7) { bg_motion.velocity.y = bg_satellite_vel; }
+						else						  { bg_motion.velocity.y = bg_3_vel; }
 					}
-					//bg_2_motion.velocity.y	      = bg_2_vel;
-					//bg_3_motion.velocity.y	      = bg_3_vel;
 				}
 
 				if (pressed_keys.find(GLFW_KEY_LEFT) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_A) != pressed_keys.end()) {
@@ -1201,33 +1203,37 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 					player_is_manually_moving     = true;
 					motion.velocity.x		      = -1 * player_vel.x;
 					//hud_heart_1_motion.velocity.x = -1 * player_vel.x;
-					for (entt::entity bg_entity : background_entities) {
-						Motion& bg_motion = registry.get<Motion>(bg_entity);
-						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = bg_2_vel; }
-						else						 { bg_motion.velocity.x = bg_3_vel; }
+					for (int bg_entity = 0; bg_entity < background_entities.size(); bg_entity++) {
+						Motion& bg_motion = registry.get<Motion>(background_entities[bg_entity]);
+						if (int(bg_entity) % 2 == 0 && int(bg_entity) < 6) { bg_motion.velocity.x = bg_2_vel; }
+						else if (int(bg_entity) == 6) { bg_motion.velocity.x = bg_moon_vel; }
+						else if (int(bg_entity) == 7) { bg_motion.velocity.x = bg_satellite_vel; }
+						else { bg_motion.velocity.x = bg_3_vel; }
 					}
 				}
 
 				if (pressed_keys.find(GLFW_KEY_RIGHT) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_D) != pressed_keys.end()) {
-					do_pathfinding_movement       = false;
-					player_is_manually_moving     = true;
-					motion.velocity.x		      = player_vel.x;
-					//hud_heart_1_motion.velocity.x = player_vel.x;
-					for (entt::entity bg_entity : background_entities) {
-						Motion& bg_motion = registry.get<Motion>(bg_entity);
-						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.x = -1 * bg_2_vel; }
+					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
+					motion.velocity.x = player_vel.x;
+					for (int bg_entity = 0; bg_entity < background_entities.size(); bg_entity++) {
+						Motion& bg_motion = registry.get<Motion>(background_entities[bg_entity]);
+						if (int(bg_entity) % 2 == 0 && int(bg_entity) < 6) { bg_motion.velocity.x = -1 * bg_2_vel; }
+						else if (int(bg_entity) == 6) { bg_motion.velocity.x = -1 * bg_moon_vel; }
+						else if (int(bg_entity) == 7) { bg_motion.velocity.x = -1 * bg_satellite_vel; }
 						else { bg_motion.velocity.x = -1 * bg_3_vel; }
 					}
 				}
 
-				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end()  || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
-					do_pathfinding_movement       = false;
-					player_is_manually_moving     = true;
-					motion.velocity.y		      = player_vel.y;
-					//hud_heart_1_motion.velocity.y = player_vel.y;
-					for (entt::entity bg_entity : background_entities) {
-						Motion& bg_motion = registry.get<Motion>(bg_entity);
-						if (int(bg_entity) % 2 == 0) { bg_motion.velocity.y = -1 * bg_2_vel; }
+				if (pressed_keys.find(GLFW_KEY_DOWN) != pressed_keys.end() || pressed_keys.find(GLFW_KEY_S) != pressed_keys.end()) {
+					do_pathfinding_movement = false;
+					player_is_manually_moving = true;
+					motion.velocity.y = player_vel.y;
+					for (int bg_entity = 0; bg_entity < background_entities.size(); bg_entity++) {
+						Motion& bg_motion = registry.get<Motion>(background_entities[bg_entity]);
+						if (int(bg_entity) % 2 == 0 && int(bg_entity) < 6) { bg_motion.velocity.y = -1 * bg_2_vel; }
+						else if (int(bg_entity) == 6) { bg_motion.velocity.y = -1 * bg_moon_vel; }
+						else if (int(bg_entity) == 7) { bg_motion.velocity.y = -1 * bg_satellite_vel; }
 						else { bg_motion.velocity.y = -1 * bg_3_vel; }
 					}
 				}

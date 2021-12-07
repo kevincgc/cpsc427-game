@@ -163,6 +163,14 @@ entt::entity createBackground(RenderSystem* renderer, vec2 position, int element
 			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SPACE2;
 			motion.scale = mesh.original_size * 4500.f * global_scaling_vector;
 			break;
+		case 4:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_MOON;
+			motion.scale = mesh.original_size * 500.f * global_scaling_vector;
+			break;
+		case 5:
+			texture_asset_id = TEXTURE_ASSET_ID::BACKGROUND_SATELLITE;
+			motion.scale = mesh.original_size * 200.f * global_scaling_vector;
+			break;
 		case 10:
 			texture_asset_id = TEXTURE_ASSET_ID::HUD_HEART;
 			motion.scale = mesh.original_size * 100.f * global_scaling_vector;
